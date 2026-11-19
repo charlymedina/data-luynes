@@ -3,27 +3,31 @@
  * Réglette de classement compacte, à glisser dans une carte de chiffre clé :
  * une ligne de 1 à N (toutes les communes du département) et un point pour Luynes.
  * Version courte de RankGauge, qui remplace une phrase du type « 19ᵉ commune sur 272 ».
+ * Le rang est toujours accompagné de son ensemble (« sur 272 communes d'Indre-et-Loire »).
  */
-import { formatRank } from '../../lib/format';
+import { COMMUNES_37, formatCommunes, formatRank } from '../../lib/format';
 
 interface Props {
   rank: number;
   total: number;
   /** Ce qui est classé, ex. « la plus peuplée » (lu par les lecteurs d'écran et affiché en petit) */
   what: string;
+  /** Ensemble de référence, par défaut « communes d'Indre-et-Loire ». */
+  ensemble?: string;
   /** Sur fond sarcelle (carte « loire »), la réglette passe en clair. */
   onDark?: boolean;
 }
 
-const { rank, total, what, onDark = false } = Astro.props;
+const { rank, total, what, ensemble = COMMUNES_37, onDark = false } = Astro.props;
 const position = total > 1 ? ((rank - 1) / (total - 1)) * 100 : 0;
+const surQui = `sur ${formatCommunes(total, ensemble)}`;
 ---
 
 <figure class="mt-5 text-xs">
   <div
     class:list={['relative h-2 rounded-full', onDark ? 'bg-bg/25' : 'bg-chart-grid']}
     role="img"
-    aria-label={`Luynes ${formatRank(rank)} commune ${what} sur ${total} en Indre-et-Loire`}
+    aria-label={`Luynes ${formatRank(rank)} ${what}, ${surQui}`}
   >
     <span
       class:list={[
@@ -33,8 +37,7 @@ const position = total > 1 ? ((rank - 1) / (total - 1)) * 100 : 0;
       style={`left:${position}%`}
     ></span>
   </div>
-  <figcaption class="mt-2 flex justify-between gap-2 opacity-85">
-    <span><strong class="font-semibold">{formatRank(rank)}</strong> {what}</span>
-    <span class="shrink-0">sur {total}</span>
+  <figcaption class="mt-2 leading-snug opacity-85">
+    <strong class="font-semibold">{formatRank(rank)}</strong> {what} {surQui}
   </figcaption>
 </figure>

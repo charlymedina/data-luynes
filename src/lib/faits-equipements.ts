@@ -1,7 +1,7 @@
 /**
  * Anecdotes « Le saviez-vous ? » du thème Écoles, santé & services (BPE INSEE, Éducation nationale).
  */
-import { nombreDe, resumeEquipements } from '../data/equipements';
+import { effectifsCollege, nombreDe, resumeEquipements } from '../data/equipements';
 import { formatNumber } from './format';
 
 export function faitsEquipements(): string[] {
@@ -23,5 +23,9 @@ export function faitsEquipements(): string[] {
   const piscine = nombreDe('F101');
   if (piscine > 0) liste.push(`Luynes a sa piscine : la base des équipements de l'INSEE y recense ${formatNumber(piscine)} bassin de natation.`);
   liste.push(`La base des équipements de l'INSEE recense ${formatNumber(r.equipements)} commerces, services et équipements à Luynes en ${r.annee_bpe}.`);
+  const college = effectifsCollege.at(-1);
+  if (college) {
+    liste.push(`Le collège de Luynes accueille ${formatNumber(college.eleves)} élèves à la rentrée ${college.rentree}, dont ${formatNumber(college.sixiemes)} en 6ᵉ.`);
+  }
   return liste;
 }

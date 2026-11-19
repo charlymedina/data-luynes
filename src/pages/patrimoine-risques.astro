@@ -90,10 +90,10 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
 
   <section aria-label="Chiffres clés du patrimoine et des risques" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
     <KeyFigure tone="loire" icon="aqueduc" label="Monuments historiques" value={r.monuments}>
-      <MiniRank onDark rank={r.rang_monuments} total={r.nb_communes} what="du département" />
+      <MiniRank onDark rank={r.rang_monuments} total={r.nb_communes} what="pour les monuments" />
     </KeyFigure>
     <KeyFigure tone="accent" icon="cave" label="Cavités souterraines" value={r.cavites}>
-      <MiniRank rank={r.rang_cavites} total={r.nb_communes} what="du département" />
+      <MiniRank rank={r.rang_cavites} total={r.nb_communes} what="pour les cavités" />
     </KeyFigure>
     <KeyFigure icon="alerte" label="Catastrophes naturelles" value={r.catnat} unit="arrêtés">
       <MiniCompare items={typesCatnat} />

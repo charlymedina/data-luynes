@@ -51,6 +51,25 @@ export const SOURCES_EQUIPEMENTS: readonly Source[] = [
       '&select=rentree_scolaire,numero_ecole,patronyme,secteur,nombre_total_classes,nombre_total_eleves,nombre_eleves_preelementaire_hors_ulis,nombre_eleves_elementaire_hors_ulis',
   },
   {
+    // Dans les jeux IPS et collèges, la colonne commune contient bien le code INSEE (37139) ; on filtre
+    // en plus sur les établissements de l'annuaire (UAI) dans le SQL, par prudence.
+    id: 'ips_ecoles_luynes',
+    description: 'Indice de position sociale (IPS) des écoles de Luynes, depuis la rentrée 2022 (Éducation nationale)',
+    url: `${EDUCATION}/fr-en-ips-ecoles-ap2022/exports/json?where=${where('code_insee_de_la_commune="37139"')}`,
+  },
+  {
+    id: 'ips_college_luynes',
+    description: 'Indice de position sociale (IPS) du collège de Luynes, depuis la rentrée 2023 (Éducation nationale)',
+    url: `${EDUCATION}/fr-en-ips-colleges-ap2023/exports/json?where=${where('code_insee_de_la_commune="37139"')}`,
+  },
+  {
+    id: 'effectifs_college_luynes',
+    description: 'Élèves du collège de Luynes par niveau (6ᵉ à 3ᵉ) à chaque rentrée (Éducation nationale)',
+    url:
+      `${EDUCATION}/fr-en-college-effectifs-niveau-sexe-lv/exports/json?where=${where('code_commune="37139"')}` +
+      '&select=rentree_scolaire,numero_college,patronyme,nombre_eleves_total,nombre_total_de_6emes,nombre_total_de_5emes,nombre_total_de_4emes,nombre_total_de_3emes',
+  },
+  {
     id: 'effectifs_ecoles_37',
     description: "Élèves et classes des écoles d'Indre-et-Loire à chaque rentrée (Éducation nationale)",
     url:

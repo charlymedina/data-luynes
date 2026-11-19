@@ -14,7 +14,7 @@ import RankGauge from '../components/charts/RankGauge.astro';
 import { annees, etiquettesDpe, loyerAppartement, loyerMaison, resumeImmobilier as r, SEUILS_PRIX_M2, tranchesPrixMaisons, ventes } from '../data/immobilier';
 import { contourCommune } from '../data/patrimoine';
 import { CREDITS_IMMOBILIER } from '../data/credits';
-import { formatNumber } from '../lib/format';
+import { COMMUNES_37_COMPARABLES, formatNumber } from '../lib/format';
 import { faitsImmobilier } from '../lib/faits';
 
 const enEuros = (v: number): string => `${formatNumber(v)} €`;
@@ -57,10 +57,11 @@ interface Classement {
   icon: IconName;
   rank: number;
   total: number;
+  ensemble?: string;
   items: MiniItem[];
 }
 const classements: Classement[] = [
-  { titre: "Prix au m² d'une maison", icon: 'maison', rank: r.rang_prix_m2_maison, total: r.nb_communes_classees, items: comparerA37(r.prix_m2_maison, r.prix_m2_maison_37, enM2, 'Indre-et-L.') },
+  { titre: "Prix au m² d'une maison", icon: 'maison', rank: r.rang_prix_m2_maison, total: r.nb_communes_classees, ensemble: COMMUNES_37_COMPARABLES, items: comparerA37(r.prix_m2_maison, r.prix_m2_maison_37, enM2, 'Indre-et-L.') },
   ...(loyerMaison
     ? [{ titre: "Loyer d'une maison", icon: 'cle' as const, rank: loyerMaison.rang, total: loyerMaison.nb_communes, items: comparerA37(loyerMaison.loyer_m2, loyerMaison.loyer_m2_mediane_37, enLoyer, 'Médiane 37') }]
     : []),
@@ -95,7 +96,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
 
   <section aria-label="Chiffres clés de l'immobilier" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
     <KeyFigure tone="loire" icon="maison" label="Prix au m² d'une maison" value={r.prix_m2_maison} unit="€/m²">
-      <MiniRank onDark rank={r.rang_prix_m2_maison} total={r.nb_communes_classees} what="la plus chère" />
+      <MiniRank onDark rank={r.rang_prix_m2_maison} total={r.nb_communes_classees} ensemble={COMMUNES_37_COMPARABLES} what="la plus chère" />
     </KeyFigure>
     <KeyFigure tone="accent" icon="tirelire" label="Prix d'une maison" value={Math.round(r.prix_maison / 1000)} unit="k€">
       <MiniCompare items={comparerA37(r.prix_maison, r.prix_maison_37, enK, 'Indre-et-L.')} />
@@ -186,7 +187,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
       {
         classements.map((c) => (
           <div class="flex flex-col">
-            <RankGauge label={c.titre} rank={c.rank} total={c.total} icon={c.icon} ends={['la plus chère', 'la moins chère']} />
+            <RankGauge label={c.titre} rank={c.rank} total={c.total} ensemble={c.ensemble} icon={c.icon} ends={['la plus chère', 'la moins chère']} />
             <div class="-mt-3 rounded-b-[1.25rem] border border-t-0 border-line bg-surface px-5 pt-1 pb-5">
               <MiniCompare items={c.items} />
             </div>

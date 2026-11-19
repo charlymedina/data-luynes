@@ -16,6 +16,7 @@ import {
   anneesAccidents,
   momentsAccidents,
   nomMois,
+  publicationDerniereAnnee,
   resumeAccidents as r,
   routesAccidents,
   usagersAccidents,
@@ -25,7 +26,7 @@ import {
 } from '../data/accidents';
 import { contourCommune } from '../data/patrimoine';
 import { CREDITS_ACCIDENTS } from '../data/credits';
-import { formatNumber } from '../lib/format';
+import { formatMonthYear, formatNumber } from '../lib/format';
 import { faitsAccidents } from '../lib/faits-accidents';
 
 const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
@@ -151,7 +152,10 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
 
   <section id="evolution" aria-labelledby="evolution-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
     <h2 id="evolution-titre" class={titreH2}>Année après année</h2>
-    <p class="mt-4 max-w-2xl text-ink-2">Nombre d'accidents corporels à Luynes chaque année. En orange, les années qui en ont compté le plus.</p>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Nombre d'accidents corporels à Luynes chaque année. En orange, les années qui en ont compté le plus.
+      {publicationDerniereAnnee && <span class="text-sm">Données {r.annee_fin} d'après le fichier national publié en {formatMonthYear(publicationDerniereAnnee)}.</span>}
+    </p>
     <div class:list={['mt-8', carte]}>
       <ColumnChart
         columns={colonnes}
@@ -176,7 +180,7 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
   </section>
 
   <section id="gravite" aria-labelledby="gravite-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
-    <h2 id="gravite-titre" class={titreH2}>La gravité</h2>
+    <h2 id="gravite-titre" class={titreH2}>Les conséquences</h2>
     <div class="mt-8 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
       <div class={carte}>
         <Waffle
@@ -188,9 +192,8 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
         />
       </div>
       <div class={carte}>
-        <h3 class="font-display text-xl font-bold">Accidents avec un blessé hospitalisé ou un mort</h3>
-        <MiniCompare items={versus(r.part_graves_luynes, r.part_graves_37)} />
-        <ul class="mt-8 grid grid-cols-3 gap-3 text-center">
+        <h3 class="font-display text-xl font-bold">Personnes touchées depuis {r.annee_debut}</h3>
+        <ul class="mt-6 grid grid-cols-3 gap-3 text-center">
           <li class="rounded-2xl bg-accent-soft p-3"><Icon name="alerte" class="mx-auto h-6 w-6 text-accent" /><p class="mt-2 font-display text-3xl font-extrabold">{formatNumber(r.tues)}</p><p class="text-xs text-ink-2">tués</p></li>
           <li class="rounded-2xl bg-loire-soft p-3"><Icon name="sante" class="mx-auto h-6 w-6 text-loire" /><p class="mt-2 font-display text-3xl font-extrabold">{formatNumber(r.hospitalises)}</p><p class="text-xs text-ink-2">hospitalisés</p></li>
           <li class="rounded-2xl border border-line p-3"><Icon name="personnes" class="mx-auto h-6 w-6 text-ink-2" /><p class="mt-2 font-display text-3xl font-extrabold">{formatNumber(r.blesses_legers)}</p><p class="text-xs text-ink-2">blessés légers</p></li>

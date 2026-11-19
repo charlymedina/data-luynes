@@ -8,6 +8,7 @@ import carteRows from './generated/accidents_carte.json';
 import usagersRows from './generated/accidents_usagers.json';
 import momentsRows from './generated/accidents_moments.json';
 import routesRows from './generated/accidents_routes.json';
+import manifesteBaac from '../../data/archive/baac/manifest.json';
 import { firstRow } from './rows';
 
 export interface ResumeAccidents {
@@ -86,6 +87,18 @@ export const accidentsCarte: readonly AccidentCarte[] = carteRows as AccidentCar
 export const usagersAccidents: readonly UsagerAccidents[] = usagersRows as UsagerAccidents[];
 export const momentsAccidents: readonly MomentAccidents[] = momentsRows as MomentAccidents[];
 export const routesAccidents: readonly RouteAccidents[] = routesRows as RouteAccidents[];
+
+/**
+ * Date de publication, par l'ONISR sur data.gouv.fr, du fichier de la dernière année (lue dans l'adresse du fichier
+ * archivé : …/20261030-141517/caract-2025.csv → 30 octobre 2026). `null` si elle n'est pas lisible.
+ */
+function datePublication(annee: number): Date | null {
+  const fichiers = (manifesteBaac as Record<string, Record<string, string>>)[String(annee)];
+  const trouve = fichiers?.caract?.match(/\/(\d{4})(\d{2})(\d{2})-\d{6}\//);
+  return trouve ? new Date(Number(trouve[1]), Number(trouve[2]) - 1, Number(trouve[3])) : null;
+}
+
+export const publicationDerniereAnnee: Date | null = datePublication(resumeAccidents.annee_fin);
 
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 

@@ -9,7 +9,7 @@ import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.ast
 import RankGauge from '../components/charts/RankGauge.astro';
 import { ANNEE_REFORME_FONCIER, anneesBudget, resumeBudget as r } from '../data/budget';
 import { CREDITS_BUDGET } from '../data/credits';
-import { formatNumber } from '../lib/format';
+import { formatCommunes, formatNumber } from '../lib/format';
 import { faitsBudget } from '../lib/faits-budget';
 
 const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
@@ -186,7 +186,7 @@ const lexique: { terme: string; icon: IconName; definition: string }[] = [
   </section>
 
   <section id="departement" aria-labelledby="departement-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
-    <h2 id="departement-titre" class={titreH2}>Luynes parmi les {r.nb_communes} communes</h2>
+    <h2 id="departement-titre" class={titreH2}>Luynes parmi les {formatCommunes(r.nb_communes)}</h2>
     <p class="mt-4 max-w-2xl text-ink-2">Classement en Indre-et-Loire ({r.annee}) : le point orange situe Luynes, de la valeur la plus élevée à la plus faible.</p>
     <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {

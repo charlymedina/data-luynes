@@ -200,7 +200,7 @@ Comptage d'enregistrements contenant « luynes » (19/11/2026) : arrêts Fil Ble
 - **Visualisation** : carte + frise chronologique. **Difficulté : facile.**
 - **Pièges** : pagination (`page`, `page_size`) ; `gaspar/pprn` ignore le filtre commune (renvoie toute la France) ; dates au format `JJ/MM/AAAA`.
 
-### 2.20 Météo / climat
+### 2.20 Météo / climat — **écarté** (pas de station à Luynes, voir §3)
 - **Météo-France** : aucune station à Luynes ; la plus pertinente = **TOURS (37179001, aéroport de Parçay-Meslay, ~15 km)** avec données depuis 1950 (+ fichier « avant 1949 »). Records de chaleur/froid, jours de gel, pluie annuelle, réchauffement depuis 1950.
 - **Open-Meteo** : réanalyse ERA5 au point de Luynes depuis 1940 ; pratique mais modèle (≠ mesure) et licence non commerciale.
 - **Visualisation** : « warming stripes » de Tours, courbe des températures, calendrier des jours de gel. **Difficulté : moyen** (fichier départemental de 9 Mo compressé, filtrer `NUM_POSTE = 37179001` ; colonnes de qualité `Q…`).
@@ -255,6 +255,7 @@ Comptage d'enregistrements contenant « luynes » (19/11/2026) : arrêts Fil Ble
 | Achats de phytosanitaires par commune (SDES) | Jeu listé mais sans fichier publié au 19/11/2026. |
 | Bruit (cartes stratégiques) | Rien trouvé en accès direct pour le 37. |
 | Arbres (TM) | Inventaire essentiellement sur Tours (11 lignes « luynes » seulement). |
+| Météo / climat (Météo-France, Open-Meteo) | **Écarté : pas de station à Luynes** (la plus proche est à Tours, ~15 km ; Open-Meteo = modèle, pas une mesure). Choix éditorial du 19/11/2026 : ne publier que des données de la commune. |
 
 ---
 
@@ -268,7 +269,7 @@ Comptage d'enregistrements contenant « luynes » (19/11/2026) : arrêts Fil Ble
 | 4 | **Finances communales (DGFiP)** | Comparaison « strate » déjà calculée par la DGFiP ; intérêt citoyen fort | faible |
 | 5 | **Revenus (Filosofi + IRCOM) & emploi (BTS, Flores, SIDE)** | Chiffres clés + comparaisons métropole/France | faible |
 | 6 | **Accidents (BAAC)** | Carte des accidents, records ; formats hétérogènes | moyen |
-| 7 | **Climat à Tours (Météo-France)** | Warming stripes, records : fort effet « waouh » | moyen |
+| 7 | ~~Climat à Tours (Météo-France)~~ | Écarté : pas de station à Luynes | — |
 | 8 | **Équipements, écoles, santé** (BPE, annuaire éducation, IPS/brevet, FINESS) | Utile au quotidien ; « Luynes a un hôpital » | faible/moyen |
 | 9 | **Énergie & mobilité** (ORE, ODRÉ solaire, parc auto Crit'Air, IRVE, GTFS) | Transition écologique ; bon potentiel de comparaisons | moyen |
 | 10 | **Élections, délinquance, eau potable, construction (Sitadel)** | Intéressant mais sensible (élections, délinquance) ou plus technique (Hub'eau) | moyen |

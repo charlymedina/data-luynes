@@ -6,7 +6,16 @@ import { commune, rang } from '../data/commune';
 import { agesDe, derniereAnneeEtatCivil, faits, pyramide } from '../data/population';
 import { monuments, resumeRisques, zoneInondable } from '../data/patrimoine';
 import { etiquettesDpe, loyerMaison, resumeImmobilier } from '../data/immobilier';
-import { formatNumber, formatOneIn, formatPercent, formatRank, formatRatio } from './format';
+import {
+  COMMUNES_37_COMPARABLES,
+  formatCommunes,
+  formatNumber,
+  formatOneIn,
+  formatPercent,
+  formatRank,
+  formatRankOf,
+  formatRatio,
+} from './format';
 
 /** Écart femmes/hommes chez les plus âgés : seulement si l'écart est vraiment parlant. */
 const RATIO_FEMMES_PARLANT = 1.5;
@@ -28,7 +37,7 @@ export function formatVariation(pct: number): string {
 export function faitsCommune(): string[] {
   return [
     `Avec ${formatNumber(commune.densite_hab_km2)} habitants au km², Luynes est ${formatRatio(commune.densite_hab_km2, rang.densite_departement)} fois plus dense que la moyenne de l'Indre-et-Loire.`,
-    `Luynes est la ${formatRank(rang.rang_population)} commune la plus peuplée du département… sur ${rang.nb_communes} !`,
+    `Luynes est la ${formatRank(rang.rang_population)} commune la plus peuplée… sur les ${formatCommunes(rang.nb_communes)} !`,
     `Avec ${formatNumber(commune.surface_km2, 1)} km², Luynes est plus grande que ${partDevancee(rang.rang_surface)} % des communes d'Indre-et-Loire (la moitié d'entre elles font moins de ${formatNumber(rang.surface_mediane_km2, 1)} km²).`,
     `Luynes est la ${formatRank(rang.rang_densite)} commune la plus dense d'Indre-et-Loire : plus dense que ${partDevancee(rang.rang_densite)} % des communes du département.`,
   ];
@@ -37,7 +46,7 @@ export function faitsCommune(): string[] {
 /** Anecdotes qui comparent Luynes aux autres communes du département (population et âges). */
 function faitsPopulationDepartement(): string[] {
   const liste = [
-    `Pour la part des 65 ans et plus, Luynes se classe ${formatRank(rang.rang_65_plus)} sur ${rang.nb_communes} communes d'Indre-et-Loire.`,
+    `Pour la part des 65 ans et plus, Luynes se classe ${formatRankOf(rang.rang_65_plus, rang.nb_communes)}.`,
   ];
   const sensInverse = rang.evolution_pct < 0 && rang.evolution_departement_pct > 0;
   if (sensInverse) {
@@ -53,7 +62,7 @@ export function faitsPatrimoine(): string[] {
   const r = resumeRisques;
   const plusAncien = monuments[0];
   const liste = [
-    `Avec ${formatNumber(r.monuments)} monuments historiques, Luynes se classe ${formatRank(r.rang_monuments)} sur ${r.nb_communes} communes d'Indre-et-Loire (${formatNumber(r.moyenne_monuments_departement, 1)} en moyenne).`,
+    `Avec ${formatNumber(r.monuments)} monuments historiques, Luynes se classe ${formatRankOf(r.rang_monuments, r.nb_communes)} (${formatNumber(r.moyenne_monuments_departement, 1)} en moyenne).`,
     `${formatNumber(r.cavites)} cavités souterraines sont recensées à Luynes : ${formatRatio(r.cavites, r.moyenne_cavites_departement)} fois la moyenne des communes du département. Le tuffeau du coteau a été creusé de toutes parts !`,
     `Luynes a connu ${formatNumber(r.catnat)} arrêtés de catastrophe naturelle depuis ${r.catnat_premiere_annee}, dont ${formatNumber(r.catnat_secheresse)} pour sécheresse : ${formatRank(r.rang_catnat)} commune la plus touchée du département.`,
     `Le plus ancien mouvement de terrain recensé à Luynes date de ${r.mouvement_plus_ancien}.`,
@@ -73,7 +82,7 @@ export function faitsImmobilier(): string[] {
     etiquettesDpe.filter((e) => e.etiquette === 'F' || e.etiquette === 'G').reduce((somme, e) => somme + e[cle], 0);
   const liste = [
     `Une maison se vend ${formatNumber(r.prix_maison)} € à Luynes (prix médian), contre ${formatNumber(r.prix_maison_37)} € en Indre-et-Loire.`,
-    `Au m², une maison coûte ${formatNumber(r.prix_m2_maison)} € à Luynes : ${formatRank(r.rang_prix_m2_maison)} commune la plus chère du département sur les ${r.nb_communes_classees} qui ont assez de ventes pour être comparées.`,
+    `Au m², une maison coûte ${formatNumber(r.prix_m2_maison)} € à Luynes : ${formatRank(r.rang_prix_m2_maison)} commune la plus chère sur ${formatCommunes(r.nb_communes_classees, COMMUNES_37_COMPARABLES)} (celles qui ont assez de ventes).`,
     `En ${nbAnnees} ans, ${formatNumber(r.ventes)} biens ont changé de mains à Luynes, pour ${formatNumber(r.montant_total / 1_000_000)} millions d'euros au total.`,
     `La maison la plus chère vendue à Luynes depuis ${r.annee_debut} est partie à ${formatNumber(r.maison_la_plus_chere)} €.`,
     `La maison « type » vendue à Luynes : ${formatNumber(r.surface_maison)} m² habitables sur ${formatNumber(r.terrain_maison)} m² de terrain.`,

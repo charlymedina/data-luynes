@@ -10,8 +10,10 @@ import RankGauge from '../components/charts/RankGauge.astro';
 import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
 import {
   domainesEquipements,
+  effectifsCollege,
   effectifsEcoles,
   etablissementsScolaires,
+  ipsEtablissements,
   nombreDe,
   resumeEquipements as r,
   typeEquipement,
@@ -83,6 +85,23 @@ const colonnesEleves: Column[] = effectifsEcoles.map((e, i) => ({
   display: formatNumber(e.eleves),
   highlight: i === effectifsEcoles.length - 1,
 }));
+
+const college = effectifsCollege.at(-1);
+const colonnesCollege: Column[] = effectifsCollege.map((e, i) => ({
+  label: `’${String(e.rentree).slice(2)}`,
+  fullLabel: `Rentrée ${e.rentree}`,
+  value: e.eleves,
+  display: formatNumber(e.eleves),
+  highlight: i === effectifsCollege.length - 1,
+}));
+const niveauxCollege = college
+  ? [
+      { libelle: '6ᵉ', eleves: college.sixiemes },
+      { libelle: '5ᵉ', eleves: college.cinquiemes },
+      { libelle: '4ᵉ', eleves: college.quatriemes },
+      { libelle: '3ᵉ', eleves: college.troisiemes },
+    ]
+  : [];
 ---
 
 <Base
@@ -222,6 +241,71 @@ const colonnesEleves: Column[] = effectifsEcoles.map((e, i) => ({
       }
     </ul>
   </section>
+
+  {
+    college && (
+      <section id="college" aria-labelledby="college-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+        <h2 id="college-titre" class={titreH2}>Le collège</h2>
+        <p class="mt-4 max-w-2xl text-ink-2">
+          Élèves du collège de Luynes à chaque rentrée, de la 6ᵉ à la 3ᵉ (y compris la classe ULIS). Il accueille aussi des
+          élèves des communes voisines.
+        </p>
+        <div class="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+          <div class={carte}>
+            <ColumnChart
+              columns={colonnesCollege}
+              unit="élèves"
+              headers={['Rentrée', 'Élèves']}
+              ariaLabel={`Élèves du collège de Luynes : ${formatNumber(effectifsCollege[0]?.eleves ?? 0)} en ${effectifsCollege[0]?.rentree}, ${formatNumber(college.eleves)} en ${college.rentree}.`}
+              tableCaption="Élèves du collège de Luynes à chaque rentrée"
+            />
+          </div>
+          <div class={carte}>
+            <h3 class="flex items-center gap-2 font-display text-xl font-bold"><Icon name="livre" class="h-6 w-6 text-loire" /> Rentrée {college.rentree}</h3>
+            <ul class="mt-6 grid grid-cols-2 gap-3 text-center">
+              {niveauxCollege.map((n) => (
+                <li class="rounded-2xl bg-loire-soft p-4">
+                  <p class="font-display text-3xl font-extrabold">{formatNumber(n.eleves)}</p>
+                  <p class="text-xs text-ink-2">élèves en {n.libelle}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    ipsEtablissements.length > 0 && (
+      <section id="ips" aria-labelledby="ips-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+        <h2 id="ips-titre" class={titreH2}>Le milieu social des élèves</h2>
+        <p class="mt-4 max-w-2xl text-ink-2">
+          L'<strong class="text-ink">indice de position sociale (IPS)</strong>, calculé par l'Éducation nationale, résume le milieu
+          social des familles d'après la profession des parents : plus il est élevé, plus les familles sont favorisées.
+          Chaque établissement est comparé aux moyennes de son secteur (public ou privé). Il n'est pas publié pour les écoles
+          maternelles seules.
+        </p>
+        <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {ipsEtablissements.map((e) => (
+            <li class={carte}>
+              <p class="flex items-center gap-2 text-sm font-medium text-loire">
+                <Icon name={e.est_college ? 'livre' : 'ecole'} class="h-5 w-5" /> {e.secteur} · {e.rentree}
+              </p>
+              <p class="mt-2 font-display text-lg leading-tight font-bold">{e.nom}</p>
+              <MiniCompare
+                items={[
+                  { label: 'IPS', value: e.ips, display: unDecimal(e.ips), highlight: true },
+                  { label: `37, ${e.secteur}`, value: e.ips_37_secteur, display: unDecimal(e.ips_37_secteur) },
+                  { label: `France, ${e.secteur}`, value: e.ips_france_secteur, display: unDecimal(e.ips_france_secteur) },
+                ]}
+              />
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
 
   <FunFacts facts={faitsEquipements()} id="saviez-vous-equipements" />
 </Base>

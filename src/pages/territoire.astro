@@ -9,7 +9,7 @@ import CompareBars, { type CompareItem } from '../components/charts/CompareBars.
 import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
 import { commune, communesDepartement, rang } from '../data/commune';
 import { CREDITS_TERRITOIRE } from '../data/credits';
-import { formatNumber, formatRank } from '../lib/format';
+import { formatCommunes, formatNumber, formatRank } from '../lib/format';
 import { faitsCommune } from '../lib/faits';
 
 const plusDense = communesDepartement[0];
@@ -57,7 +57,7 @@ const mini = (items: CompareItem[], display: (v: number) => string): MiniItem[] 
   </section>
 
   <section id="densite" aria-labelledby="densite-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
-    <h2 id="densite-titre" class={titreH2}>Les {rang.nb_communes} communes, de la plus dense à la moins dense</h2>
+    <h2 id="densite-titre" class={titreH2}>Les {formatCommunes(rang.nb_communes)}, de la plus dense à la moins dense</h2>
     {
       plusDense && moinsDense && (
         <p class="mt-4 max-w-2xl text-ink-2">

@@ -8,6 +8,8 @@ import domainesRows from './generated/equipements_domaines.json';
 import typesRows from './generated/equipements_types.json';
 import effectifsRows from './generated/ecoles_effectifs.json';
 import ecolesRows from './generated/ecoles_liste.json';
+import ipsRows from './generated/ecoles_ips.json';
+import collegeRows from './generated/ecoles_college.json';
 import { firstRow } from './rows';
 
 export interface ResumeEquipements {
@@ -73,6 +75,33 @@ export interface Etablissement {
   lat: number;
   lon: number;
 }
+
+/** Indice de position sociale d'un établissement à sa dernière rentrée publiée (voir data/sql/ecoles_ips.sql). */
+export interface IpsEtablissement {
+  uai: string;
+  nom: string;
+  est_college: boolean;
+  /** ex. « 2024-2025 » */
+  rentree: string;
+  secteur: 'public' | 'privé';
+  ips: number;
+  ips_37_secteur: number;
+  ips_france_secteur: number;
+  ips_37: number;
+  ips_france: number;
+}
+
+export interface RentreeCollege {
+  rentree: number;
+  eleves: number;
+  sixiemes: number;
+  cinquiemes: number;
+  quatriemes: number;
+  troisiemes: number;
+}
+
+export const ipsEtablissements: readonly IpsEtablissement[] = (ipsRows as IpsEtablissement[]).filter((e) => e.ips !== null);
+export const effectifsCollege: readonly RentreeCollege[] = collegeRows as RentreeCollege[];
 
 export const resumeEquipements: ResumeEquipements = firstRow(resumeRows as ResumeEquipements[], 'equipements_resume');
 export const domainesEquipements: readonly DomaineEquipements[] = (domainesRows as DomaineEquipements[]).filter((d) => d.domaine !== '_T');
