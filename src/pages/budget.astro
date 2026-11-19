@@ -1,0 +1,225 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon, { type IconName } from '../components/Icon.astro';
+import LineChart from '../components/charts/LineChart.astro';
+import Waffle, { type WaffleItem } from '../components/charts/Waffle.astro';
+import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
+import RankGauge from '../components/charts/RankGauge.astro';
+import { ANNEE_REFORME_FONCIER, anneesBudget, resumeBudget as r } from '../data/budget';
+import { CREDITS_BUDGET } from '../data/credits';
+import { formatNumber } from '../lib/format';
+import { faitsBudget } from '../lib/faits-budget';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+
+const xs = anneesBudget.map((a) => a.annee);
+const premiere = xs[0] ?? r.premiere_annee;
+const derniere = xs.at(-1) ?? r.annee;
+const ticks = xs.filter((annee) => annee % 5 === 0 || annee === derniere);
+const euros = (v: number): string => `${formatNumber(v)} €`;
+const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
+const strateCourte = r.strate.replace(/^communes de /, '').replace(/ hab$/, ' habitants');
+
+/** Luynes, communes de même taille (strate), médiane du département : trois barres fines. */
+function trio(luynes: number, strate: number, departement: number | null, display: (v: number) => string): MiniItem[] {
+  const items: MiniItem[] = [
+    { label: 'Luynes', value: luynes, display: display(luynes), highlight: true },
+    { label: 'Même taille', value: strate, display: display(strate) },
+  ];
+  return departement === null ? items : [...items, { label: 'Médiane 37', value: departement, display: display(departement) }];
+}
+
+// « Sur 100 € » : 4 catégories au plus (palette catégorielle validée à 4 couleurs).
+const recettes: WaffleItem[] = [
+  { label: 'Impôts locaux', value: r.part_impots_locaux },
+  { label: "Dotation de l'État", value: r.part_dotation_etat },
+  { label: 'Autres recettes', value: r.part_autres_recettes },
+];
+const depenses: WaffleItem[] = [
+  { label: 'Personnel communal', value: r.part_personnel },
+  { label: 'Achats, énergie, entretien', value: r.part_achats },
+  { label: 'Subventions et participations', value: r.part_subventions + r.part_contingents },
+  { label: 'Intérêts de la dette et autres', value: r.part_interets + r.part_autres_depenses },
+];
+
+const rangs: { label: string; rank: number; icon: IconName; trio: MiniItem[] }[] = [
+  { label: 'Dépenses courantes par habitant', rank: r.rang_depenses, icon: 'pieces', trio: trio(r.depenses_hab, r.depenses_hab_strate, r.depenses_hab_37, euros) },
+  { label: 'Dette par habitant', rank: r.rang_dette, icon: 'banque', trio: trio(r.dette_hab, r.dette_hab_strate, r.dette_hab_37, euros) },
+  { label: 'Taux de taxe foncière', rank: r.rang_taux_foncier, icon: 'maison', trio: trio(r.taux_foncier, r.taux_foncier_strate, r.taux_foncier_37, pourcent) },
+  { label: 'Équipements par habitant', rank: r.rang_equipement, icon: 'outils', trio: trio(r.equipement_hab, r.equipement_hab_strate, r.equipement_hab_37, euros) },
+];
+
+const lexique: { terme: string; icon: IconName; definition: string }[] = [
+  { terme: 'Fonctionnement', icon: 'pieces', definition: 'Les dépenses et recettes courantes de chaque année : salaires, entretien, énergie, subventions, impôts, dotations.' },
+  { terme: 'Investissement', icon: 'outils', definition: 'Ce qui dure : travaux, bâtiments, voirie, matériel. Financé par l’épargne de la commune, des subventions et des emprunts.' },
+  { terme: 'Autofinancement', icon: 'tirelire', definition: 'Ce qui reste des recettes courantes une fois les dépenses courantes payées : l’argent disponible pour rembourser et investir.' },
+  { terme: 'Dette', icon: 'banque', definition: 'Ce qu’il reste à rembourser sur les emprunts au 31 décembre. L’annuité est ce qui est remboursé dans l’année.' },
+  { terme: 'Taxe foncière', icon: 'maison', definition: 'Impôt payé par les propriétaires. La commune en vote le taux ; depuis 2021, il inclut l’ancienne part du département.' },
+  { terme: 'Même taille', icon: 'graphique', definition: `La moyenne nationale des communes de ${strateCourte} (« strate »), calculée par la DGFiP pour comparer.` },
+];
+---
+
+<Base
+  title="Budget de la commune de Luynes — Luynes en chiffres"
+  description={`Dépenses, recettes, dette, investissements et taxe foncière de Luynes en ${r.annee}, comparés aux communes de même taille.`}
+  sources={CREDITS_BUDGET}
+  showBack
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="pieces" class="h-5 w-5" /> Thème · Budget communal</p>
+    <h1 id="titre" class="mt-3 font-display text-5xl leading-[0.95] font-extrabold tracking-tight min-[380px]:text-6xl sm:text-8xl">Budget</h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Les comptes de la commune publiés par les Finances publiques, de {premiere} à {derniere}, comparés aux communes de même taille.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés du budget" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <KeyFigure tone="loire" icon="pieces" label={`Dépenses courantes ${r.annee}`} value={r.depenses / 1_000_000} decimals={1} unit="M€">
+      <MiniCompare onDark items={trio(r.depenses_hab, r.depenses_hab_strate, null, (v) => `${formatNumber(v)} €/hab.`)} />
+    </KeyFigure>
+    <KeyFigure tone="accent" icon="banque" label="Dette par habitant" value={r.dette_hab} unit="€">
+      <MiniCompare items={trio(r.dette_hab, r.dette_hab_strate, null, euros)} />
+    </KeyFigure>
+    <KeyFigure icon="maison" label="Taxe foncière" value={r.taux_foncier} decimals={1} unit="%">
+      <MiniCompare items={trio(r.taux_foncier, r.taux_foncier_strate, null, pourcent)} />
+    </KeyFigure>
+    <KeyFigure icon="outils" label="Équipements par habitant" value={r.equipement_hab} unit="€">
+      <MiniCompare items={trio(r.equipement_hab, r.equipement_hab_strate, null, euros)} />
+    </KeyFigure>
+  </section>
+
+  <section id="repartition" aria-labelledby="repartition-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="repartition-titre" class={titreH2}>D'où vient l'argent, où va-t-il ?</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Le budget courant {r.annee}, ramené à 100 € : une case = 1 €.</p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      <div class={carte}>
+        <Waffle
+          title="Sur 100 € qui entrent"
+          unit="€"
+          items={recettes}
+          ariaLabel={`Sur 100 € de recettes courantes : ${recettes.map((i) => `${i.label} ${formatNumber(i.value, 0)} €`).join(', ')}.`}
+        />
+      </div>
+      <div class={carte}>
+        <Waffle
+          title="Sur 100 € qui sortent"
+          unit="€"
+          items={depenses}
+          ariaLabel={`Sur 100 € de dépenses courantes : ${depenses.map((i) => `${i.label} ${formatNumber(i.value, 0)} €`).join(', ')}.`}
+        />
+      </div>
+    </div>
+    <p class="mt-4 max-w-2xl text-sm text-ink-2">
+      « Autres recettes » : autres taxes, reversements et dotations d'autres collectivités, ventes de services (cantine, périscolaire…).
+    </p>
+  </section>
+
+  <section id="dette" aria-labelledby="dette-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="dette-titre" class={titreH2}>La dette</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Ce qu'il reste à rembourser au 31 décembre, par habitant. Point haut en {r.annee_dette_max}{r.annee_dette_max < r.annee && r.dette_hab < r.dette_hab_max ? ', plus bas depuis' : ''}.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <LineChart
+        xs={xs}
+        xTicks={ticks}
+        unit="€/hab."
+        series={[
+          { name: 'Luynes', color: 'var(--chart-2)', values: anneesBudget.map((a) => a.dette_hab) },
+          { name: 'Communes de même taille', color: 'var(--chart-1)', values: anneesBudget.map((a) => a.dette_hab_strate) },
+        ]}
+        annotations={[{ x: r.annee_dette_max, y: r.dette_hab_max, label: `${r.annee_dette_max} : ${euros(r.dette_hab_max)}` }]}
+        ariaLabel={`Dette par habitant de ${premiere} à ${derniere} : à Luynes, de ${euros(anneesBudget[0]?.dette_hab ?? 0)} à ${euros(r.dette_hab)}, avec un maximum de ${euros(r.dette_hab_max)} en ${r.annee_dette_max}.`}
+        tableCaption="Dette par habitant, Luynes et moyenne des communes de même taille"
+      />
+    </div>
+  </section>
+
+  <section id="investissements" aria-labelledby="investissements-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="investissements-titre" class={titreH2}>Les investissements</h2>
+    <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_2fr]">
+      <div class="flex flex-col justify-between rounded-[1.5rem] bg-loire p-6 text-bg sm:p-8">
+        <Icon name="outils" class="h-9 w-9 opacity-85" />
+        <p class="mt-6 font-display text-5xl font-extrabold tracking-tight sm:text-6xl">{formatNumber(r.equipement_10_ans / 1_000_000, 1)} M€</p>
+        <p class="mt-3 opacity-85">consacrés aux équipements en 10 ans : travaux, bâtiments, voirie, matériel.</p>
+      </div>
+      <div class={carte}>
+        <p class="mb-4 text-sm text-ink-2">Par habitant et par an : les montants suivent le rythme des chantiers.</p>
+        <LineChart
+          xs={xs}
+          xTicks={ticks}
+          unit="€/hab."
+          heightClass="h-56 sm:h-64"
+          series={[
+            { name: 'Luynes', color: 'var(--chart-2)', values: anneesBudget.map((a) => a.equipement_hab) },
+            { name: 'Communes de même taille', color: 'var(--chart-1)', values: anneesBudget.map((a) => a.equipement_hab_strate) },
+          ]}
+          ariaLabel={`Dépenses d'équipement par habitant de ${premiere} à ${derniere}, Luynes et communes de même taille.`}
+          tableCaption="Dépenses d'équipement par habitant, Luynes et moyenne des communes de même taille"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section id="taxe-fonciere" aria-labelledby="taxe-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="taxe-titre" class={titreH2}>La taxe foncière</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Le saut de {ANNEE_REFORME_FONCIER} n'est pas une hausse votée : la part du département a été ajoutée au taux de toutes les communes de France.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <LineChart
+        xs={xs}
+        xTicks={ticks}
+        unit="%"
+        heightClass="h-56 sm:h-64"
+        series={[
+          { name: 'Luynes', color: 'var(--chart-2)', values: anneesBudget.map((a) => a.taux_foncier) },
+          { name: 'Communes de même taille', color: 'var(--chart-1)', values: anneesBudget.map((a) => a.taux_foncier_strate) },
+        ]}
+        annotations={[{ x: ANNEE_REFORME_FONCIER, y: anneesBudget.find((a) => a.annee === ANNEE_REFORME_FONCIER)?.taux_foncier ?? r.taux_foncier, label: 'Réforme' }]}
+        ariaLabel={`Taux de taxe foncière sur le bâti de ${premiere} à ${derniere} : ${pourcent(r.taux_foncier)} à Luynes en ${r.annee}, ${pourcent(r.taux_foncier_strate)} pour les communes de même taille.`}
+        tableCaption="Taux de taxe foncière sur le bâti (%), Luynes et moyenne des communes de même taille"
+      />
+    </div>
+  </section>
+
+  <section id="departement" aria-labelledby="departement-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="departement-titre" class={titreH2}>Luynes parmi les {r.nb_communes} communes</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Classement en Indre-et-Loire ({r.annee}) : le point orange situe Luynes, de la valeur la plus élevée à la plus faible.</p>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {
+        rangs.map((item) => (
+          <div class="flex flex-col gap-0">
+            <RankGauge label={item.label} rank={item.rank} total={r.nb_communes} icon={item.icon} />
+            <div class="-mt-3 rounded-b-[1.25rem] border border-t-0 border-line bg-surface px-5 pt-1 pb-5 text-ink">
+              <MiniCompare items={item.trio} />
+            </div>
+          </div>
+        ))
+      }
+    </div>
+    <p class="mt-4 text-sm text-ink-2">« Médiane 37 » : la moitié des communes d'Indre-et-Loire sont au-dessus, la moitié en dessous.</p>
+  </section>
+
+  <section id="lexique" aria-labelledby="lexique-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="lexique-titre" class={titreH2}>Petit lexique</h2>
+    <dl class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        lexique.map((item) => (
+          <div class={carte}>
+            <dt class="flex items-center gap-3 font-display text-xl font-bold">
+              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-loire-soft text-loire"><Icon name={item.icon} class="h-5 w-5" /></span>
+              {item.terme}
+            </dt>
+            <dd class="mt-3 text-sm leading-relaxed text-ink-2">{item.definition}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+
+  <FunFacts facts={faitsBudget()} id="saviez-vous-budget" />
+</Base>

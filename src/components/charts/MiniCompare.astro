@@ -1,0 +1,55 @@
+---
+/**
+ * Mini-comparaison à glisser sous un chiffre clé : quelques barres fines (Luynes en avant, références en retrait),
+ * pour remplacer une phrase pleine de chiffres. Les valeurs restent écrites en petit au bout des barres.
+ */
+export interface MiniItem {
+  label: string;
+  value: number;
+  display: string;
+  highlight?: boolean;
+}
+
+interface Props {
+  items: readonly MiniItem[];
+  /** Sur fond sarcelle (carte « loire »), les barres passent en clair. */
+  onDark?: boolean;
+}
+
+const { items, onDark = false } = Astro.props;
+const max = Math.max(...items.map((i) => i.value), 1);
+---
+
+<ul class="mt-5 space-y-1.5 text-xs">
+  {
+    items.map((item) => (
+      <li class="grid grid-cols-[5.5rem_1fr] items-center gap-2">
+        <span class:list={[item.highlight ? 'font-semibold' : 'opacity-80']}>{item.label}</span>
+        <span class="flex items-center gap-1.5">
+          <span
+            data-bar
+            class:list={[
+              'mini-bar h-2.5 rounded-r-[3px]',
+              onDark ? (item.highlight ? 'bg-bg' : 'bg-bg/45') : item.highlight ? 'bg-accent' : 'bg-bar',
+            ]}
+            style={`width:${Math.max((item.value / max) * 70, 2)}%`}
+          />
+          <span class="tabular shrink-0 opacity-85">{item.display}</span>
+        </span>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .mini-bar {
+    transform-origin: left center;
+  }
+  :global(html.motion) .mini-bar {
+    transform: scaleX(0);
+    transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+  }
+  :global(html.motion) .mini-bar:global(.is-visible) {
+    transform: none;
+  }
+</style>

@@ -1,0 +1,83 @@
+---
+/**
+ * « Sur 100 … » en grille de 10 × 10 cases : chaque case = 1 %. Couleurs catégorielles validées (ordre fixe),
+ * légende avec libellés directs (la couleur n'est jamais seule), petit espace entre les cases,
+ * infobulle au survol de chaque catégorie, tableau des valeurs repliable.
+ */
+import { formatNumber } from '../../lib/format';
+
+export interface WaffleItem {
+  label: string;
+  /** Part en % (le total doit faire ~100) */
+  value: number;
+}
+
+interface Props {
+  title: string;
+  items: readonly WaffleItem[];
+  /** Unité d'une case, ex. « € » pour « sur 100 € » */
+  unit: string;
+  ariaLabel: string;
+}
+
+const { title, items, unit, ariaLabel } = Astro.props;
+/** Ordre catégoriel validé (orange, sarcelle, bleu, or). Au-delà de 4 catégories, regrouper en « Autres ». */
+const COLORS = ['var(--chart-2)', 'var(--chart-1)', 'var(--chart-3)', 'var(--chart-4)'] as const;
+
+/** Arrondi « au plus fort reste » : les cases font toujours exactement 100. */
+function toCells(values: readonly number[]): number[] {
+  const total = values.reduce((s, v) => s + v, 0) || 1;
+  const exact = values.map((v) => (100 * v) / total);
+  const cells = exact.map(Math.floor);
+  const order = exact.map((v, i) => ({ i, rest: v - Math.floor(v) })).sort((a, b) => b.rest - a.rest);
+  for (let k = 0; cells.reduce((s, c) => s + c, 0) < 100; k++) {
+    const target = order[k % order.length];
+    if (target) cells[target.i] = (cells[target.i] ?? 0) + 1;
+  }
+  return cells;
+}
+
+const cells = toCells(items.map((i) => i.value));
+const squares = items.flatMap((item, index) => Array.from({ length: cells[index] ?? 0 }, () => ({ index, item })));
+const CELL = 10;
+const GAP = 2;
+const tip = (item: WaffleItem, index: number): string =>
+  JSON.stringify({ title: item.label, rows: [{ label: `sur 100 ${unit}`, value: `${formatNumber(item.value, 1)} ${unit}`, color: COLORS[index] }] });
+---
+
+<figure class="waffle">
+  <figcaption class="text-sm font-semibold text-ink">{title}</figcaption>
+  <div class="relative mt-4 grid items-center gap-5 sm:grid-cols-[minmax(0,13rem)_1fr]" data-chart="rows">
+    <svg viewBox={`0 0 ${10 * (CELL + GAP) - GAP} ${10 * (CELL + GAP) - GAP}`} class="w-full max-w-[13rem]" role="img" aria-label={ariaLabel}>
+      {
+        squares.map((s, n) => (
+          <rect x={(n % 10) * (CELL + GAP)} y={Math.floor(n / 10) * (CELL + GAP)} width={CELL} height={CELL} rx="2" fill={COLORS[s.index]}>
+            <title>{`${s.item.label} : ${formatNumber(s.item.value, 1)} ${unit} sur 100`}</title>
+          </rect>
+        ))
+      }
+    </svg>
+    <div class="chart-tip" hidden></div>
+    <ul class="space-y-2.5 text-sm">
+      {
+        items.map((item, index) => (
+          <li class="flex items-baseline gap-2.5" data-tip={tip(item, index)}>
+            <span class="inline-block h-3 w-3 shrink-0 translate-y-0.5 rounded-[3px]" style={`background:${COLORS[index]}`} aria-hidden="true" />
+            <span class="text-ink">{item.label}</span>
+            <span class="tabular ml-auto font-semibold whitespace-nowrap text-ink">{formatNumber(item.value, 0)} {unit}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+  <details class="mt-4 text-sm text-ink-2">
+    <summary class="cursor-pointer">Voir les données en tableau</summary>
+    <table class="mt-2 w-full text-left">
+      <caption class="sr-only">{title}</caption>
+      <thead><tr><th class="py-1 font-semibold">Poste</th><th class="py-1 text-right font-semibold">Sur 100 {unit}</th></tr></thead>
+      <tbody>
+        {items.map((item) => <tr class="border-t border-line"><td class="py-1">{item.label}</td><td class="tabular py-1 text-right">{formatNumber(item.value, 1)} {unit}</td></tr>)}
+      </tbody>
+    </table>
+  </details>
+</figure>
