@@ -23,6 +23,23 @@ Notes :
 - Les valeurs du recensement sont des estimations (avec décimales) : elles sont arrondies à l'affichage.
 - Les requêtes SQL correspondantes sont `data/sql/_melodi.sql` (vue partagée) et `data/sql/population_*.sql`.
 
+## Thème Patrimoine & risques
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Base Mérimée — monuments historiques](https://www.data.gouv.fr/datasets/5af120e5b595087cfabcde81/) via l'[API tabulaire data.gouv](https://tabular-api.data.gouv.fr/api/resources/3a52af4a-f9da-4dcc-8110-b07774dfb3bc/data/?COG_Insee_lors_de_la_protection__exact=37139) | Les 8 monuments de Luynes (nom, époque, protection, propriétaire, coordonnées) ; nombre de monuments par commune du 37 (`__groupby` sur le code INSEE) | Ministère de la Culture | Licence Ouverte 2.0 | Hebdomadaire | `data/raw/monuments_luynes.json`, `monuments_37.json` |
+| [Géorisques — cavités souterraines](https://georisques.gouv.fr/api/v1/cavites?code_insee=37139) | Position et type des 193 cavités de Luynes ; toutes les cavités du 37 (par paquets de 20 communes, limite de l'API) | BRGM / ministère de la Transition écologique | Licence Ouverte 2.0 | Continue | `data/raw/cavites_luynes.json`, `cavites_37.json` |
+| [Géorisques — mouvements de terrain](https://georisques.gouv.fr/api/v1/mvt?code_insee=37139) | Type et année des mouvements de terrain (adresses non reprises) | BRGM | Licence Ouverte 2.0 | Continue | `data/raw/mouvements_terrain_luynes.json` |
+| [Géorisques — arrêtés CatNat (GASPAR)](https://georisques.gouv.fr/api/v1/gaspar/catnat?code_insee=37139) | Arrêtés de catastrophe naturelle de Luynes et de toutes les communes du 37 | Ministère de l'Intérieur / DGPR | Licence Ouverte 2.0 | Continue | `data/raw/catnat_luynes.json`, `catnat_37.json` |
+| [Géorisques — risques recensés (GASPAR)](https://georisques.gouv.fr/api/v1/gaspar/risques?code_insee=37139) | Liste des risques naturels officiellement recensés pour la commune | DGPR | Licence Ouverte 2.0 | Continue | `data/raw/risques_luynes.json` |
+| [API Géo — contour](https://geo.api.gouv.fr/communes/37139?format=geojson&geometry=contour) | Limite de la commune sur la carte | IGN / Etalab | Licence Ouverte 2.0 | Annuelle | `data/raw/commune_contour.json` |
+| [OpenFreeMap](https://openfreemap.org) | Fond de carte (styles « positron » et « dark »), chargé par le navigateur du visiteur | OpenFreeMap, données OpenStreetMap | ODbL (données OSM) | — | — |
+
+Notes :
+- Les réponses paginées (Géorisques, API tabulaire) sont fusionnées par `scripts/build-data.ts` en un seul fichier `{ "data": [...] }`.
+- Les codes INSEE « lors de la protection » de Mérimée peuvent être d'anciens codes de communes fusionnées : celles-ci comptent alors 0 monument dans le classement.
+- Requêtes : `data/sql/patrimoine_*.sql` et `data/sql/risques_*.sql`.
+
 Les données sont téléchargées à nouveau à chaque construction du site (au moins une fois par semaine),
 avec 3 tentatives par source en cas de panne passagère.
 La liste technique des sources est dans `data/sources.ts`.

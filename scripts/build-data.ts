@@ -22,16 +22,64 @@ const FETCH_TIMEOUT_MS = 60_000;
 const MAX_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 2_000;
 
-async function resolveUrl(source: Source): Promise<string> {
-  return typeof source.url === 'string' ? source.url : source.url();
+/** Une source peut demander une seule adresse ou plusieurs (résultats fusionnés). */
+async function resolveUrls(source: Source): Promise<string[]> {
+  const urls = typeof source.url === 'string' ? source.url : await source.url();
+  return Array.isArray(urls) ? urls : [urls];
 }
 
-async function fetchJson(source: Source): Promise<string> {
-  const response = await fetch(await resolveUrl(source), { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+/** Garde-fou : une source paginée ne doit jamais faire tourner le build en boucle. */
+const MAX_PAGES = 100;
+
+async function getJson(url: string): Promise<unknown> {
+  const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const body = await response.text();
-  JSON.parse(body); // échoue tôt si la source ne renvoie pas du JSON valide
-  return body;
+  return JSON.parse(await response.text()); // échoue tôt si la source ne renvoie pas du JSON valide
+}
+
+interface Page {
+  data: unknown[];
+  next: string | null;
+}
+
+/** Lit une page Géorisques ({ data, page, total_pages }) et calcule l'adresse de la suivante. */
+function pageGeorisques(body: unknown, url: string): Page {
+  const { data, page, total_pages } = body as { data: unknown[]; page: number; total_pages: number };
+  const next = new URL(url);
+  next.searchParams.set('page', String(page + 1));
+  return { data, next: page < total_pages ? next.toString() : null };
+}
+
+/** Lit une page de l'API tabulaire data.gouv ({ data, links: { next } }). */
+function pageTabular(body: unknown): Page {
+  const { data, links } = body as { data: unknown[]; links: { next: string | null } };
+  return { data, next: links.next };
+}
+
+/** Récupère toutes les pages d'une adresse paginée et renvoie l'ensemble des lignes. */
+async function fetchAllPages(source: Source, firstUrl: string): Promise<unknown[]> {
+  const rows: unknown[] = [];
+  let url: string | null = firstUrl;
+  for (let count = 0; url !== null; count++) {
+    if (count === MAX_PAGES) throw new Error(`plus de ${MAX_PAGES} pages`);
+    const body = await getJson(url);
+    const page: Page = source.pagination === 'georisques' ? pageGeorisques(body, url) : pageTabular(body);
+    rows.push(...(page.data ?? []));
+    url = page.next;
+  }
+  return rows;
+}
+
+/** Télécharge la source ; les sources paginées ou multi-adresses sont fusionnées en { "data": [...] }. */
+async function fetchJson(source: Source): Promise<string> {
+  const urls = await resolveUrls(source);
+  if (!source.pagination) {
+    if (urls.length !== 1) throw new Error('plusieurs adresses demandent une pagination déclarée');
+    return JSON.stringify(await getJson(urls[0] as string));
+  }
+  const rows: unknown[] = [];
+  for (const url of urls) rows.push(...(await fetchAllPages(source, url)));
+  return JSON.stringify({ data: rows });
 }
 
 /** Télécharge une source, avec jusqu'à 3 tentatives espacées (2 s, puis 4 s) en cas de panne passagère. */

@@ -1,0 +1,85 @@
+---
+/**
+ * Carte interactive de Luynes : contour de la commune + couches de points, avec légende
+ * (cases à cocher pour afficher / masquer chaque couche). La carte elle-même est dessinée
+ * dans le navigateur par src/lib/map.ts, chargé seulement sur les pages qui ont une carte.
+ * Le slot reçoit l'alternative accessible (liste ou tableau des mêmes informations).
+ */
+import type { MapData, MapLayerData } from '../lib/map';
+
+export interface MapLegendItem {
+  layer: MapLayerData;
+  label: string;
+}
+
+interface Props {
+  ariaLabel: string;
+  contour: MapData['contour'];
+  legend: readonly MapLegendItem[];
+}
+
+const { ariaLabel, contour, legend } = Astro.props;
+const data: MapData = { contour, layers: legend.map((item) => item.layer) };
+const json = JSON.stringify(data).replaceAll('<', '\\u003c');
+---
+
+<figure data-map class="map-root overflow-hidden rounded-[1.5rem] border border-line bg-surface">
+  <div class="flex flex-wrap gap-x-5 gap-y-2 border-b border-line px-4 py-3 text-sm sm:px-6">
+    {
+      legend.map((item) => (
+        <label class="flex cursor-pointer items-center gap-2 select-none">
+          <input type="checkbox" checked data-layer={item.layer.id} class="peer sr-only" />
+          <span
+            class="inline-block size-3.5 rounded-full ring-2 ring-surface transition peer-checked:opacity-100 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-loire opacity-30"
+            style={`background:var(${item.layer.colorVar})`}
+            aria-hidden="true"
+          />
+          <span class="text-ink-2 peer-checked:text-ink">{item.label}</span>
+        </label>
+      ))
+    }
+    <span class="flex items-center gap-2 text-ink-2">
+      <span class="inline-block h-0 w-5 border-t-2 border-dashed border-loire" aria-hidden="true"></span>
+      Limite de la commune
+    </span>
+  </div>
+  <div class="map-canvas relative h-[22rem] w-full sm:h-[30rem]" role="region" aria-label={ariaLabel}>
+    <p class="map-fallback absolute inset-0 grid place-items-center p-6 text-center text-sm text-muted">
+      Chargement de la carte…
+    </p>
+  </div>
+  <script is:inline type="application/json" class="map-data" set:html={json} />
+  <figcaption class="border-t border-line px-4 py-3 text-xs text-muted sm:px-6">
+    Cliquer sur un point pour le détail. Fond de carte © OpenFreeMap, données © contributeurs OpenStreetMap.
+  </figcaption>
+  <div class="border-t border-line px-4 py-3 sm:px-6">
+    <slot />
+  </div>
+</figure>
+
+<script>
+  import { initMaps } from '../lib/map';
+  initMaps();
+</script>
+
+<style>
+  .map-root[data-ready='true'] .map-fallback {
+    display: none;
+  }
+  .map-root[data-ready='error'] .map-fallback {
+    color: var(--ink-2);
+  }
+  /* Infobulles et contrôles MapLibre aux couleurs du site */
+  .map-root :global(.maplibregl-popup-content) {
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    font-family: var(--font-sans);
+  }
+  .map-root :global(.maplibregl-popup-tip) {
+    border-top-color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+</style>

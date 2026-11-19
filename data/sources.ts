@@ -13,7 +13,13 @@ export interface Source {
    * Adresse à télécharger. Peut être calculée juste avant le téléchargement à partir d'une source
    * déjà téléchargée (les sources sont récupérées dans l'ordre de cette liste).
    */
-  readonly url: string | (() => Promise<string>);
+  readonly url: string | (() => Promise<string | string[]>);
+  /**
+   * Réponse découpée en pages, fusionnées dans un seul fichier { "data": [...] } :
+   *  - « georisques » : API Géorisques (champ total_pages, paramètre page) ;
+   *  - « tabular »    : API tabulaire data.gouv (lien links.next).
+   */
+  readonly pagination?: 'georisques' | 'tabular';
 }
 
 const GEO_API = 'https://geo.api.gouv.fr';
@@ -34,6 +40,39 @@ async function melodiCommunes37(): Promise<string> {
   const communes = JSON.parse(await readFile('data/raw/communes_37.json', 'utf8')) as { code: string }[];
   const geo = communes.map((c) => `GEO=COM-${c.code}`).join('&');
   return `${MELODI}/DS_RP_POPULATION_PRINC?${geo}&SEX=_T&AGE=_T&AGE=Y_LT20&AGE=Y_GE65&maxResult=10000`;
+}
+
+const GEORISQUES = 'https://georisques.gouv.fr/api/v1';
+/** API tabulaire data.gouv sur la base Mérimée (monuments historiques), filtrable sans télécharger les 100 Mo. */
+const MERIMEE = 'https://tabular-api.data.gouv.fr/api/resources/3a52af4a-f9da-4dcc-8110-b07774dfb3bc/data/';
+const MERIMEE_COLONNES = [
+  'Reference',
+  'Titre_editorial_de_la_notice',
+  'Denomination_de_l_edifice',
+  'Typologie_de_la_protection',
+  'Date_et_typologie_de_la_protection',
+  'Format_abrege_du_siecle_de_construction',
+  'Statut_juridique_de_l_edifice',
+  'coordonnees_au_format_WGS84',
+].join(',');
+
+/** Géorisques accepte au plus 20 codes INSEE par requête. */
+const GEORISQUES_MAX_CODES = 20;
+
+/**
+ * Requêtes Géorisques couvrant les 272 communes du département (pour les classements) :
+ * les codes INSEE (lus dans la liste API Géo) sont envoyés par paquets de 20.
+ */
+function georisquesCommunes37(endpoint: string): () => Promise<string[]> {
+  return async () => {
+    const communes = JSON.parse(await readFile('data/raw/communes_37.json', 'utf8')) as { code: string }[];
+    const urls: string[] = [];
+    for (let i = 0; i < communes.length; i += GEORISQUES_MAX_CODES) {
+      const codes = communes.slice(i, i + GEORISQUES_MAX_CODES).map((c) => c.code);
+      urls.push(`${GEORISQUES}/${endpoint}?code_insee=${codes.join(',')}&page_size=1000`);
+    }
+    return urls;
+  };
 }
 
 export const SOURCES: readonly Source[] = [
@@ -90,5 +129,60 @@ export const SOURCES: readonly Source[] = [
     id: 'deces_luynes',
     description: 'Décès domiciliés à Luynes par année (INSEE, état civil)',
     url: melodi('DS_ETAT_CIVIL_DECES_COMMUNES', 'COM-37139'),
+  },
+
+  // — Patrimoine & risques —
+  {
+    id: 'commune_contour',
+    description: 'Contour de la commune, pour les cartes (API Géo / IGN)',
+    url: `${GEO_API}/communes/37139?fields=nom&format=geojson&geometry=contour`,
+  },
+  {
+    id: 'monuments_luynes',
+    description: 'Monuments historiques de Luynes (Ministère de la Culture, base Mérimée)',
+    url: `${MERIMEE}?COG_Insee_lors_de_la_protection__exact=37139&columns=${MERIMEE_COLONNES}&page_size=50`,
+    pagination: 'tabular',
+  },
+  {
+    id: 'monuments_37',
+    description: "Nombre de monuments historiques par commune d'Indre-et-Loire (base Mérimée)",
+    url: `${MERIMEE}?Departement_format_numerique__exact=37&COG_Insee_lors_de_la_protection__groupby&Reference__count&page_size=50`,
+    pagination: 'tabular',
+  },
+  {
+    id: 'cavites_luynes',
+    description: 'Cavités souterraines recensées à Luynes (Géorisques / BRGM)',
+    url: `${GEORISQUES}/cavites?code_insee=37139&page_size=1000`,
+    pagination: 'georisques',
+  },
+  {
+    id: 'mouvements_terrain_luynes',
+    description: 'Mouvements de terrain recensés à Luynes (Géorisques / BRGM)',
+    url: `${GEORISQUES}/mvt?code_insee=37139&page_size=1000`,
+    pagination: 'georisques',
+  },
+  {
+    id: 'catnat_luynes',
+    description: 'Arrêtés de catastrophe naturelle à Luynes (Géorisques, base GASPAR)',
+    url: `${GEORISQUES}/gaspar/catnat?code_insee=37139&page_size=1000`,
+    pagination: 'georisques',
+  },
+  {
+    id: 'risques_luynes',
+    description: 'Risques naturels recensés à Luynes (Géorisques, base GASPAR)',
+    url: `${GEORISQUES}/gaspar/risques?code_insee=37139`,
+    pagination: 'georisques',
+  },
+  {
+    id: 'catnat_37',
+    description: "Arrêtés de catastrophe naturelle des communes d'Indre-et-Loire (Géorisques)",
+    url: georisquesCommunes37('gaspar/catnat'),
+    pagination: 'georisques',
+  },
+  {
+    id: 'cavites_37',
+    description: "Cavités souterraines des communes d'Indre-et-Loire (Géorisques / BRGM)",
+    url: georisquesCommunes37('cavites'),
+    pagination: 'georisques',
   },
 ];

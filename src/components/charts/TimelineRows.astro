@@ -1,0 +1,136 @@
+---
+/**
+ * Frise chronologique en lignes : une ligne par catégorie (ex. sécheresse, inondation…), un point par événement
+ * placé à son année. L'identité vient du libellé de la ligne (pas de la couleur) : une seule teinte suffit.
+ * Survol d'une ligne : la liste des années. Tableau détaillé repliable en dessous.
+ */
+import type { TipContent } from '../../lib/chart-tooltip';
+import { toPercent } from '../../lib/scale';
+
+export interface TimelineRow {
+  label: string;
+  annees: readonly number[];
+}
+
+interface Props {
+  rows: readonly TimelineRow[];
+  ariaLabel: string;
+  /** Nom de l'événement au pluriel, ex. « arrêtés » */
+  unite: string;
+  tableCaption: string;
+}
+
+const { rows, ariaLabel, unite, tableCaption } = Astro.props;
+const DECENNIE = 10;
+const all = rows.flatMap((r) => r.annees);
+const start = Math.floor(Math.min(...all) / DECENNIE) * DECENNIE;
+const end = Math.ceil((Math.max(...all) + 1) / DECENNIE) * DECENNIE;
+const ticks: number[] = [];
+for (let year = start; year <= end; year += DECENNIE) ticks.push(year);
+const labelTicks = ticks.length > 8 ? ticks.filter((_, i) => i % 2 === 0) : ticks;
+const x = (year: number): number => toPercent(year + 0.5, start, end);
+
+/** Plusieurs événements la même année : les points s'empilent vers le haut (rang 0, 1, 2…). */
+const DOT_STEP_PX = 11;
+interface Dot {
+  annee: number;
+  pile: number;
+}
+const empiler = (annees: readonly number[]): Dot[] => {
+  const vus = new Map<number, number>();
+  return annees.map((annee) => {
+    const pile = vus.get(annee) ?? 0;
+    vus.set(annee, pile + 1);
+    return { annee, pile };
+  });
+};
+const hauteurLigne = (annees: readonly number[]): number =>
+  24 + DOT_STEP_PX * Math.max(0, ...empiler(annees).map((d) => d.pile));
+
+const tipFor = (row: TimelineRow): string => {
+  const content: TipContent = {
+    title: row.label,
+    rows: [
+      { label: unite, value: String(row.annees.length), color: 'var(--chart-1)' },
+      { label: '', value: row.annees.join(', '), color: 'transparent' },
+    ],
+  };
+  return JSON.stringify(content);
+};
+---
+
+<figure data-chart="rows" class="relative">
+  <div role="img" aria-label={ariaLabel}>
+    <ul class="space-y-1" aria-hidden="true">
+      {
+        rows.map((row) => (
+          <li class="timeline-row grid grid-cols-1 gap-1 rounded-lg px-1 py-2 sm:grid-cols-[11rem_1fr] sm:items-center sm:gap-4" data-tip={tipFor(row)}>
+            <span class="text-sm font-medium text-ink">
+              {row.label} <span class="tabular text-muted">· {row.annees.length}</span>
+            </span>
+            <span class="relative block" style={`height:${hauteurLigne(row.annees)}px`}>
+              <span class="absolute inset-x-0 bottom-3 border-t border-chart-grid" />
+              {empiler(row.annees).map((dot) => (
+                <span
+                  class="timeline-dot absolute size-3 -translate-x-1/2 translate-y-1/2 rounded-full bg-chart-1 ring-2 ring-surface"
+                  style={`left:${x(dot.annee)}%; bottom:${12 + dot.pile * DOT_STEP_PX}px`}
+                />
+              ))}
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="relative mt-1 h-5 sm:ml-[12rem]" aria-hidden="true">
+      {
+        labelTicks.map((tick) => (
+          <span class="tabular absolute -translate-x-1/2 text-xs text-muted" style={`left:${toPercent(tick, start, end)}%`}>
+            {tick}
+          </span>
+        ))
+      }
+    </div>
+  </div>
+  <div class="chart-tip" hidden></div>
+
+  <details class="mt-4 text-sm text-ink-2">
+    <summary class="cursor-pointer font-medium hover:text-ink">Voir le détail en tableau</summary>
+    <table class="tabular mt-3 w-full text-left">
+      <caption class="sr-only">{tableCaption}</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="py-1.5 pr-3">Catégorie</th>
+          <th scope="col" class="py-1.5 pr-3 text-right">Nombre</th>
+          <th scope="col" class="py-1.5">Années</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.map((row) => (
+            <tr class="border-t border-line align-top">
+              <th scope="row" class="py-1.5 pr-3 font-medium">{row.label}</th>
+              <td class="py-1.5 pr-3 text-right">{row.annees.length}</td>
+              <td class="py-1.5">{row.annees.join(', ')}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </details>
+</figure>
+
+<style>
+  .timeline-row:hover {
+    background: var(--chart-grid);
+  }
+  .timeline-dot {
+    opacity: 0.85;
+  }
+  :global(.motion .reveal) .timeline-dot {
+    transform: translate(-50%, 50%) scale(0);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+  }
+  :global(.motion .reveal.is-visible) .timeline-dot {
+    transform: translate(-50%, 50%) scale(1);
+  }
+</style>

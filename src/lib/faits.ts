@@ -4,6 +4,7 @@
  */
 import { commune, rang } from '../data/commune';
 import { agesDe, derniereAnneeEtatCivil, faits, pyramide } from '../data/population';
+import { monuments, resumeRisques } from '../data/patrimoine';
 import { formatNumber, formatOneIn, formatPercent, formatRank, formatRatio } from './format';
 
 /** Écart femmes/hommes chez les plus âgés : seulement si l'écart est vraiment parlant. */
@@ -38,6 +39,22 @@ function faitsPopulationDepartement(): string[] {
     liste.push(
       `Entre ${rang.annee_debut} et ${rang.annee_fin}, Luynes a perdu ${formatPercent(-rang.evolution_pct)} de ses habitants, alors que l'Indre-et-Loire en gagnait ${formatPercent(rang.evolution_departement_pct)}.`,
     );
+  }
+  return liste;
+}
+
+/** Anecdotes « Patrimoine & risques » (monuments, cavités, catastrophes naturelles). */
+export function faitsPatrimoine(): string[] {
+  const r = resumeRisques;
+  const plusAncien = monuments[0];
+  const liste = [
+    `Avec ${formatNumber(r.monuments)} monuments historiques, Luynes se classe ${formatRank(r.rang_monuments)} sur ${r.nb_communes} communes d'Indre-et-Loire (${formatNumber(r.moyenne_monuments_departement, 1)} en moyenne).`,
+    `${formatNumber(r.cavites)} cavités souterraines sont recensées à Luynes : ${formatRatio(r.cavites, r.moyenne_cavites_departement)} fois la moyenne des communes du département. Le tuffeau du coteau a été creusé de toutes parts !`,
+    `Luynes a connu ${formatNumber(r.catnat)} arrêtés de catastrophe naturelle depuis ${r.catnat_premiere_annee}, dont ${formatNumber(r.catnat_secheresse)} pour sécheresse : ${formatRank(r.rang_catnat)} commune la plus touchée du département.`,
+    `Le plus ancien mouvement de terrain recensé à Luynes date de ${r.mouvement_plus_ancien}.`,
+  ];
+  if (plusAncien) {
+    liste.unshift(`« ${plusAncien.nom} » : c'est le premier monument de Luynes protégé au titre des monuments historiques, dès ${plusAncien.annee_protection} !`);
   }
   return liste;
 }

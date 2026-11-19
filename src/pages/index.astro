@@ -8,16 +8,17 @@ import { agesDe, derniereAnneeEtatCivil, historique } from '../data/population';
 import { themesBientot } from '../data/themes';
 import { CREDITS_ACCUEIL } from '../data/credits';
 import { formatNumber, formatRank } from '../lib/format';
-import { faitsCommune, faitsPopulation } from '../lib/faits';
+import { faitsCommune, faitsPatrimoine, faitsPopulation } from '../lib/faits';
+import { resumeRisques } from '../data/patrimoine';
 import { toPercent } from '../lib/scale';
 
 const luynes = agesDe('Luynes');
 const france = agesDe('France');
 
-// Mélange des anecdotes « commune » et « population » (une sur deux), pour varier dès les premiers clics.
-const population = faitsPopulation();
-const communeFaits = faitsCommune();
-const faits = population.flatMap((fait, i) => [fait, ...(communeFaits[i] ? [communeFaits[i]] : [])]);
+// Mélange des anecdotes des différents thèmes (une de chaque à tour de rôle).
+const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine()];
+const longueurMax = Math.max(...sources.map((s) => s.length));
+const faits = Array.from({ length: longueurMax }, (_, i) => sources.flatMap((s) => (s[i] ? [s[i]] : []))).flat();
 
 // Mini-courbe de la population depuis 1876 (dans la grande carte « Habitants »).
 const maxPop = Math.max(...historique.map((r) => r.population));
@@ -108,6 +109,21 @@ const sparkline = historique
         value={commune.densite_hab_km2}
         unit="hab./km²"
         note={`Contre ${formatNumber(rang.densite_departement)} en moyenne dans le département.`}
+      />
+      <KeyFigure
+        class="sm:col-span-3"
+        tone="loire"
+        href="/patrimoine-risques#monuments"
+        label="Monuments historiques"
+        value={resumeRisques.monuments}
+        note={`${formatRank(resumeRisques.rang_monuments)} commune d'Indre-et-Loire. Le premier protégé en ${resumeRisques.premiere_protection}.`}
+      />
+      <KeyFigure
+        class="sm:col-span-3"
+        href="/patrimoine-risques#carte"
+        label="Cavités souterraines"
+        value={resumeRisques.cavites}
+        note={`${formatRank(resumeRisques.rang_cavites)} commune du département : le coteau est creusé de caves.`}
       />
     </div>
   </section>

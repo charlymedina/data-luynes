@@ -16,7 +16,7 @@ export interface Theme {
 export const THEMES: readonly Theme[] = [
   { slug: 'population', titre: 'Population', emoji: '👥', resume: 'Habitants depuis 1876, âges, naissances.', statut: 'disponible' },
   { slug: 'territoire', titre: 'Territoire', emoji: '🗺️', resume: 'Superficie, densité, classement dans le département.', statut: 'disponible' },
-  { slug: 'patrimoine-risques', titre: 'Patrimoine & risques', emoji: '🏰', resume: 'Monuments, cavités, inondations, catastrophes naturelles.', statut: 'bientot' },
+  { slug: 'patrimoine-risques', titre: 'Patrimoine & risques', emoji: '🏰', resume: 'Monuments, cavités, inondations, catastrophes naturelles.', statut: 'disponible' },
   { slug: 'immobilier', titre: 'Immobilier', emoji: '🏠', resume: 'Prix au m², ventes, loyers, étiquettes énergie.', statut: 'bientot' },
   { slug: 'budget', titre: 'Budget communal', emoji: '💶', resume: 'Recettes, dépenses, dette, impôts locaux.', statut: 'bientot' },
   { slug: 'revenus-emploi', titre: 'Revenus & emploi', emoji: '💼', resume: 'Revenus, salaires, emplois, entreprises.', statut: 'bientot' },

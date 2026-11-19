@@ -1,0 +1,181 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import MapView, { type MapLegendItem } from '../components/MapView.astro';
+import TimelineRows, { type TimelineRow } from '../components/charts/TimelineRows.astro';
+import CompareBars, { type CompareItem } from '../components/charts/CompareBars.astro';
+import { arretesCatnat, cavites, contourCommune, monuments, mouvementsTerrain, resumeRisques as r } from '../data/patrimoine';
+import { CREDITS_PATRIMOINE } from '../data/credits';
+import { formatNumber, formatRank, formatRatio } from '../lib/format';
+import { faitsPatrimoine, partDevancee } from '../lib/faits';
+
+/** Regroupe des événements datés par catégorie, dans l'ordre d'apparition des catégories données. */
+function parCategorie<T extends { annee: number }>(items: readonly T[], categorie: (item: T) => string, ordre: readonly string[]): TimelineRow[] {
+  return ordre
+    .map((label) => ({ label, annees: items.filter((item) => categorie(item) === label).map((item) => item.annee) }))
+    .filter((row) => row.annees.length > 0);
+}
+
+const lignesCatnat = parCategorie(arretesCatnat, (a) => a.risque, ['Sécheresse', 'Mouvement de terrain', 'Inondation / coulée de boue']);
+const lignesMouvements = parCategorie(mouvementsTerrain, (m) => m.type, ['Chute de blocs / éboulement', 'Glissement', 'Effondrement / affaissement']);
+
+const legende: MapLegendItem[] = [
+  {
+    label: `Cavités souterraines (${formatNumber(cavites.length)})`,
+    layer: { id: 'cavites', colorVar: '--chart-1', radius: 4, points: cavites.map((c) => ({ lat: c.latitude, lon: c.longitude, label: c.type })) },
+  },
+  {
+    label: `Monuments historiques (${formatNumber(monuments.length)})`,
+    layer: {
+      id: 'monuments',
+      colorVar: '--chart-2',
+      radius: 8,
+      points: monuments.map((m) => ({ lat: m.latitude, lon: m.longitude, label: `${m.nom} — ${m.protection} en ${m.annee_protection}` })),
+    },
+  },
+];
+
+const enNombre = (v: number): string => formatNumber(v, 1);
+const comparaisons: { titre: string; items: CompareItem[] }[] = [
+  { titre: 'Monuments historiques', luynes: r.monuments, moyenne: r.moyenne_monuments_departement },
+  { titre: 'Cavités souterraines', luynes: r.cavites, moyenne: r.moyenne_cavites_departement },
+  { titre: 'Arrêtés de catastrophe naturelle', luynes: r.catnat, moyenne: r.moyenne_catnat_departement },
+].map(({ titre, luynes, moyenne }) => ({
+  titre,
+  items: [
+    { label: 'Luynes', value: luynes, display: formatNumber(luynes), highlight: true },
+    { label: 'Moyenne 37', value: moyenne, display: enNombre(moyenne), highlight: false },
+  ],
+}));
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+---
+
+<Base
+  title="Patrimoine & risques de Luynes — Luynes en chiffres"
+  description={`${formatNumber(r.monuments)} monuments historiques, ${formatNumber(r.cavites)} cavités souterraines, ${formatNumber(r.catnat)} arrêtés de catastrophe naturelle : le patrimoine et les risques naturels de Luynes.`}
+  sources={CREDITS_PATRIMOINE}
+  showBack
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="font-medium text-loire">Thème · 🏰 Patrimoine & risques</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.6rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      Patrimoine <span class="text-accent">&</span> risques
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Un aqueduc romain, un château, des caves creusées dans le tuffeau… Le coteau qui fait le charme de Luynes
+      est aussi celui qui bouge : éboulements, sécheresses, crues de la Loire.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés du patrimoine et des risques" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <KeyFigure tone="loire" label="Monuments historiques" value={r.monuments} note={`${formatRank(r.rang_monuments)} commune du département sur ${r.nb_communes}, dont ${formatNumber(r.monuments_classes)} classés.`} />
+    <KeyFigure tone="accent" label="Cavités souterraines" value={r.cavites} note={`${formatRank(r.rang_cavites)} commune d'Indre-et-Loire : plus que ${partDevancee(r.rang_cavites)} % des communes.`} />
+    <KeyFigure label="Catastrophes naturelles" value={r.catnat} unit="arrêtés" note={`Depuis ${r.catnat_premiere_annee}, dont ${formatNumber(r.catnat_secheresse)} pour sécheresse. ${formatRank(r.rang_catnat)} du département.`} />
+    <KeyFigure label="Mouvements de terrain" value={r.mouvements} note={`Recensés depuis ${r.mouvement_plus_ancien} : éboulements, glissements, effondrements.`} />
+  </section>
+
+  <section id="carte" aria-labelledby="carte-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="carte-titre" class={titreH2}>La carte</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Les gros points orange sont les monuments historiques, les petits points bleu-vert les cavités recensées par le BRGM.
+      Le pointillé marque la limite de la commune.
+    </p>
+    <div class="mt-8">
+      <MapView
+        ariaLabel={`Carte de Luynes : ${formatNumber(r.monuments)} monuments historiques et ${formatNumber(r.cavites)} cavités souterraines`}
+        contour={contourCommune}
+        legend={legende}
+      >
+        <details class="text-sm text-ink-2">
+          <summary class="cursor-pointer font-medium hover:text-ink">Voir la liste des monuments</summary>
+          <ul class="mt-3 space-y-1">
+            {monuments.map((m) => <li><strong class="text-ink">{m.nom}</strong> — {m.epoque}, {m.protection} en {m.annee_protection}</li>)}
+          </ul>
+          <p class="mt-3">Et {formatNumber(r.cavites)} cavités souterraines, presque toutes des caves (positions issues de l'inventaire du BRGM).</p>
+        </details>
+      </MapView>
+    </div>
+  </section>
+
+  <section id="monuments" aria-labelledby="monuments-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="monuments-titre" class={titreH2}>{formatNumber(r.monuments)} monuments historiques</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Du premier protégé en {r.premiere_protection} au plus récent. « Classé » est la protection la plus forte ;
+      « inscrit » protège aussi l'édifice, à un niveau moindre.
+    </p>
+    <ol class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        monuments.map((m, i) => (
+          <li
+            class:list={['rounded-[1.25rem] border border-line p-5 transition hover:-translate-y-1', m.protection === 'classé' ? 'bg-accent-soft' : 'bg-surface']}
+            style={`transform: rotate(${i % 2 === 0 ? -0.5 : 0.5}deg)`}
+          >
+            <p class="tabular font-display text-3xl font-extrabold text-loire">{m.annee_protection}</p>
+            <h3 class="mt-2 font-display text-lg leading-tight font-bold">{m.nom}</h3>
+            <p class="mt-2 text-sm text-ink-2">{m.epoque}</p>
+            <p class="mt-3 text-xs font-semibold tracking-wide text-ink-2 uppercase">
+              {m.protection}{m.protection_partielle ? ' (en partie)' : ''} · {m.proprietaire}
+            </p>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section id="catastrophes" aria-labelledby="catnat-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="catnat-titre" class={titreH2}>Les catastrophes naturelles</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Chaque point est un arrêté de catastrophe naturelle reconnu par l'État pour Luynes, à l'année de l'événement.
+      Les sécheresses font « travailler » les sols argileux, ce qui peut fissurer les maisons.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <TimelineRows
+        rows={lignesCatnat}
+        unite="arrêtés"
+        ariaLabel={`${formatNumber(r.catnat)} arrêtés de catastrophe naturelle entre ${r.catnat_premiere_annee} et ${r.catnat_derniere_annee} : ${formatNumber(r.catnat_secheresse)} pour sécheresse, ${formatNumber(r.catnat_mouvement)} pour mouvement de terrain, ${formatNumber(r.catnat_inondation)} pour inondation.`}
+        tableCaption="Arrêtés de catastrophe naturelle à Luynes par type de risque"
+      />
+    </div>
+    <p class="mt-4 text-sm text-ink-2">
+      Risques naturels officiellement recensés pour la commune : <strong class="text-ink">{r.risques_recenses}</strong>.
+    </p>
+  </section>
+
+  <section id="coteau" aria-labelledby="coteau-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="coteau-titre" class={titreH2}>Le coteau qui bouge</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      {formatNumber(r.mouvements)} mouvements de terrain recensés depuis {r.mouvement_plus_ancien}, surtout des chutes de blocs
+      le long du coteau de tuffeau, là où sont creusées les caves.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <TimelineRows
+        rows={lignesMouvements}
+        unite="événements"
+        ariaLabel={`${formatNumber(r.mouvements)} mouvements de terrain recensés à Luynes depuis ${r.mouvement_plus_ancien}.`}
+        tableCaption="Mouvements de terrain recensés à Luynes par type"
+      />
+    </div>
+  </section>
+
+  <section id="departement" aria-labelledby="departement-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="departement-titre" class={titreH2}>Luynes face au département</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Comparée à la moyenne des {r.nb_communes} communes d'Indre-et-Loire, Luynes compte
+      {' '}{formatRatio(r.cavites, r.moyenne_cavites_departement)} fois plus de cavités et {formatRatio(r.monuments, r.moyenne_monuments_departement)} fois plus de monuments historiques.
+    </p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-3">
+      {
+        comparaisons.map((c) => (
+          <div class={carte}>
+            <CompareBars title={c.titre} items={c.items} />
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <FunFacts facts={faitsPatrimoine()} id="saviez-vous-patrimoine" />
+</Base>
