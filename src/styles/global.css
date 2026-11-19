@@ -3,7 +3,8 @@
 @import '@fontsource-variable/inter';
 
 /* Palette « Loire & tuffeau » : la pierre blanche de Touraine et le fleuve.
-   Thème clair uniquement (choix éditorial : rendu « grand public », même si le téléphone est en mode sombre). */
+   Thème : par défaut celui du navigateur (prefers-color-scheme) ; le bouton de l'en-tête force
+   clair ou sombre en posant data-theme="light|dark" sur <html> (choix mémorisé, cf. lib/theme.ts). */
 :root {
   --bg: #f6f0e1;
   --surface: #fffcf5;
@@ -21,6 +22,45 @@
   --chart-2: #d9542a;
   --chart-grid: #ece4d0;
   color-scheme: light;
+}
+
+/* Thème sombre : mêmes jetons, valeurs propres (couleurs de graphiques validées contre la surface sombre).
+   Les deux blocs ci-dessous doivent rester identiques : l'un suit le navigateur, l'autre le bouton. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0e181b;
+    --surface: #152328;
+    --ink: #f1ebdd;
+    --ink-2: #b8c3c3;
+    --muted: #8a9897;
+    --line: #253940;
+    --loire: #5cc3c0;
+    --loire-soft: #173a3d;
+    --accent: #ff8a5e;
+    --accent-soft: #3d2219;
+    --bar: #3c5257;
+    --chart-1: #2ea3aa;
+    --chart-2: #e8693c;
+    --chart-grid: #22353a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #0e181b;
+  --surface: #152328;
+  --ink: #f1ebdd;
+  --ink-2: #b8c3c3;
+  --muted: #8a9897;
+  --line: #253940;
+  --loire: #5cc3c0;
+  --loire-soft: #173a3d;
+  --accent: #ff8a5e;
+  --accent-soft: #3d2219;
+  --bar: #3c5257;
+  --chart-1: #2ea3aa;
+  --chart-2: #e8693c;
+  --chart-grid: #22353a;
+  color-scheme: dark;
 }
 
 @theme inline {
