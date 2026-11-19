@@ -111,6 +111,11 @@
   --font-sans: 'Inter Variable', system-ui, sans-serif;
 }
 
+/* La barre de navigation reste en haut : les ancres (#ages, #carte…) s'arrêtent juste en dessous. */
+html {
+  scroll-padding-top: 5rem;
+}
+
 body {
   background: var(--bg);
   color: var(--ink);

@@ -1,0 +1,59 @@
+---
+/** Bouton clair / sombre (comportement dans lib/theme.ts). */
+---
+
+<button
+  type="button"
+  data-theme-toggle
+  aria-label="Changer de thème"
+  aria-pressed="false"
+  class="theme-toggle grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink transition hover:-rotate-12 hover:border-accent hover:text-accent focus-visible:ring-4 focus-visible:ring-loire/40 focus-visible:outline-none active:scale-90"
+>
+  <!-- Lune (affichée en thème clair) -->
+  <svg class="icon-moon h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+  </svg>
+  <!-- Soleil (affiché en thème sombre) -->
+  <svg class="icon-sun h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+  </svg>
+</button>
+
+<style>
+  /* Une seule icône visible selon le thème effectif ; les deux sont superposées dans la même case. */
+  .theme-toggle svg {
+    grid-area: 1 / 1;
+    transition:
+      transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.3s ease;
+  }
+  .icon-sun {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+  }
+  :global(:root[data-theme='dark']) .icon-sun {
+    opacity: 1;
+    transform: none;
+  }
+  :global(:root[data-theme='dark']) .icon-moon {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.5);
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .icon-sun {
+      opacity: 1;
+      transform: none;
+    }
+    :global(:root:not([data-theme='light'])) .icon-moon {
+      opacity: 0;
+      transform: rotate(90deg) scale(0.5);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .theme-toggle,
+    .theme-toggle svg {
+      transition: none;
+    }
+  }
+</style>

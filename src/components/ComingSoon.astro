@@ -1,6 +1,7 @@
 ---
 /** Les thèmes pas encore ouverts : visibles mais non cliquables (style « pointillés »). */
 import type { Theme } from '../data/themes';
+import Icon from './Icon.astro';
 
 interface Props {
   themes: readonly Theme[];
@@ -19,7 +20,9 @@ const { themes } = Astro.props;
           class="rounded-[1.25rem] border border-dashed border-line p-4 transition hover:-translate-y-1 hover:border-loire hover:bg-loire-soft sm:p-6"
           style={`rotate: ${i % 2 === 0 ? -0.6 : 0.6}deg`}
         >
-          <span class="text-2xl sm:text-3xl" aria-hidden="true">{theme.emoji}</span>
+          <span class="grid h-10 w-10 place-items-center rounded-full bg-loire-soft text-loire sm:h-11 sm:w-11">
+            <Icon name={theme.icon} class="h-5 w-5 sm:h-6 sm:w-6" />
+          </span>
           <h3 class="mt-2 font-display text-lg leading-tight font-bold sm:mt-3 sm:text-xl">{theme.titre}</h3>
           <p class="mt-1 text-xs text-ink-2 sm:text-sm">{theme.resume}</p>
           <p class="mt-3 text-xs font-semibold tracking-wide text-muted uppercase">Bientôt</p>

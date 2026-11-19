@@ -1,0 +1,45 @@
+---
+/**
+ * Mini-histogramme à glisser dans une carte de chiffre clé (ex. ventes par année).
+ * Décoratif : la valeur forte de la carte et l'aria-label portent le sens.
+ */
+interface Props {
+  values: readonly { label: string; value: number }[];
+  ariaLabel: string;
+  onDark?: boolean;
+}
+
+const { values, ariaLabel, onDark = false } = Astro.props;
+const max = Math.max(...values.map((v) => v.value), 1);
+---
+
+<figure class="mt-5" role="img" aria-label={ariaLabel}>
+  <div class="flex h-14 items-end gap-1.5">
+    {
+      values.map((v) => (
+        <span
+          data-bar
+          class:list={['mini-col flex-1 rounded-t-[4px]', onDark ? 'bg-bg/70' : 'bg-chart-1']}
+          style={`height:${Math.max((v.value / max) * 100, 4)}%`}
+          title={`${v.label} : ${v.value}`}
+        />
+      ))
+    }
+  </div>
+  <figcaption class="mt-1.5 flex justify-between text-xs opacity-75" aria-hidden="true">
+    <span>{values[0]?.label}</span><span>{values.at(-1)?.label}</span>
+  </figcaption>
+</figure>
+
+<style>
+  .mini-col {
+    transform-origin: bottom center;
+  }
+  :global(html.motion) .mini-col {
+    transform: scaleY(0);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+  }
+  :global(html.motion) .mini-col:global(.is-visible) {
+    transform: none;
+  }
+</style>

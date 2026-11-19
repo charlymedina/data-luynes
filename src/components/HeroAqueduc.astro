@@ -1,0 +1,117 @@
+---
+/**
+ * Illustration d'accueil : l'aqueduc gallo-romain de Luynes, en ruine (deux tronçons d'arches debout,
+ * deux piles arasées entre les deux), sur le coteau, avec le soleil et la Loire en contrebas.
+ * Dessin au trait aux couleurs du thème (clair ou sombre). Purement décorative.
+ */
+const BASE = 210; // pied des piles
+const TOP = 98; // dessus du tablier
+const SPRING = 146; // naissance des arches
+const BAY = 54; // entraxe des piles
+const PIER = 14; // largeur d'une pile
+const RADIUS = (BAY - PIER) / 2;
+
+/** Ouvertures en plein cintre d'un tronçon d'arcades (soustraites du bloc par fill-rule evenodd). */
+function openings(x0: number, bays: number): string {
+  return Array.from({ length: bays }, (_, i) => {
+    const left = x0 + i * BAY + PIER;
+    return `M${left} ${BASE}V${SPRING}A${RADIUS} ${RADIUS} 0 0 1 ${left + 2 * RADIUS} ${SPRING}V${BASE}Z`;
+  }).join(' ');
+}
+
+// Tronçon gauche : 3 arches, tablier cassé à droite. Tronçon droit : 2 arches, cassé à gauche.
+const left = `M24 ${TOP}H184l5 4 4-2 7 6V${BASE}H24Z ${openings(24, 3)}`;
+const right = `M348 106l6-5 5 3 4-6H470V${BASE}H348Z ${openings(348, 2)}`;
+// Piles arasées entre les deux tronçons
+const stumps = [`M240 ${BASE}V170l4-3 5 4 5-5V${BASE}Z`, `M294 ${BASE}V150l5 3 4-4 5 2V${BASE}Z`];
+const waves = [
+  'M36 258q15-8 30 0t30 0 30 0',
+  'M196 270q15-8 30 0t30 0 30 0 30 0',
+  'M362 256q15-8 30 0t30 0 30 0',
+];
+---
+
+<div class="hero-frame overflow-hidden rounded-[2rem] border border-line shadow-[0_30px_60px_-40px_rgba(27,42,46,0.6)]">
+<svg class="hero-aqueduc block w-full" viewBox="0 0 480 300" aria-hidden="true" focusable="false">
+  <rect width="480" height="300" fill="var(--accent-soft)"></rect>
+  <circle class="part sun" cx="380" cy="86" r="44" fill="var(--accent)"></circle>
+  <path class="part" d="M0 176C70 148 150 138 230 150S380 166 480 148V300H0Z" fill="var(--loire-soft)"></path>
+  <g class="part trees" fill="var(--loire)" opacity="0.5">
+    <circle cx="14" cy="174" r="10"></circle>
+    <circle cx="452" cy="160" r="12"></circle>
+    <circle cx="468" cy="166" r="9"></circle>
+  </g>
+  <path class="part" d="M0 214C90 202 190 198 280 205S420 214 480 208V300H0Z" fill="var(--line)"></path>
+  <g class="arcades" fill="var(--surface)" stroke="var(--ink)" stroke-width="2.2" stroke-linejoin="round">
+    <path class="part arcade arcade-1" fill-rule="evenodd" d={left}></path>
+    {stumps.map((d, i) => <path class={`part arcade stump stump-${i + 1}`} d={d} />)}
+    <path class="part arcade arcade-2" fill-rule="evenodd" d={right}></path>
+  </g>
+  <g fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-opacity="0.5" class="part cornices">
+    <path d="M24 106H186M352 112H470"></path>
+  </g>
+  <path class="part" d="M0 238C80 230 160 232 240 238S400 246 480 238V300H0Z" fill="var(--loire-soft)"></path>
+  <g class="waves" fill="none" stroke="var(--loire)" stroke-width="3" stroke-linecap="round">
+    {waves.map((d, i) => <path class={`wave wave-${i + 1}`} d={d} />)}
+  </g>
+</svg>
+</div>
+
+<style>
+  .hero-frame {
+    rotate: 1.2deg;
+  }
+  /* Apparition : le soleil se lève, les arches montent une à une, la Loire ondule.
+     Purement CSS (aucun flash, rien sans animation si l'utilisateur limite les animations). */
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-aqueduc .part {
+      animation: rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .hero-aqueduc .sun {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: sunrise 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .hero-aqueduc .arcade-1 {
+      animation-delay: 0.25s;
+    }
+    .hero-aqueduc .stump-1 {
+      animation-delay: 0.4s;
+    }
+    .hero-aqueduc .stump-2 {
+      animation-delay: 0.5s;
+    }
+    .hero-aqueduc .arcade-2 {
+      animation-delay: 0.6s;
+    }
+    .hero-aqueduc .cornices {
+      animation-delay: 0.7s;
+    }
+    .hero-aqueduc .wave {
+      animation: drift 6s ease-in-out infinite alternate;
+    }
+    .hero-aqueduc .wave-2 {
+      animation-delay: -2s;
+    }
+    .hero-aqueduc .wave-3 {
+      animation-delay: -4s;
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+  @keyframes sunrise {
+    from {
+      opacity: 0;
+      transform: translateY(40px) scale(0.85);
+    }
+  }
+  @keyframes drift {
+    to {
+      transform: translateX(14px);
+    }
+  }
+</style>

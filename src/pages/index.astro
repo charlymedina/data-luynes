@@ -3,14 +3,18 @@ import Base from '../layouts/Base.astro';
 import KeyFigure from '../components/KeyFigure.astro';
 import FunFacts from '../components/FunFacts.astro';
 import ComingSoon from '../components/ComingSoon.astro';
+import HeroAqueduc from '../components/HeroAqueduc.astro';
+import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
+import MiniRank from '../components/charts/MiniRank.astro';
+import MiniColumns from '../components/charts/MiniColumns.astro';
 import { commune, rang } from '../data/commune';
 import { agesDe, derniereAnneeEtatCivil, historique } from '../data/population';
 import { themesBientot } from '../data/themes';
 import { CREDITS_ACCUEIL } from '../data/credits';
-import { formatNumber, formatRank } from '../lib/format';
+import { formatNumber } from '../lib/format';
 import { faitsCommune, faitsImmobilier, faitsPatrimoine, faitsPopulation } from '../lib/faits';
 import { resumeRisques } from '../data/patrimoine';
-import { resumeImmobilier } from '../data/immobilier';
+import { annees as anneesImmobilier, resumeImmobilier } from '../data/immobilier';
 import { toPercent } from '../lib/scale';
 import { resumeBudget } from '../data/budget';
 import { faitsBudget } from '../lib/faits-budget';
@@ -32,32 +36,45 @@ const lastYear = historique.at(-1)?.annee ?? 0;
 const sparkline = historique
   .map((r) => `${toPercent(r.annee, firstYear, lastYear)},${100 - toPercent(r.population, 0, maxPop)}`)
   .join(' ');
+
+/** Deux ou trois barres fines : Luynes en avant, puis les références. */
+const duo = (luynesValue: number, refs: readonly [string, number][], display: (v: number) => string): MiniItem[] => [
+  { label: 'Luynes', value: luynesValue, display: display(luynesValue), highlight: true },
+  ...refs.map(([label, value]) => ({ label, value, display: display(value) })),
+];
+const euros = (v: number): string => `${formatNumber(v)} €`;
+const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
 ---
 
 <Base
   title="Luynes en chiffres — les données ouvertes de Luynes (37)"
-  description={`Population, âges, naissances… Luynes (${commune.code_postal}) racontée par les données publiques.`}
+  description={`Population, immobilier, budget, patrimoine… Luynes (${commune.code_postal}) racontée par les données publiques.`}
   sources={CREDITS_ACCUEIL}
 >
-  <!-- En-tête -->
-  <section aria-labelledby="titre" class="relative pt-16 pb-12 sm:pt-24">
-    <p class="font-medium text-loire">{commune.departement} · {commune.code_postal}</p>
-    <h1 id="titre" class="mt-3 max-w-4xl font-display text-6xl leading-[0.95] font-extrabold tracking-tight sm:text-8xl">
-      Luynes,<br />
-      <span class="relative inline-block">
-        en chiffres
-        <svg class="absolute -bottom-3 left-0 w-full text-accent" viewBox="0 0 300 16" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M2 10 C 40 2, 70 16, 110 8 S 180 2, 220 9 S 280 14, 298 6" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" />
-        </svg>
-      </span>.
-    </h1>
-    <p class="mt-8 max-w-xl text-lg leading-relaxed text-ink-2">
-      Château, aqueduc gallo-romain, coteaux sur la Loire… et beaucoup de données publiques.
-      On les rassemble ici, en clair, pour que chacun puisse découvrir sa commune autrement.
-    </p>
+  <!-- En-tête : titre + illustration de l'aqueduc -->
+  <section aria-labelledby="titre" class="relative grid items-center gap-8 pt-10 pb-12 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-6">
+    <div>
+      <p class="font-medium text-loire">{commune.departement} · {commune.code_postal}</p>
+      <h1 id="titre" class="mt-3 max-w-4xl font-display text-6xl leading-[0.95] font-extrabold tracking-tight sm:text-8xl">
+        Luynes,<br />
+        <span class="relative inline-block">
+          en chiffres
+          <svg class="absolute -bottom-3 left-0 w-full text-accent" viewBox="0 0 300 16" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M2 10 C 40 2, 70 16, 110 8 S 180 2, 220 9 S 280 14, 298 6" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" />
+          </svg>
+        </span>.
+      </h1>
+      <p class="mt-8 max-w-xl text-lg leading-relaxed text-ink-2">
+        Château, aqueduc gallo-romain, coteaux sur la Loire… et beaucoup de données publiques.
+        On les rassemble ici, en clair, pour que chacun puisse découvrir sa commune autrement.
+      </p>
+    </div>
+    <div class="mx-auto w-full max-w-xl lg:max-w-none">
+      <HeroAqueduc />
+    </div>
   </section>
 
-  <!-- Chiffres clés cliquables, composition « bento » -->
+  <!-- Chiffres clés cliquables, composition « bento » : un chiffre fort + un petit visuel par carte -->
   <section aria-labelledby="chiffres-cles">
     <h2 id="chiffres-cles" class="sr-only">Chiffres clés</h2>
     <div class="grid gap-4 sm:grid-cols-6">
@@ -69,7 +86,6 @@ const sparkline = historique
         label="Habitants"
         value={commune.population}
         unit="Luynois·es"
-        note={`${formatRank(rang.rang_population)} commune la plus peuplée d'Indre-et-Loire, sur ${rang.nb_communes}.`}
       >
         <figure class="mt-6" aria-hidden="true">
           <svg class="h-14 w-full overflow-visible sm:h-20" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -79,95 +95,69 @@ const sparkline = historique
             <span>{firstYear}</span><span>{lastYear}</span>
           </figcaption>
         </figure>
+        <MiniRank onDark rank={rang.rang_population} total={rang.nb_communes} what="la plus peuplée" />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-2" tone="accent" href="/population#ages" icon="sablier" label="Âge médian" value={luynes.age_median} decimals={1} unit="ans">
+        <MiniCompare items={duo(luynes.age_median, [['France', france.age_median]], (v) => `${formatNumber(v, 1)} ans`)} />
       </KeyFigure>
       <KeyFigure
         class="sm:col-span-2"
-        tone="accent"
-        href="/population#ages"
-        label="Âge médian"
-        value={luynes.age_median}
-        decimals={1}
-        unit="ans"
-        note={`Contre ${formatNumber(france.age_median, 1)} ans en France.`}
-      />
-      <KeyFigure
-        class="sm:col-span-2"
         href="/population#naissances"
-        label={`Naissances en ${derniereAnneeEtatCivil.annee}`}
+        icon="bebe"
+        label={`Naissances ${derniereAnneeEtatCivil.annee}`}
         value={derniereAnneeEtatCivil.naissances}
         unit="bébés"
-        note={`Et ${formatNumber(derniereAnneeEtatCivil.deces)} décès la même année.`}
-      />
-      <KeyFigure
-        class="sm:col-span-3"
-        href="/territoire"
-        label="Superficie"
-        value={commune.surface_km2}
-        decimals={1}
-        unit="km²"
-        note={`${formatRank(rang.rang_surface)} commune la plus grande d'Indre-et-Loire.`}
-      />
-      <KeyFigure
-        class="sm:col-span-3"
-        tone="accent"
-        href="/territoire#densite"
-        label="Densité"
-        value={commune.densite_hab_km2}
-        unit="hab./km²"
-        note={`Contre ${formatNumber(rang.densite_departement)} en moyenne dans le département.`}
-      />
-      <KeyFigure
-        class="sm:col-span-3"
-        tone="loire"
-        href="/patrimoine-risques#monuments"
-        label="Monuments historiques"
-        value={resumeRisques.monuments}
-        note={`${formatRank(resumeRisques.rang_monuments)} commune d'Indre-et-Loire. Le premier protégé en ${resumeRisques.premiere_protection}.`}
-      />
-      <KeyFigure
-        class="sm:col-span-3"
-        href="/patrimoine-risques#carte"
-        label="Cavités souterraines"
-        value={resumeRisques.cavites}
-        note={`${formatRank(resumeRisques.rang_cavites)} commune du département : le coteau est creusé de caves.`}
-      />
-      <KeyFigure
-        class="sm:col-span-4"
-        tone="accent"
-        href="/immobilier"
-        icon="maison"
-        label="Prix au m² d'une maison"
-        value={resumeImmobilier.prix_m2_maison}
-        unit="€/m²"
-        note={`Contre ${formatNumber(resumeImmobilier.prix_m2_maison_37)} €/m² en Indre-et-Loire (prix médians ${resumeImmobilier.annee_debut}-${resumeImmobilier.annee_fin}).`}
-      />
-      <KeyFigure
-        class="sm:col-span-2"
-        href="/immobilier#carte"
-        icon="cle"
-        label="Ventes immobilières"
-        value={resumeImmobilier.ventes}
-        note={`Depuis ${resumeImmobilier.annee_debut}, toutes sur une carte.`}
-      />
-      <KeyFigure
-        class="sm:col-span-3"
-        tone="loire"
-        href="/budget"
-        label="Dépenses de la commune"
-        value={resumeBudget.depenses_hab}
-        unit="€/hab."
-        icon="pieces"
-        note={`Budget de fonctionnement ${resumeBudget.annee}. Communes de même taille : ${formatNumber(resumeBudget.depenses_hab_strate)} € par habitant.`}
-      />
+      >
+        <MiniCompare
+          items={[
+            { label: 'Naissances', value: derniereAnneeEtatCivil.naissances, display: formatNumber(derniereAnneeEtatCivil.naissances), highlight: true },
+            { label: 'Décès', value: derniereAnneeEtatCivil.deces, display: formatNumber(derniereAnneeEtatCivil.deces) },
+          ]}
+        />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" href="/territoire" icon="regle" label="Superficie" value={commune.surface_km2} decimals={1} unit="km²">
+        <MiniRank rank={rang.rang_surface} total={rang.nb_communes} what="la plus grande" />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" tone="accent" href="/territoire#densite" icon="immeuble" label="Densité" value={commune.densite_hab_km2} unit="hab./km²">
+        <MiniCompare items={duo(commune.densite_hab_km2, [['Moyenne 37', rang.densite_departement]], (v) => formatNumber(v))} />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" tone="loire" href="/patrimoine-risques#monuments" icon="aqueduc" label="Monuments historiques" value={resumeRisques.monuments}>
+        <MiniRank onDark rank={resumeRisques.rang_monuments} total={resumeRisques.nb_communes} what="du département" />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" href="/patrimoine-risques#carte" icon="cave" label="Cavités souterraines" value={resumeRisques.cavites}>
+        <MiniRank rank={resumeRisques.rang_cavites} total={resumeRisques.nb_communes} what="du département" />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-4" tone="accent" href="/immobilier" icon="maison" label="Prix au m² d'une maison" value={resumeImmobilier.prix_m2_maison} unit="€/m²">
+        <MiniCompare items={duo(resumeImmobilier.prix_m2_maison, [['Indre-et-Loire', resumeImmobilier.prix_m2_maison_37]], euros)} />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-2" href="/immobilier#carte" icon="cle" label="Ventes immobilières" value={resumeImmobilier.ventes}>
+        <MiniColumns
+          values={anneesImmobilier.map((a) => ({ label: String(a.annee), value: a.ventes }))}
+          ariaLabel={`Ventes par année, de ${resumeImmobilier.annee_debut} à ${resumeImmobilier.annee_fin}`}
+        />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" tone="loire" href="/budget" icon="pieces" label="Dépenses de la commune" value={resumeBudget.depenses_hab} unit="€/hab.">
+        <MiniCompare onDark items={duo(resumeBudget.depenses_hab, [['Même taille', resumeBudget.depenses_hab_strate]], euros)} />
+      </KeyFigure>
       <KeyFigure
         class="sm:col-span-3"
         href="/revenus-emploi"
         icon="mallette"
         label="Niveau de vie médian"
-        value={Math.round(resumeRevenus.niveau_vie / 12 / 10) * 10}
+        value={niveauVieMois(resumeRevenus.niveau_vie)}
         unit="€/mois"
-        note={`La moitié des Luynois vit avec plus. ${formatRank(resumeRevenus.rang_niveau_vie)} commune d'Indre-et-Loire.`}
-      />
+      >
+        <MiniCompare
+          items={duo(
+            niveauVieMois(resumeRevenus.niveau_vie),
+            [
+              ['Indre-et-Loire', niveauVieMois(resumeRevenus.niveau_vie_37)],
+              ['France', niveauVieMois(resumeRevenus.niveau_vie_france)],
+            ],
+            euros,
+          )}
+        />
+      </KeyFigure>
     </div>
   </section>
 

@@ -5,13 +5,17 @@ import FunFacts from '../components/FunFacts.astro';
 import CarteVentes from '../components/CarteVentes.astro';
 import LineChart from '../components/charts/LineChart.astro';
 import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
-import CompareBars, { type CompareItem } from '../components/charts/CompareBars.astro';
 import DpeBars from '../components/charts/DpeBars.astro';
+import Icon, { type IconName } from '../components/Icon.astro';
+import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
+import MiniRank from '../components/charts/MiniRank.astro';
+import PictoGrid from '../components/charts/PictoGrid.astro';
+import RankGauge from '../components/charts/RankGauge.astro';
 import { annees, etiquettesDpe, loyerAppartement, loyerMaison, resumeImmobilier as r, SEUILS_PRIX_M2, tranchesPrixMaisons, ventes } from '../data/immobilier';
 import { contourCommune } from '../data/patrimoine';
 import { CREDITS_IMMOBILIER } from '../data/credits';
-import { formatNumber, formatRank } from '../lib/format';
-import { faitsImmobilier, partDevancee } from '../lib/faits';
+import { formatNumber } from '../lib/format';
+import { faitsImmobilier } from '../lib/faits';
 
 const enEuros = (v: number): string => `${formatNumber(v)} €`;
 const enM2 = (v: number): string => `${formatNumber(v)} €/m²`;
@@ -38,9 +42,31 @@ const colonnesPrix: Column[] = tranchesPrixMaisons.map((t) => ({
   highlight: t === trancheMediane,
 }));
 
-const comparerA37 = (luynes: number, departement: number, format: (v: number) => string, libelle37: string): CompareItem[] => [
+const comparerA37 = (luynes: number, departement: number, format: (v: number) => string, libelle37: string): MiniItem[] => [
   { label: 'Luynes', value: luynes, display: format(luynes), highlight: true },
-  { label: libelle37, value: departement, display: format(departement), highlight: false },
+  { label: libelle37, value: departement, display: format(departement) },
+];
+const parType: MiniItem[] = [
+  { label: 'Maisons', value: r.ventes_maisons, display: formatNumber(r.ventes_maisons), highlight: true },
+  { label: 'Terrains', value: r.ventes_terrains, display: formatNumber(r.ventes_terrains) },
+  { label: 'Appart.', value: r.ventes_appartements, display: formatNumber(r.ventes_appartements) },
+];
+
+interface Classement {
+  titre: string;
+  icon: IconName;
+  rank: number;
+  total: number;
+  items: MiniItem[];
+}
+const classements: Classement[] = [
+  { titre: "Prix au m² d'une maison", icon: 'maison', rank: r.rang_prix_m2_maison, total: r.nb_communes_classees, items: comparerA37(r.prix_m2_maison, r.prix_m2_maison_37, enM2, 'Indre-et-L.') },
+  ...(loyerMaison
+    ? [{ titre: "Loyer d'une maison", icon: 'cle' as const, rank: loyerMaison.rang, total: loyerMaison.nb_communes, items: comparerA37(loyerMaison.loyer_m2, loyerMaison.loyer_m2_mediane_37, enLoyer, 'Médiane 37') }]
+    : []),
+  ...(loyerAppartement
+    ? [{ titre: "Loyer d'un appartement", icon: 'immeuble' as const, rank: loyerAppartement.rang, total: loyerAppartement.nb_communes, items: comparerA37(loyerAppartement.loyer_m2, loyerAppartement.loyer_m2_mediane_37, enLoyer, 'Médiane 37') }]
+    : []),
 ];
 
 const passoires = etiquettesDpe.filter((e) => e.etiquette === 'F' || e.etiquette === 'G');
@@ -57,10 +83,9 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
   title="Immobilier à Luynes — Luynes en chiffres"
   description={`Prix au m², carte des ${formatNumber(r.ventes)} ventes depuis ${r.annee_debut}, loyers et étiquettes énergie : l'immobilier à Luynes.`}
   sources={CREDITS_IMMOBILIER}
-  showBack
 >
   <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
-    <p class="font-medium text-loire">Thème · 🏠 Immobilier</p>
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="maison" class="h-5 w-5" /> Thème · Immobilier</p>
     <h1 id="titre" class="mt-3 font-display text-5xl leading-[0.95] font-extrabold tracking-tight min-[380px]:text-6xl sm:text-8xl">Immobilier</h1>
     <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
       Combien coûte une maison à Luynes ? Où se vendent-elles ? Toutes les ventes enregistrées par l'administration
@@ -69,34 +94,20 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
   </section>
 
   <section aria-label="Chiffres clés de l'immobilier" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-    <KeyFigure
-      tone="loire"
-      label="Prix au m² d'une maison"
-      value={r.prix_m2_maison}
-      unit="€/m²"
-      note={`${formatRank(r.rang_prix_m2_maison)} commune la plus chère sur ${r.nb_communes_classees} comparables du département.`}
-    />
-    <KeyFigure
-      tone="accent"
-      label="Prix d'une maison"
-      value={Math.round(r.prix_maison / 1000)}
-      unit="k€"
-      note={`Prix médian ${r.annee_debut}-${r.annee_fin} (${enEuros(r.prix_maison)}), contre ${enEuros(r.prix_maison_37)} en Indre-et-Loire.`}
-    />
-    <KeyFigure
-      label="Ventes"
-      value={r.ventes}
-      note={`De ${r.annee_debut} à ${r.annee_fin}, dont ${formatNumber(r.ventes_maisons)} maisons et ${formatNumber(r.ventes_terrains)} terrains.`}
-    />
+    <KeyFigure tone="loire" icon="maison" label="Prix au m² d'une maison" value={r.prix_m2_maison} unit="€/m²">
+      <MiniRank onDark rank={r.rang_prix_m2_maison} total={r.nb_communes_classees} what="la plus chère" />
+    </KeyFigure>
+    <KeyFigure tone="accent" icon="tirelire" label="Prix d'une maison" value={Math.round(r.prix_maison / 1000)} unit="k€">
+      <MiniCompare items={comparerA37(r.prix_maison, r.prix_maison_37, enK, 'Indre-et-L.')} />
+    </KeyFigure>
+    <KeyFigure icon="cle" label={`Ventes ${r.annee_debut}-${r.annee_fin}`} value={r.ventes}>
+      <MiniCompare items={parType} />
+    </KeyFigure>
     {
       loyerMaison && (
-        <KeyFigure
-          label="Loyer d'une maison"
-          value={loyerMaison.loyer_m2}
-          decimals={1}
-          unit="€/m²"
-          note={`Par mois, charges comprises (annonces ${loyerMaison.annee}). Médiane du 37 : ${enLoyer(loyerMaison.loyer_m2_mediane_37)}.`}
-        />
+        <KeyFigure icon="calendrier" label="Loyer d'une maison" value={loyerMaison.loyer_m2} decimals={1} unit="€/m²/mois">
+          <MiniCompare items={comparerA37(loyerMaison.loyer_m2, loyerMaison.loyer_m2_mediane_37, enLoyer, 'Médiane 37')} />
+        </KeyFigure>
       )
     }
   </section>
@@ -168,36 +179,19 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
   <section id="departement" aria-labelledby="departement-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
     <h2 id="departement-titre" class={titreH2}>Luynes face au département</h2>
     <p class="mt-4 max-w-2xl text-ink-2">
-      Le m² d'une maison est plus cher à Luynes que dans {partDevancee(r.rang_prix_m2_maison, r.nb_communes_classees)} % des communes
-      d'Indre-et-Loire comparables (au moins 30 maisons vendues depuis {r.annee_debut}).
+      Le point orange situe Luynes, de la commune la plus chère à la moins chère. Prix : communes avec au moins 30 maisons vendues
+      depuis {r.annee_debut} ; loyers : prix au m² par mois, charges comprises, d'après les annonces.
     </p>
-    <div class="mt-8 grid gap-6 md:grid-cols-2">
-      <div class={carte}><CompareBars title="Prix au m² d'une maison" items={comparerA37(r.prix_m2_maison, r.prix_m2_maison_37, enM2, 'Indre-et-Loire')} /></div>
-      <div class={carte}><CompareBars title="Prix d'une maison" items={comparerA37(r.prix_maison, r.prix_maison_37, enK, 'Indre-et-Loire')} /></div>
+    <div class="mt-8 grid gap-4 md:grid-cols-3">
       {
-        loyerMaison && (
-          <div class={carte}>
-            <CompareBars title="Loyer d'une maison (€/m² par mois)" items={comparerA37(loyerMaison.loyer_m2, loyerMaison.loyer_m2_mediane_37, enLoyer, 'Médiane 37')} />
-            <p class="mt-4 text-sm text-ink-2">
-              {formatRank(loyerMaison.rang)} commune la plus chère sur {loyerMaison.nb_communes}. Fourchette à Luynes :
-              {' '}{enLoyer(loyerMaison.loyer_m2_bas)} à {enLoyer(loyerMaison.loyer_m2_haut)} ({formatNumber(loyerMaison.annonces_commune)} annonces).
-            </p>
+        classements.map((c) => (
+          <div class="flex flex-col">
+            <RankGauge label={c.titre} rank={c.rank} total={c.total} icon={c.icon} ends={['la plus chère', 'la moins chère']} />
+            <div class="-mt-3 rounded-b-[1.25rem] border border-t-0 border-line bg-surface px-5 pt-1 pb-5">
+              <MiniCompare items={c.items} />
+            </div>
           </div>
-        )
-      }
-      {
-        loyerAppartement && (
-          <div class={carte}>
-            <CompareBars
-              title="Loyer d'un appartement (€/m² par mois)"
-              items={comparerA37(loyerAppartement.loyer_m2, loyerAppartement.loyer_m2_mediane_37, enLoyer, 'Médiane 37')}
-            />
-            <p class="mt-4 text-sm text-ink-2">
-              {formatRank(loyerAppartement.rang)} commune la plus chère sur {loyerAppartement.nb_communes}. Fourchette à Luynes :
-              {' '}{enLoyer(loyerAppartement.loyer_m2_bas)} à {enLoyer(loyerAppartement.loyer_m2_haut)} ({formatNumber(loyerAppartement.annonces_commune)} annonces).
-            </p>
-          </div>
-        )
+        ))
       }
     </div>
   </section>
@@ -205,17 +199,31 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
   <section id="energie" aria-labelledby="energie-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
     <h2 id="energie-titre" class={titreH2}>Les étiquettes énergie</h2>
     <p class="mt-4 max-w-2xl text-ink-2">
-      {formatNumber(nbDpe)} diagnostics de performance énergétique (DPE) réalisés à Luynes depuis juillet 2021.
-      {etiquetteFrequente && <>L'étiquette la plus fréquente est la <strong class="text-ink">{etiquetteFrequente.etiquette}</strong>. </>}
-      Les « passoires thermiques » (F et G) représentent {formatNumber(partPassoires, 1)} % des DPE, contre {formatNumber(partPassoires37, 1)} %
-      en Indre-et-Loire. Seuls les logements vendus, loués ou rénovés passent un DPE : ce n'est pas un portrait de tous les logements.
+      Les diagnostics de performance énergétique (DPE) réalisés à Luynes depuis juillet 2021.
+      {etiquetteFrequente && <>L'étiquette la plus fréquente est la <strong class="text-ink">{etiquetteFrequente.etiquette}</strong>.</>}
     </p>
-    <div class:list={['mt-8 max-w-3xl', carte]}>
-      <DpeBars
-        etiquettes={etiquettesDpe}
-        ariaLabel={`Répartition des étiquettes énergie à Luynes et en Indre-et-Loire. ${formatNumber(partPassoires, 1)} % de passoires thermiques à Luynes, ${formatNumber(partPassoires37, 1)} % dans le département.`}
-      />
+    <div class="mt-8 grid gap-6 lg:grid-cols-[3fr_2fr]">
+      <div class={carte}>
+        <DpeBars
+          etiquettes={etiquettesDpe}
+          ariaLabel={`Répartition des ${formatNumber(nbDpe)} étiquettes énergie à Luynes et en Indre-et-Loire. ${formatNumber(partPassoires, 1)} % de passoires thermiques à Luynes, ${formatNumber(partPassoires37, 1)} % dans le département.`}
+        />
+      </div>
+      <div class={carte}>
+        <h3 class="flex items-center gap-2 font-display text-lg font-bold"><Icon name="feuille" class="h-5 w-5 text-loire" /> Les passoires thermiques</h3>
+        <p class="mt-1 mb-5 text-sm text-ink-2">Logements classés F ou G, sur 100 diagnostiqués.</p>
+        <PictoGrid
+          count={partPassoires}
+          label="logements diagnostiqués sont des passoires thermiques"
+          shape="maison"
+          ariaLabel={`${formatNumber(partPassoires, 1)} % de passoires thermiques à Luynes`}
+        />
+        <MiniCompare items={comparerA37(partPassoires, partPassoires37, (v) => `${formatNumber(v, 1)} %`, 'Indre-et-L.')} />
+      </div>
     </div>
+    <p class="mt-4 max-w-2xl text-sm text-ink-2">
+      Seuls les logements vendus, loués ou rénovés passent un DPE : ce n'est pas un portrait de tous les logements.
+    </p>
   </section>
 
   <FunFacts facts={faitsImmobilier()} id="saviez-vous-immobilier" />

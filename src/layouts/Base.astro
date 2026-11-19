@@ -8,11 +8,9 @@ interface Props {
   description: string;
   /** Sources citées en pied de page (origine + licence). */
   sources: readonly FooterSource[];
-  /** Affiche un lien « ← Accueil » dans l'en-tête (pages de thème). */
-  showBack?: boolean;
 }
 
-const { title, description, sources, showBack = false } = Astro.props;
+const { title, description, sources } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -33,6 +31,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#f6f0e1" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0e181b" media="(prefers-color-scheme: dark)" />
     <meta property="og:title" content={title} />
@@ -42,7 +41,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   </head>
   <body class="min-h-dvh">
     <div class="grain" aria-hidden="true"></div>
-    <SiteHeader showBack={showBack} />
+    <SiteHeader />
     <main class="mx-auto max-w-6xl px-4 sm:px-6">
       <slot />
     </main>
@@ -50,8 +49,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <script>
       import { initAnimations } from '../lib/animations.ts';
       import { initChartTooltips } from '../lib/chart-tooltip.ts';
+      import { initNav } from '../lib/nav.ts';
       import { initThemeToggle } from '../lib/theme.ts';
       initThemeToggle();
+      initNav();
       initAnimations();
       initChartTooltips();
     </script>

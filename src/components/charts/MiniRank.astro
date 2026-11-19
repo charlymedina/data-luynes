@@ -1,0 +1,40 @@
+---
+/**
+ * Réglette de classement compacte, à glisser dans une carte de chiffre clé :
+ * une ligne de 1 à N (toutes les communes du département) et un point pour Luynes.
+ * Version courte de RankGauge, qui remplace une phrase du type « 19ᵉ commune sur 272 ».
+ */
+import { formatRank } from '../../lib/format';
+
+interface Props {
+  rank: number;
+  total: number;
+  /** Ce qui est classé, ex. « la plus peuplée » (lu par les lecteurs d'écran et affiché en petit) */
+  what: string;
+  /** Sur fond sarcelle (carte « loire »), la réglette passe en clair. */
+  onDark?: boolean;
+}
+
+const { rank, total, what, onDark = false } = Astro.props;
+const position = total > 1 ? ((rank - 1) / (total - 1)) * 100 : 0;
+---
+
+<figure class="mt-5 text-xs">
+  <div
+    class:list={['relative h-2 rounded-full', onDark ? 'bg-bg/25' : 'bg-chart-grid']}
+    role="img"
+    aria-label={`Luynes ${formatRank(rank)} commune ${what} sur ${total} en Indre-et-Loire`}
+  >
+    <span
+      class:list={[
+        'absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] shadow-sm',
+        onDark ? 'border-loire bg-bg' : 'border-surface bg-accent',
+      ]}
+      style={`left:${position}%`}
+    ></span>
+  </div>
+  <figcaption class="mt-2 flex justify-between gap-2 opacity-85">
+    <span><strong class="font-semibold">{formatRank(rank)}</strong> {what}</span>
+    <span class="shrink-0">sur {total}</span>
+  </figcaption>
+</figure>

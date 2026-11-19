@@ -10,14 +10,18 @@ interface Props {
   count: number;
   label: string;
   ariaLabel: string;
+  /** Pictogramme : une silhouette (par défaut) ou une petite maison */
+  shape?: 'personne' | 'maison';
 }
 
-const { count, label, ariaLabel } = Astro.props;
+const { count, label, ariaLabel, shape = 'personne' } = Astro.props;
 const highlighted = Math.round(Math.min(Math.max(count, 0), 100));
 const STEP = 14;
-// Silhouette simple : tête + buste (dans une case de 12 × 12)
+// Silhouette simple : tête + buste, ou maison : toit + murs (dans une case de 12 × 12)
 const person = (x: number, y: number): string =>
-  `M${x + 6} ${y + 1.2}a2.4 2.4 0 1 1 0 4.8a2.4 2.4 0 1 1 0-4.8Z M${x + 1.8} ${y + 12}c0-3 1.9-5 4.2-5s4.2 2 4.2 5Z`;
+  shape === 'maison'
+    ? `M${x + 6} ${y + 1}L${x + 11.5} ${y + 6}H${x + 10}V${y + 12}H${x + 2}V${y + 6}H${x + 0.5}Z`
+    : `M${x + 6} ${y + 1.2}a2.4 2.4 0 1 1 0 4.8a2.4 2.4 0 1 1 0-4.8Z M${x + 1.8} ${y + 12}c0-3 1.9-5 4.2-5s4.2 2 4.2 5Z`;
 ---
 
 <figure class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">

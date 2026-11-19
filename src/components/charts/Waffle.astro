@@ -18,11 +18,13 @@ interface Props {
   /** Unité d'une case, ex. « € » pour « sur 100 € » */
   unit: string;
   ariaLabel: string;
+  /** Couleurs imposées (ex. garder la couleur d'une entité déjà vue sur une carte). Par défaut : ordre catégoriel validé. */
+  colors?: readonly string[];
 }
 
-const { title, items, unit, ariaLabel } = Astro.props;
+const { title, items, unit, ariaLabel, colors } = Astro.props;
 /** Ordre catégoriel validé (orange, sarcelle, bleu, or). Au-delà de 4 catégories, regrouper en « Autres ». */
-const COLORS = ['var(--chart-2)', 'var(--chart-1)', 'var(--chart-3)', 'var(--chart-4)'] as const;
+const COLORS: readonly string[] = colors ?? ['var(--chart-2)', 'var(--chart-1)', 'var(--chart-3)', 'var(--chart-4)'];
 
 /** Arrondi « au plus fort reste » : les cases font toujours exactement 100. */
 function toCells(values: readonly number[]): number[] {
