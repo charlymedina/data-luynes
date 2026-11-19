@@ -35,6 +35,7 @@ Le détail de chaque source sera documenté dans `docs/sources.md`.
 data-luynes/
 ├── data/
 │   ├── sources.ts       # Liste des sources téléchargées (→ data/raw/)
+│   ├── archive/dvf/     # Archive des ventes immobilières que DVF ne publie plus (voir docs/sources.md)
 │   └── sql/*.sql        # Requêtes DuckDB : un fichier .sql = un fichier JSON pour le site
 │                        #   (les fichiers « _*.sql » préparent des vues partagées, sans JSON)
 ├── scripts/build-data.ts  # Télécharge les sources et exécute les requêtes SQL

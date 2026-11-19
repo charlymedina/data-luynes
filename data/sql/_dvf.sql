@@ -5,7 +5,28 @@
 -- dépendance…) et par nature de terrain, et le prix total (valeur_fonciere) est répété sur chaque ligne.
 -- On regroupe donc tout par id_mutation pour obtenir UNE ligne par vente.
 
--- 1. Lignes brutes, tous les fichiers annuels, colonnes utiles converties dans le bon type
+-- 1. Toutes les années disponibles, sans doublon :
+--    - les fichiers publiés aujourd'hui (téléchargés dans data/raw/dvf_37/, ~5 dernières années) ;
+--    - plus les années de l'archive du dépôt (data/archive/dvf/<année>.parquet) qui ne sont PLUS publiées.
+--    L'archive est tenue à jour juste avant par le build (scripts/archive-dvf.ts).
+CREATE OR REPLACE TABLE dvf_sources AS
+WITH publiees AS (
+  SELECT *, left(parse_filename(filename), 4) AS annee_fichier
+  FROM read_csv('data/raw/dvf_37/*.csv.gz', union_by_name = true, all_varchar = true, filename = true)
+),
+annees_publiees AS (
+  SELECT DISTINCT annee_fichier FROM publiees
+),
+archivees AS (
+  SELECT *, left(parse_filename(filename), 4) AS annee_fichier
+  FROM read_parquet('data/archive/dvf/*.parquet', union_by_name = true, filename = true)
+  WHERE left(parse_filename(filename), 4) NOT IN (SELECT annee_fichier FROM annees_publiees)
+)
+SELECT * EXCLUDE (filename) FROM publiees
+UNION ALL BY NAME
+SELECT * EXCLUDE (filename) FROM archivees;
+
+-- 2. Lignes brutes, colonnes utiles converties dans le bon type
 CREATE OR REPLACE TABLE dvf_lignes AS
 SELECT
   id_mutation,
@@ -22,11 +43,11 @@ SELECT
   surface_terrain::DOUBLE                    AS surface_terrain,
   longitude::DOUBLE                          AS lon,
   latitude::DOUBLE                           AS lat
-FROM read_csv('data/raw/dvf_37/*.csv.gz', union_by_name = true, all_varchar = true)
+FROM dvf_sources
 -- Les ventes classiques et les ventes sur plan (VEFA) ; on écarte échanges, adjudications et expropriations
 WHERE nature_mutation IN ('Vente', 'Vente en l''état futur d''achèvement');
 
--- 2. Une ligne par vente
+-- 3. Une ligne par vente
 CREATE OR REPLACE TABLE dvf_ventes AS
 WITH
 -- Les locaux de chaque vente, sans doublon (une maison apparaît une fois par nature de terrain)
@@ -83,7 +104,7 @@ FROM ventes v
 LEFT JOIN compte_locaux l USING (id_mutation)
 LEFT JOIN terrains t USING (id_mutation);
 
--- 3. Prix au m² des ventes « simples » (une seule maison ou un seul appartement), valeurs aberrantes écartées
+-- 4. Prix au m² des ventes « simples » (une seule maison ou un seul appartement), valeurs aberrantes écartées
 CREATE OR REPLACE VIEW dvf_ventes_prix AS
 SELECT
   *,

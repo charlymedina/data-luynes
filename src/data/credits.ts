@@ -34,7 +34,7 @@ const GEORISQUES: FooterSource = {
 const DVF: FooterSource = {
   nom: 'Demandes de valeurs foncières géolocalisées (DGFiP, Etalab)',
   url: 'https://www.data.gouv.fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/',
-  detail: 'ventes immobilières des 5 dernières années — Licence Ouverte 2.0',
+  detail: 'ventes immobilières (années publiées + archive du site) — Licence Ouverte 2.0',
 };
 
 const ADEME_DPE: FooterSource = {
