@@ -8,15 +8,16 @@ import { agesDe, derniereAnneeEtatCivil, historique } from '../data/population';
 import { themesBientot } from '../data/themes';
 import { CREDITS_ACCUEIL } from '../data/credits';
 import { formatNumber, formatRank } from '../lib/format';
-import { faitsCommune, faitsPatrimoine, faitsPopulation } from '../lib/faits';
+import { faitsCommune, faitsImmobilier, faitsPatrimoine, faitsPopulation } from '../lib/faits';
 import { resumeRisques } from '../data/patrimoine';
+import { resumeImmobilier } from '../data/immobilier';
 import { toPercent } from '../lib/scale';
 
 const luynes = agesDe('Luynes');
 const france = agesDe('France');
 
 // Mélange des anecdotes des différents thèmes (une de chaque à tour de rôle).
-const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine()];
+const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier()];
 const longueurMax = Math.max(...sources.map((s) => s.length));
 const faits = Array.from({ length: longueurMax }, (_, i) => sources.flatMap((s) => (s[i] ? [s[i]] : []))).flat();
 
@@ -124,6 +125,22 @@ const sparkline = historique
         label="Cavités souterraines"
         value={resumeRisques.cavites}
         note={`${formatRank(resumeRisques.rang_cavites)} commune du département : le coteau est creusé de caves.`}
+      />
+      <KeyFigure
+        class="sm:col-span-4"
+        tone="accent"
+        href="/immobilier"
+        label="Prix au m² d'une maison"
+        value={resumeImmobilier.prix_m2_maison}
+        unit="€/m²"
+        note={`Contre ${formatNumber(resumeImmobilier.prix_m2_maison_37)} €/m² en Indre-et-Loire (prix médians ${resumeImmobilier.annee_debut}-${resumeImmobilier.annee_fin}).`}
+      />
+      <KeyFigure
+        class="sm:col-span-2"
+        href="/immobilier#carte"
+        label="Ventes immobilières"
+        value={resumeImmobilier.ventes}
+        note={`Depuis ${resumeImmobilier.annee_debut}, toutes sur une carte.`}
       />
     </div>
   </section>

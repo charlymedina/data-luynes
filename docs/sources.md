@@ -33,12 +33,31 @@ Notes :
 | [Géorisques — arrêtés CatNat (GASPAR)](https://georisques.gouv.fr/api/v1/gaspar/catnat?code_insee=37139) | Arrêtés de catastrophe naturelle de Luynes et de toutes les communes du 37 | Ministère de l'Intérieur / DGPR | Licence Ouverte 2.0 | Continue | `data/raw/catnat_luynes.json`, `catnat_37.json` |
 | [Géorisques — risques recensés (GASPAR)](https://georisques.gouv.fr/api/v1/gaspar/risques?code_insee=37139) | Liste des risques naturels officiellement recensés pour la commune | DGPR | Licence Ouverte 2.0 | Continue | `data/raw/risques_luynes.json` |
 | [API Géo — contour](https://geo.api.gouv.fr/communes/37139?format=geojson&geometry=contour) | Limite de la commune sur la carte | IGN / Etalab | Licence Ouverte 2.0 | Annuelle | `data/raw/commune_contour.json` |
+| [Géorisques — zones inondables (directive inondation, WFS)](https://www.georisques.gouv.fr/services?service=WFS&version=2.0.0&request=GetCapabilities) | Couche `ALEA_SYNT_01_02MOY_FXX` : surfaces inondables par débordement de cours d'eau, scénario « probabilité moyenne » (période de retour 100 à 300 ans) du TRI de Tours, dans un rectangle autour de Luynes ; découpée à la limite communale en SQL | DGPR / DDT, directive inondation | Licence Ouverte 2.0 | Révision tous les 6 ans (cycle directive inondation) | `data/raw/zones_inondables.json` |
 | [OpenFreeMap](https://openfreemap.org) | Fond de carte (styles « positron » et « dark »), chargé par le navigateur du visiteur | OpenFreeMap, données OpenStreetMap | ODbL (données OSM) | — | — |
 
 Notes :
 - Les réponses paginées (Géorisques, API tabulaire) sont fusionnées par `scripts/build-data.ts` en un seul fichier `{ "data": [...] }`.
 - Les codes INSEE « lors de la protection » de Mérimée peuvent être d'anciens codes de communes fusionnées : celles-ci comptent alors 0 monument dans le classement.
-- Requêtes : `data/sql/patrimoine_*.sql` et `data/sql/risques_*.sql`.
+- Zones inondables : le scénario « extrême » (`ALEA_SYNT_01_04FAI_FXX`) a été comparé le 19/11/2026 ; il couvre exactement la même surface à Luynes (389 ha, 11,4 % de la commune), on ne garde donc que le scénario de référence. Le découpage et les surfaces utilisent l'extension `spatial` de DuckDB (téléchargée automatiquement), en Lambert 93. Pas de classement départemental (il faudrait les zones de tous les TRI du 37).
+- Requêtes : `data/sql/patrimoine_*.sql` et `data/sql/risques_*.sql` (+ `_spatial.sql`).
+
+## Thème Immobilier
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Géo-DVF — demandes de valeurs foncières géolocalisées](https://www.data.gouv.fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/) (`https://files.data.gouv.fr/geo-dvf/latest/csv/<année>/departements/37.csv.gz`) | Toutes les ventes d'Indre-et-Loire des années publiées (2021 → 2025 au 19/11/2026) : prix, date, surfaces, pièces, type de local, position de la parcelle, rue. Luynes = `code_commune = '37139'` | DGFiP, géolocalisé par Etalab | Licence Ouverte 2.0 | Semestrielle (avril, octobre) | `data/raw/dvf_37/*.csv.gz` |
+| [ADEME — DPE logements existants](https://data.ademe.fr/datasets/dpe03existant) (API data-fair, agrégat `values_agg?field=etiquette_dpe`) | Nombre de DPE par étiquette A → G à Luynes (`code_insee_ban:37139`), en Indre-et-Loire et en France, depuis juillet 2021 | ADEME | Licence Ouverte 2.0 | Quotidienne | `data/raw/dpe_luynes.json`, `dpe_37.json`, `dpe_france.json` |
+| [Carte des loyers 2025](https://www.data.gouv.fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/) via l'API tabulaire data.gouv (fichiers « maison » et « appartement ») | Loyer d'annonce prédit au m² charges comprises, fourchette, nombre d'annonces, pour les 272 communes du 37 | Ministère de la Transition écologique (DHUP), annonces SeLoger / Leboncoin / PAP | Licence Ouverte 2.0 | Annuelle (un nouveau jeu chaque décembre) | `data/raw/loyers_maisons_37.json`, `loyers_appartements_37.json` |
+
+Notes :
+- **DVF ne garde que ~5 ans glissants** : à chaque mise à jour, l'année la plus ancienne disparaît (2021 partira en 2027). La liste des années est recalculée à chaque construction (`data/sources.ts`, fonction `dvfDepartement37`). Pour garder l'historique, il faudra archiver nous-mêmes les fichiers (pas encore fait).
+- Une vente DVF occupe plusieurs lignes (parcelles, locaux, natures de terrain) : `data/sql/_dvf.sql` regroupe tout par `id_mutation` et définit le type de bien (maison seule, appartement seul, terrain, autre). Prix au m² seulement pour une maison ou un appartement vendu seul, surface ≥ 15 m², entre 300 et 15 000 €/m² ; ventes < 1 000 € écartées. Échanges, adjudications et expropriations exclus.
+- Le classement des prix au m² ne retient que les communes avec au moins 30 ventes de maisons sur la période.
+- Carte des loyers : identifiants des fichiers 2025 codés dans `data/sources.ts` ; à mettre à jour quand le jeu 2026 sortira.
+- Les DPE ne concernent que les logements vendus, loués ou rénovés depuis juillet 2021 : ce n'est pas un portrait de tout le parc.
+- Les ventes de Luynes sont aussi publiées en `/donnees/ventes-immobilieres.json` (fichier lu par la carte).
+- Requêtes : `data/sql/_dvf.sql` et `data/sql/immobilier_*.sql`.
 
 Les données sont téléchargées à nouveau à chaque construction du site (au moins une fois par semaine),
 avec 3 tentatives par source en cas de panne passagère.

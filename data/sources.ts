@@ -20,6 +20,11 @@ export interface Source {
    *  - « tabular »    : API tabulaire data.gouv (lien links.next).
    */
   readonly pagination?: 'georisques' | 'tabular';
+  /**
+   * « json » (par défaut) : réponse JSON enregistrée dans data/raw/<id>.json.
+   * « fichiers » : fichiers bruts (ex. CSV compressés) enregistrés tels quels dans le dossier data/raw/<id>/.
+   */
+  readonly format?: 'json' | 'fichiers';
 }
 
 const GEO_API = 'https://geo.api.gouv.fr';
@@ -74,6 +79,52 @@ function georisquesCommunes37(endpoint: string): () => Promise<string[]> {
     return urls;
   };
 }
+
+/**
+ * Zones inondables (Géorisques, service WFS « directive inondation ») autour de Luynes, au format GeoJSON.
+ * Couche ALEA_SYNT_01_02MOY : débordement de cours d'eau (01), scénario « moyen » (02MOY, crue de référence
+ * de probabilité moyenne) du territoire à risque important d'inondation (TRI) de Tours.
+ * Le rectangle (latitudes 47,36–47,46, longitudes 0,47–0,61) englobe la commune ; le découpage exact
+ * à la limite communale est fait en SQL (data/sql/risques_zones_inondables.sql).
+ */
+const ZONES_INONDABLES =
+  'https://www.georisques.gouv.fr/services?service=WFS&version=2.0.0&request=GetFeature' +
+  '&typeNames=ms:ALEA_SYNT_01_02MOY_FXX&srsName=EPSG:4326&outputFormat=geojson' +
+  '&bbox=47.36,0.47,47.46,0.61,urn:ogc:def:crs:EPSG::4326';
+
+/** Géo-DVF (Etalab) : ventes immobilières géolocalisées, un fichier par année et par département. */
+const GEO_DVF = 'https://files.data.gouv.fr/geo-dvf/latest/csv';
+/** Nombre d'années à tester en remontant depuis l'année en cours (DVF ne garde que ~5 ans glissants). */
+const DVF_ANNEES_TESTEES = 7;
+
+/**
+ * Adresses des fichiers DVF d'Indre-et-Loire de toutes les années actuellement publiées.
+ * La liste change à chaque mise à jour (une année arrive, la plus ancienne disparaît) :
+ * on teste les années récentes une par une et on garde celles qui existent.
+ */
+async function dvfDepartement37(): Promise<string[]> {
+  const anneeEnCours = new Date().getFullYear();
+  const urls: string[] = [];
+  for (let annee = anneeEnCours - DVF_ANNEES_TESTEES; annee <= anneeEnCours; annee++) {
+    const url = `${GEO_DVF}/${annee}/departements/37.csv.gz`;
+    const response = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(30_000) });
+    if (response.ok) urls.push(url);
+  }
+  return urls;
+}
+
+/** API « data-fair » de l'ADEME : diagnostics de performance énergétique (DPE) des logements existants. */
+const DPE_AGREGATS = 'https://data.ademe.fr/data-fair/api/v1/datasets/dpe03existant/values_agg?field=etiquette_dpe';
+
+/**
+ * Carte des loyers 2025 (ministère de la Transition écologique), via l'API tabulaire de data.gouv
+ * (évite l'encodage Latin-1 du CSV). Identifiants des fichiers « maison » et « appartement » du jeu
+ * « Carte des loyers – indicateurs de loyers d'annonce par commune en 2025 » (un nouveau jeu chaque année).
+ */
+const LOYERS_2025 = {
+  maison: 'https://tabular-api.data.gouv.fr/api/resources/129f764d-b613-44e4-952c-5ff50a8c9b73/data/',
+  appartement: 'https://tabular-api.data.gouv.fr/api/resources/55b34088-0964-415f-9df7-d87dd98a09be/data/',
+} as const;
 
 export const SOURCES: readonly Source[] = [
   // — Commune et classement dans le département (accueil, Territoire, Population) —
@@ -184,5 +235,45 @@ export const SOURCES: readonly Source[] = [
     description: "Cavités souterraines des communes d'Indre-et-Loire (Géorisques / BRGM)",
     url: georisquesCommunes37('cavites'),
     pagination: 'georisques',
+  },
+  {
+    id: 'zones_inondables',
+    description: 'Zones inondables de la Loire autour de Luynes, crue de référence (Géorisques, directive inondation)',
+    url: ZONES_INONDABLES,
+  },
+
+  // — Immobilier —
+  {
+    id: 'dvf_37',
+    description: "Ventes immobilières d'Indre-et-Loire, toutes les années publiées (DVF géolocalisées, Etalab)",
+    url: dvfDepartement37,
+    format: 'fichiers',
+  },
+  {
+    id: 'dpe_luynes',
+    description: 'Étiquettes énergie (DPE) des logements de Luynes (ADEME)',
+    url: `${DPE_AGREGATS}&qs=code_insee_ban:37139`,
+  },
+  {
+    id: 'dpe_37',
+    description: "Étiquettes énergie (DPE) des logements d'Indre-et-Loire (ADEME)",
+    url: `${DPE_AGREGATS}&qs=code_departement_ban:37`,
+  },
+  {
+    id: 'dpe_france',
+    description: 'Étiquettes énergie (DPE) des logements de France (ADEME)',
+    url: DPE_AGREGATS,
+  },
+  {
+    id: 'loyers_maisons_37',
+    description: "Loyers d'annonce des maisons par commune d'Indre-et-Loire, 2025 (Carte des loyers)",
+    url: `${LOYERS_2025.maison}?DEP__exact=37&page_size=50`,
+    pagination: 'tabular',
+  },
+  {
+    id: 'loyers_appartements_37',
+    description: "Loyers d'annonce des appartements par commune d'Indre-et-Loire, 2025 (Carte des loyers)",
+    url: `${LOYERS_2025.appartement}?DEP__exact=37&page_size=50`,
+    pagination: 'tabular',
   },
 ];

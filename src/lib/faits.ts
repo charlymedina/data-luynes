@@ -4,15 +4,20 @@
  */
 import { commune, rang } from '../data/commune';
 import { agesDe, derniereAnneeEtatCivil, faits, pyramide } from '../data/population';
-import { monuments, resumeRisques } from '../data/patrimoine';
+import { monuments, resumeRisques, zoneInondable } from '../data/patrimoine';
+import { etiquettesDpe, loyerMaison, resumeImmobilier } from '../data/immobilier';
 import { formatNumber, formatOneIn, formatPercent, formatRank, formatRatio } from './format';
 
 /** Écart femmes/hommes chez les plus âgés : seulement si l'écart est vraiment parlant. */
 const RATIO_FEMMES_PARLANT = 1.5;
 
-/** Part des communes du département devant lesquelles Luynes se classe (ex. rang 46 sur 272 → 83 %). */
-export function partDevancee(rangLuynes: number): number {
-  return Math.round((100 * (rang.nb_communes - rangLuynes)) / rang.nb_communes);
+/**
+ * Part des communes devant lesquelles Luynes se classe (ex. rang 46 sur 272 → 83 %).
+ * Par défaut sur les 272 communes du département ; `total` pour un classement restreint (ex. communes
+ * avec assez de ventes immobilières).
+ */
+export function partDevancee(rangLuynes: number, total: number = rang.nb_communes): number {
+  return Math.round((100 * (total - rangLuynes)) / total);
 }
 
 /** « +3,8 % » / « −3,7 % » */
@@ -52,9 +57,32 @@ export function faitsPatrimoine(): string[] {
     `${formatNumber(r.cavites)} cavités souterraines sont recensées à Luynes : ${formatRatio(r.cavites, r.moyenne_cavites_departement)} fois la moyenne des communes du département. Le tuffeau du coteau a été creusé de toutes parts !`,
     `Luynes a connu ${formatNumber(r.catnat)} arrêtés de catastrophe naturelle depuis ${r.catnat_premiere_annee}, dont ${formatNumber(r.catnat_secheresse)} pour sécheresse : ${formatRank(r.rang_catnat)} commune la plus touchée du département.`,
     `Le plus ancien mouvement de terrain recensé à Luynes date de ${r.mouvement_plus_ancien}.`,
+    `${formatPercent(zoneInondable.part_commune_pct)} de la commune (${formatNumber(zoneInondable.surface_ha)} hectares) est en zone inondable de la Loire, entre le coteau et le fleuve.`,
   ];
   if (plusAncien) {
     liste.unshift(`« ${plusAncien.nom} » : c'est le premier monument de Luynes protégé au titre des monuments historiques, dès ${plusAncien.annee_protection} !`);
+  }
+  return liste;
+}
+
+/** Anecdotes « Immobilier » (ventes DVF, loyers, étiquettes énergie). */
+export function faitsImmobilier(): string[] {
+  const r = resumeImmobilier;
+  const nbAnnees = r.annee_fin - r.annee_debut + 1;
+  const passoire = (cle: 'part_luynes' | 'part_37'): number =>
+    etiquettesDpe.filter((e) => e.etiquette === 'F' || e.etiquette === 'G').reduce((somme, e) => somme + e[cle], 0);
+  const liste = [
+    `Une maison se vend ${formatNumber(r.prix_maison)} € à Luynes (prix médian), contre ${formatNumber(r.prix_maison_37)} € en Indre-et-Loire.`,
+    `Au m², une maison coûte ${formatNumber(r.prix_m2_maison)} € à Luynes : ${formatRank(r.rang_prix_m2_maison)} commune la plus chère du département sur les ${r.nb_communes_classees} qui ont assez de ventes pour être comparées.`,
+    `En ${nbAnnees} ans, ${formatNumber(r.ventes)} biens ont changé de mains à Luynes, pour ${formatNumber(r.montant_total / 1_000_000)} millions d'euros au total.`,
+    `La maison la plus chère vendue à Luynes depuis ${r.annee_debut} est partie à ${formatNumber(r.maison_la_plus_chere)} €.`,
+    `La maison « type » vendue à Luynes : ${formatNumber(r.surface_maison)} m² habitables sur ${formatNumber(r.terrain_maison)} m² de terrain.`,
+    `${formatPercent(passoire('part_luynes'))} des logements diagnostiqués à Luynes sont des « passoires thermiques » (étiquette F ou G), contre ${formatPercent(passoire('part_37'))} en Indre-et-Loire.`,
+  ];
+  if (loyerMaison) {
+    liste.push(
+      `Louer une maison de 100 m² à Luynes coûte environ ${formatNumber(Math.round(loyerMaison.loyer_m2 * 10) * 10)} € par mois, charges comprises (annonces ${loyerMaison.annee}).`,
+    );
   }
   return liste;
 }

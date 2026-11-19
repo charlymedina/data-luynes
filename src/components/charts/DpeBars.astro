@@ -1,0 +1,118 @@
+---
+/**
+ * Étiquettes énergie (DPE) de A à G : pour chaque lettre, la part des logements à Luynes (barre d'accent)
+ * et en Indre-et-Loire (barre de référence). La lettre est affichée dans sa couleur officielle (vert → rouge)
+ * ET écrite : la couleur n'est jamais le seul repère. Tableau complet (avec la France) repliable.
+ */
+import type { EtiquetteDpe } from '../../data/immobilier';
+import type { TipContent } from '../../lib/chart-tooltip';
+import { formatNumber } from '../../lib/format';
+
+interface Props {
+  etiquettes: readonly EtiquetteDpe[];
+  ariaLabel: string;
+}
+
+const { etiquettes, ariaLabel } = Astro.props;
+
+/** Couleurs officielles de l'étiquette énergie, et couleur de la lettre posée dessus (lisibilité). */
+const COULEURS: Record<EtiquetteDpe['etiquette'], { fond: string; texte: string }> = {
+  A: { fond: '#009c6d', texte: '#ffffff' },
+  B: { fond: '#52b153', texte: '#ffffff' },
+  C: { fond: '#78bd76', texte: '#1b2a2e' },
+  D: { fond: '#f4e70f', texte: '#1b2a2e' },
+  E: { fond: '#f0b50f', texte: '#1b2a2e' },
+  F: { fond: '#eb8235', texte: '#1b2a2e' },
+  G: { fond: '#d7221f', texte: '#ffffff' },
+};
+
+const max = Math.max(...etiquettes.flatMap((e) => [e.part_luynes, e.part_37]));
+const pct = (v: number): string => `${formatNumber(v, 1)} %`;
+const tip = (e: EtiquetteDpe): string =>
+  JSON.stringify({
+    title: `Étiquette ${e.etiquette}`,
+    rows: [
+      { label: `Luynes (${formatNumber(e.dpe_luynes)} DPE)`, value: pct(e.part_luynes), color: 'var(--chart-2)' },
+      { label: 'Indre-et-Loire', value: pct(e.part_37), color: 'var(--chart-1)' },
+      { label: 'France', value: pct(e.part_france), color: 'transparent' },
+    ],
+  } satisfies TipContent);
+---
+
+<figure data-chart="rows" class="relative">
+  <ul class="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2" aria-label="Légende">
+    <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded-[3px] bg-chart-2" aria-hidden="true"></span>Luynes</li>
+    <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded-[3px] bg-chart-1" aria-hidden="true"></span>Indre-et-Loire</li>
+  </ul>
+  <ol class="space-y-2" role="img" aria-label={ariaLabel}>
+    {
+      etiquettes.map((e) => (
+        <li class="dpe-row grid grid-cols-[2rem_1fr] items-center gap-3" data-tip={tip(e)}>
+          <span
+            class="grid h-8 w-8 place-items-center rounded-md font-display text-lg font-extrabold"
+            style={`background:${COULEURS[e.etiquette].fond};color:${COULEURS[e.etiquette].texte}`}
+            aria-hidden="true"
+          >
+            {e.etiquette}
+          </span>
+          <span class="space-y-[2px]">
+            <span class="flex items-center gap-2">
+              <span data-bar class="dpe-bar h-3.5 rounded-r-[4px] bg-chart-2" style={`width:${(e.part_luynes / max) * 80}%`} />
+              <span class="tabular shrink-0 text-xs font-bold text-ink">{pct(e.part_luynes)}</span>
+            </span>
+            <span class="flex items-center gap-2">
+              <span data-bar class="dpe-bar h-3.5 rounded-r-[4px] bg-chart-1" style={`width:${(e.part_37 / max) * 80}%`} />
+              <span class="tabular shrink-0 text-xs text-ink-2">{pct(e.part_37)}</span>
+            </span>
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+  <div class="chart-tip" hidden></div>
+
+  <details class="mt-4 text-sm text-ink-2">
+    <summary class="cursor-pointer font-medium hover:text-ink">Voir les données en tableau</summary>
+    <div class="mt-3 overflow-auto rounded-xl border border-line">
+      <table class="tabular w-full text-left">
+        <caption class="sr-only">Répartition des étiquettes énergie (DPE) des logements, en % des DPE réalisés</caption>
+        <thead class="bg-surface">
+          <tr>
+            <th scope="col" class="px-3 py-2">Étiquette</th>
+            <th scope="col" class="px-3 py-2 text-right">Luynes</th>
+            <th scope="col" class="px-3 py-2 text-right">Indre-et-Loire</th>
+            <th scope="col" class="px-3 py-2 text-right">France</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            etiquettes.map((e) => (
+              <tr class="border-t border-line">
+                <th scope="row" class="px-3 py-1.5 font-medium">{e.etiquette}</th>
+                <td class="px-3 py-1.5 text-right">{pct(e.part_luynes)} <span class="text-muted">({formatNumber(e.dpe_luynes)})</span></td>
+                <td class="px-3 py-1.5 text-right">{pct(e.part_37)}</td>
+                <td class="px-3 py-1.5 text-right">{pct(e.part_france)}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+
+<style>
+  .dpe-row:hover .dpe-bar {
+    filter: brightness(0.85);
+  }
+  .dpe-bar {
+    transform-origin: left center;
+  }
+  :global(html.motion) .dpe-bar {
+    transform: scaleX(0);
+    transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  :global(html.motion) .dpe-bar:global(.is-visible) {
+    transform: none;
+  }
+</style>

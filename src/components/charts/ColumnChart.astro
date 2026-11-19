@@ -1,0 +1,100 @@
+---
+/**
+ * Histogramme en colonnes (ex. ventes par année, répartition des prix), dessiné côté serveur.
+ * Valeur écrite au-dessus de chaque colonne, libellé court en dessous ; survol : infobulle détaillée.
+ * Une colonne peut être mise en avant (couleur d'accent). Tableau des valeurs repliable en dessous.
+ */
+import type { TipContent } from '../../lib/chart-tooltip';
+
+export interface Column {
+  /** Libellé court sous la colonne, ex. « 2024 » ou « 200 k€ » */
+  label: string;
+  /** Libellé complet (tableau, infobulle), ex. « de 200 000 à 250 000 € » */
+  fullLabel: string;
+  value: number;
+  /** Valeur mise en forme au-dessus de la colonne */
+  display: string;
+  highlight?: boolean;
+}
+
+interface Props {
+  columns: readonly Column[];
+  ariaLabel: string;
+  tableCaption: string;
+  /** En-têtes du tableau, ex. ["Année", "Ventes"] */
+  headers: readonly [string, string];
+  /** Unité dans l'infobulle, ex. « ventes » */
+  unit: string;
+}
+
+const { columns, ariaLabel, tableCaption, headers, unit } = Astro.props;
+const max = Math.max(...columns.map((c) => c.value), 1);
+const tip = (c: Column): string =>
+  JSON.stringify({
+    title: c.fullLabel,
+    rows: [{ label: unit, value: c.display, color: c.highlight ? 'var(--chart-2)' : 'var(--chart-1)' }],
+  } satisfies TipContent);
+---
+
+<figure data-chart="rows" class="relative">
+  <div class="relative flex h-48 items-end gap-[2px] border-b border-chart-grid sm:h-60" role="img" aria-label={ariaLabel}>
+    {
+      columns.map((c) => (
+        <span class="col-cell relative flex h-full min-w-0 flex-1 flex-col items-center justify-end" data-tip={tip(c)}>
+          <span class:list={['tabular mb-1 text-[0.7rem] leading-none sm:text-xs', c.highlight ? 'font-bold text-ink' : 'text-ink-2']}>
+            {c.display}
+          </span>
+          <span
+            class:list={['col-bar w-full rounded-t-[4px]', c.highlight ? 'bg-chart-2' : 'bg-chart-1']}
+            style={`height:${(c.value / max) * 85}%`}
+          />
+        </span>
+      ))
+    }
+  </div>
+  <div class="mt-2 flex gap-[2px]" aria-hidden="true">
+    {columns.map((c) => <span class="tabular min-w-0 flex-1 truncate text-center text-[0.65rem] text-muted sm:text-xs">{c.label}</span>)}
+  </div>
+  <div class="chart-tip" hidden></div>
+
+  <details class="mt-4 text-sm text-ink-2">
+    <summary class="cursor-pointer font-medium hover:text-ink">Voir les données en tableau</summary>
+    <div class="mt-3 max-h-72 overflow-auto rounded-xl border border-line">
+      <table class="tabular w-full text-left">
+        <caption class="sr-only">{tableCaption}</caption>
+        <thead class="sticky top-0 bg-surface">
+          <tr>
+            <th scope="col" class="px-3 py-2">{headers[0]}</th>
+            <th scope="col" class="px-3 py-2 text-right">{headers[1]}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            columns.map((c) => (
+              <tr class="border-t border-line">
+                <th scope="row" class="px-3 py-1.5 font-medium">{c.fullLabel}</th>
+                <td class="px-3 py-1.5 text-right">{c.display}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+
+<style>
+  .col-cell:hover .col-bar {
+    filter: brightness(0.82);
+  }
+  .col-bar {
+    transform-origin: bottom center;
+  }
+  :global(.motion .reveal) .col-bar {
+    transform: scaleY(0);
+    transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  :global(.motion .reveal.is-visible) .col-bar {
+    transform: none;
+  }
+</style>

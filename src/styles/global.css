@@ -20,7 +20,16 @@
   /* Couleurs des séries de graphiques (palette validée : contraste, daltonisme, saturation). */
   --chart-1: #00909a;
   --chart-2: #d9542a;
+  /* 3ᵉ couleur de carte (zone inondable) : validée avec les deux premières, toutes paires confondues. */
+  --chart-3: #5a6fd6;
   --chart-grid: #ece4d0;
+  /* Rampe ordonnée « prix au m² » (du moins cher au plus cher), une seule teinte, validée (--ordinal). */
+  --seq-1: #72bcbf;
+  --seq-2: #3f9fa4;
+  --seq-3: #1b868d;
+  --seq-4: #0d666d;
+  --seq-5: #07464c;
+  --seq-none: #9aa3a4;
   color-scheme: light;
 }
 
@@ -41,7 +50,15 @@
     --bar: #3c5257;
     --chart-1: #2ea3aa;
     --chart-2: #e8693c;
+    --chart-3: #6a7de3;
     --chart-grid: #22353a;
+    /* En sombre, la rampe s'inverse : le plus cher est le plus lumineux. */
+    --seq-1: #1d6a6e;
+    --seq-2: #2a8f95;
+    --seq-3: #45b3b5;
+    --seq-4: #7fd2cf;
+    --seq-5: #bdeae6;
+    --seq-none: #6b7778;
     color-scheme: dark;
   }
 }
@@ -59,7 +76,14 @@
   --bar: #3c5257;
   --chart-1: #2ea3aa;
   --chart-2: #e8693c;
+  --chart-3: #6a7de3;
   --chart-grid: #22353a;
+  --seq-1: #1d6a6e;
+  --seq-2: #2a8f95;
+  --seq-3: #45b3b5;
+  --seq-4: #7fd2cf;
+  --seq-5: #bdeae6;
+  --seq-none: #6b7778;
   color-scheme: dark;
 }
 
@@ -77,6 +101,7 @@
   --color-bar: var(--bar);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
   --color-chart-grid: var(--chart-grid);
   --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
   --font-sans: 'Inter Variable', system-ui, sans-serif;
@@ -130,4 +155,30 @@ body {
 }
 .chart-tip[hidden] {
   display: none;
+}
+
+/* Infobulles des cartes (MapLibre) aux couleurs du site, communes à toutes les cartes. */
+.maplibregl-popup-content {
+  background: var(--ink) !important;
+  color: var(--bg);
+  border-radius: 0.75rem !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.8125rem;
+  font-family: var(--font-sans);
+}
+.maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: var(--ink) !important;
+}
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: var(--ink) !important;
+}
+.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--ink) !important;
+}
+.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--ink) !important;
 }

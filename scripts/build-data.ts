@@ -1,6 +1,7 @@
 /**
  * Prépare les données du site, en deux étapes :
- *  1. télécharge chaque source listée dans data/sources.ts vers data/raw/<id>.json ;
+ *  1. télécharge chaque source listée dans data/sources.ts vers data/raw/<id>.json
+ *     (ou, pour les sources au format « fichiers » comme les CSV compressés, vers le dossier data/raw/<id>/) ;
  *  2. exécute les requêtes de data/sql/ avec DuckDB :
  *     - les fichiers qui commencent par « _ » (ex. _melodi.sql) sont exécutés en premier : ils préparent
  *       des vues partagées par plusieurs requêtes et ne produisent pas de fichier ;
@@ -9,7 +10,7 @@
  * Règle simple : un fichier .sql = un fichier .json. Chaque requête doit renvoyer au moins une ligne,
  * sinon la construction s'arrête (et le site déjà en ligne reste inchangé).
  */
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
@@ -82,12 +83,42 @@ async function fetchJson(source: Source): Promise<string> {
   return JSON.stringify({ data: rows });
 }
 
+/** Nom de fichier lisible tiré des 3 derniers segments de l'adresse (ex. « 2024-departements-37.csv.gz »). */
+function fileNameFromUrl(url: string): string {
+  return new URL(url).pathname.split('/').filter(Boolean).slice(-3).join('-');
+}
+
+/**
+ * Source au format « fichiers » : chaque adresse est enregistrée telle quelle (sans conversion) dans
+ * data/raw/<id>/. Tout est téléchargé avant d'écrire, puis le dossier est vidé : jamais de fichier périmé.
+ */
+async function downloadFiles(source: Source): Promise<void> {
+  const files: { name: string; content: Uint8Array }[] = [];
+  for (const url of await resolveUrls(source)) {
+    const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+    if (!response.ok) throw new Error(`HTTP ${response.status} pour ${url}`);
+    files.push({ name: fileNameFromUrl(url), content: new Uint8Array(await response.arrayBuffer()) });
+  }
+  if (files.length === 0) throw new Error('aucun fichier à télécharger');
+  const dir = path.join(RAW_DIR, source.id);
+  await rm(dir, { recursive: true, force: true });
+  await mkdir(dir, { recursive: true });
+  for (const file of files) await writeFile(path.join(dir, file.name), file.content);
+}
+
+async function download(source: Source): Promise<void> {
+  if (source.format === 'fichiers') {
+    await downloadFiles(source);
+    return;
+  }
+  await writeFile(path.join(RAW_DIR, `${source.id}.json`), await fetchJson(source));
+}
+
 /** Télécharge une source, avec jusqu'à 3 tentatives espacées (2 s, puis 4 s) en cas de panne passagère. */
 async function downloadSource(source: Source): Promise<void> {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      const body = await fetchJson(source);
-      await writeFile(path.join(RAW_DIR, `${source.id}.json`), body);
+      await download(source);
       console.log(`↓ ${source.id} — ${source.description}`);
       return;
     } catch (error: unknown) {
@@ -133,7 +164,12 @@ async function main(): Promise<void> {
   await mkdir(RAW_DIR, { recursive: true });
   await mkdir(OUTPUT_DIR, { recursive: true });
   // Une source après l'autre : plus doux pour les API publiques (INSEE notamment).
-  for (const source of SOURCES) await downloadSource(source);
+  // En développement, `npm run data -- --sources=id1,id2` ne retélécharge que ces sources (les autres
+  // fichiers de data/raw/ sont réutilisés tels quels) ; la construction officielle télécharge tout.
+  const only = process.argv.find((arg) => arg.startsWith('--sources='))?.slice('--sources='.length).split(',');
+  for (const source of SOURCES) {
+    if (!only || only.includes(source.id)) await downloadSource(source);
+  }
   await runQueries();
   await writeFile(
     path.join(OUTPUT_DIR, 'meta.json'),
