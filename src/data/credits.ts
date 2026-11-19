@@ -61,13 +61,40 @@ const INSEE_REVENUS_EMPLOI: FooterSource = {
   detail: 'niveau de vie, pauvreté, activité, trajets domicile-travail, salaires, créations d’entreprises — Licence Ouverte 2.0',
 };
 
+const ONISR_BAAC: FooterSource = {
+  nom: 'ONISR — bases annuelles des accidents corporels de la circulation (BAAC)',
+  url: 'https://www.data.gouv.fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024/',
+  detail: 'accidents 2005 → dernière année publiée, archive du site pour l’Indre-et-Loire — Licence Ouverte 2.0',
+};
+
+const METEO_FRANCE: FooterSource = {
+  nom: 'Météo-France — données climatologiques de base quotidiennes (meteo.data.gouv.fr)',
+  url: 'https://www.data.gouv.fr/datasets/donnees-climatologiques-de-base-quotidiennes/',
+  detail: 'station de Tours (n° 37179001), températures et pluie depuis 1959 — Licence Ouverte 2.0',
+};
+
+const INSEE_BPE: FooterSource = {
+  nom: 'INSEE — base permanente des équipements (API Melodi)',
+  url: 'https://www.insee.fr/fr/metadonnees/source/serie/s1161',
+  detail: 'commerces, services, santé, enseignement, sport, tourisme — Licence Ouverte 2.0',
+};
+
+const EDUCATION_NATIONALE: FooterSource = {
+  nom: 'Éducation nationale — annuaire de l’éducation, effectifs d’élèves par école',
+  url: 'https://data.education.gouv.fr',
+  detail: 'écoles et collèges, élèves et classes à chaque rentrée — Licence Ouverte 2.0',
+};
+
 const OPENFREEMAP: FooterSource = {
   nom: 'OpenFreeMap',
   url: 'https://openfreemap.org',
   detail: 'fond de carte, données © contributeurs OpenStreetMap (ODbL)',
 };
 
-export const CREDITS_ACCUEIL: readonly FooterSource[] = [API_GEO, INSEE_RECENSEMENT, TOURS_METROPOLE, MERIMEE, GEORISQUES, DVF, DGFIP_COMPTES, INSEE_REVENUS_EMPLOI];
+export const CREDITS_ACCUEIL: readonly FooterSource[] = [API_GEO, INSEE_RECENSEMENT, TOURS_METROPOLE, MERIMEE, GEORISQUES, DVF, DGFIP_COMPTES, INSEE_REVENUS_EMPLOI, ONISR_BAAC, METEO_FRANCE, INSEE_BPE, EDUCATION_NATIONALE];
+export const CREDITS_EQUIPEMENTS: readonly FooterSource[] = [INSEE_BPE, EDUCATION_NATIONALE, API_GEO];
+export const CREDITS_CLIMAT: readonly FooterSource[] = [METEO_FRANCE, API_GEO];
+export const CREDITS_ACCIDENTS: readonly FooterSource[] = [ONISR_BAAC, API_GEO, OPENFREEMAP];
 export const CREDITS_BUDGET: readonly FooterSource[] = [DGFIP_COMPTES];
 export const CREDITS_REVENUS: readonly FooterSource[] = [INSEE_REVENUS_EMPLOI, API_GEO];
 export const CREDITS_IMMOBILIER: readonly FooterSource[] = [DVF, CARTE_LOYERS, ADEME_DPE, API_GEO, OPENFREEMAP];

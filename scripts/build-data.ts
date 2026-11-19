@@ -6,7 +6,8 @@
  *     - les fichiers qui commencent par « _ » (ex. _melodi.sql) sont exécutés en premier : ils préparent
  *       des vues partagées par plusieurs requêtes et ne produisent pas de fichier ;
  *     - chaque autre fichier <nom>.sql produit src/data/generated/<nom>.json, que les pages importent.
- *  (entre les deux, les ventes DVF sont archivées dans data/archive/dvf/ : voir scripts/archive-dvf.ts)
+ *  (entre les deux, les ventes DVF sont archivées dans data/archive/dvf/ : voir scripts/archive-dvf.ts ;
+ *   les accidents de la route sont archivés dans data/archive/baac/ : voir scripts/archive-baac.ts)
  *
  * Règle simple : un fichier .sql = un fichier .json. Chaque requête doit renvoyer au moins une ligne,
  * sinon la construction s'arrête (et le site déjà en ligne reste inchangé).
@@ -17,6 +18,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { SOURCES, type Source } from '../data/sources.ts';
 import { archiverDvf } from './archive-dvf.ts';
+import { archiverBaac } from './archive-baac.ts';
 
 const RAW_DIR = 'data/raw';
 const SQL_DIR = 'data/sql';
@@ -153,6 +155,8 @@ async function runQueries(): Promise<void> {
   try {
     // Les ventes DVF téléchargées sont d'abord versées dans l'archive du dépôt (data/archive/dvf/), que lit _dvf.sql.
     await archiverDvf(connection);
+    // Les accidents de la route (BAAC) sont lus depuis leur archive (data/archive/baac/), mise à jour si besoin.
+    await archiverBaac(connection);
     for (const file of sharedFiles) {
       await connection.run(await readFile(path.join(SQL_DIR, file), 'utf8'));
       console.log(`✓ ${file} (vues partagées)`);

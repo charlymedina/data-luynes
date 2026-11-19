@@ -32,6 +32,9 @@
   --seq-4: #0d666d;
   --seq-5: #07464c;
   --seq-none: #9aa3a4;
+  /* Échelle divergente « plus frais ↔ plus chaud » (bandes du réchauffement) : pôles bleu (--chart-3) et
+     orange (--chart-2), milieu neutre sans teinte. */
+  --div-mid: #e4ded0;
   color-scheme: light;
 }
 
@@ -62,6 +65,7 @@
     --seq-4: #7fd2cf;
     --seq-5: #bdeae6;
     --seq-none: #6b7778;
+    --div-mid: #34403f;
     color-scheme: dark;
   }
 }
@@ -88,6 +92,7 @@
   --seq-4: #7fd2cf;
   --seq-5: #bdeae6;
   --seq-none: #6b7778;
+  --div-mid: #34403f;
   color-scheme: dark;
 }
 

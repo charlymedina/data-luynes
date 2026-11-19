@@ -1,0 +1,227 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon, { type IconName } from '../components/Icon.astro';
+import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
+import MiniRank from '../components/charts/MiniRank.astro';
+import MiniColumns from '../components/charts/MiniColumns.astro';
+import RankGauge from '../components/charts/RankGauge.astro';
+import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
+import {
+  domainesEquipements,
+  effectifsEcoles,
+  etablissementsScolaires,
+  nombreDe,
+  resumeEquipements as r,
+  typeEquipement,
+} from '../data/equipements';
+import { CREDITS_EQUIPEMENTS } from '../data/credits';
+import { formatNumber } from '../lib/format';
+import { faitsEquipements } from '../lib/faits-equipements';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+const unDecimal = (v: number): string => formatNumber(v, 1);
+const versus = (luynes: number, dep: number, display: (v: number) => string = unDecimal): MiniItem[] => [
+  { label: 'Luynes', value: luynes, display: display(luynes), highlight: true },
+  { label: 'Indre-et-Loire', value: dep, display: display(dep) },
+];
+
+/** « Ce qu'on trouve à Luynes » : quelques équipements du quotidien, avec leur icône (affichés s'ils existent). */
+const quotidien: { codes: string[]; libelle: string; icon: IconName }[] = [
+  { codes: ['A129'], libelle: 'Mairie', icon: 'banque' },
+  { codes: ['A206'], libelle: 'Bureau de poste', icon: 'mallette' },
+  { codes: ['A104'], libelle: 'Gendarmerie', icon: 'alerte' },
+  { codes: ['A203'], libelle: 'Banques', icon: 'pieces' },
+  { codes: ['B105', 'B101', 'B102'], libelle: 'Supermarché', icon: 'boutique' },
+  { codes: ['B207'], libelle: 'Boulangerie', icon: 'boutique' },
+  { codes: ['B204'], libelle: 'Boucherie', icon: 'boutique' },
+  { codes: ['A504'], libelle: 'Restaurants', icon: 'boutique' },
+  { codes: ['D307'], libelle: 'Pharmacie', icon: 'sante' },
+  { codes: ['D265'], libelle: 'Médecins généralistes', icon: 'sante' },
+  { codes: ['D101', 'D102'], libelle: 'Établissements de soins', icon: 'sante' },
+  { codes: ['D401'], libelle: 'Maison de retraite', icon: 'personnes' },
+  { codes: ['D502'], libelle: 'Crèche', icon: 'bebe' },
+  { codes: ['C107', 'C108', 'C109'], libelle: 'Écoles', icon: 'ecole' },
+  { codes: ['C201'], libelle: 'Collège', icon: 'livre' },
+  { codes: ['F101'], libelle: 'Piscine', icon: 'vague' },
+  { codes: ['F121'], libelle: 'Gymnases', icon: 'personnes' },
+  { codes: ['F103'], libelle: 'Tennis', icon: 'soleil' },
+  { codes: ['B316'], libelle: 'Station-service', icon: 'voiture' },
+  { codes: ['B326'], libelle: 'Recharge électrique', icon: 'eclair' },
+];
+const presents = quotidien.map((q) => ({ ...q, nombre: nombreDe(...q.codes) })).filter((q) => q.nombre > 0);
+
+const ICONES_DOMAINES: Record<string, IconName> = {
+  A: 'mallette',
+  B: 'boutique',
+  C: 'ecole',
+  D: 'sante',
+  E: 'voiture',
+  F: 'personnes',
+  G: 'soleil',
+};
+
+/** Santé : professionnels libéraux et pharmacies, pour 10 000 habitants. */
+const sante: { code: string; libelle: string }[] = [
+  { code: 'D265', libelle: 'Médecins généralistes' },
+  { code: 'D281', libelle: 'Infirmiers' },
+  { code: 'D279', libelle: 'Kinésithérapeutes' },
+  { code: 'D277', libelle: 'Dentistes' },
+  { code: 'D307', libelle: 'Pharmacies' },
+];
+const lignesSante = sante.flatMap((s) => {
+  const t = typeEquipement(s.code);
+  return t ? [{ ...s, t }] : [];
+});
+
+const colonnesEleves: Column[] = effectifsEcoles.map((e, i) => ({
+  label: `’${String(e.rentree).slice(2)}`,
+  fullLabel: `Rentrée ${e.rentree}`,
+  value: e.eleves,
+  display: formatNumber(e.eleves),
+  highlight: i === effectifsEcoles.length - 1,
+}));
+---
+
+<Base
+  title="Écoles, santé et services à Luynes — Luynes en chiffres"
+  description={`Commerces, services, médecins, écoles : ${formatNumber(r.equipements)} équipements recensés à Luynes, ${formatNumber(r.eleves)} élèves dans les écoles, comparés à l'Indre-et-Loire.`}
+  sources={CREDITS_EQUIPEMENTS}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="ecole" class="h-5 w-5" /> Thème · Écoles, santé & services</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.6rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      Écoles, santé <span class="text-accent">&</span> services
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Ce qu'on trouve à Luynes au quotidien : commerces, services publics, professionnels de santé, écoles et équipements sportifs,
+      d'après la base des équipements de l'INSEE ({r.annee_bpe}) et l'Éducation nationale.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés des écoles, de la santé et des services" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <KeyFigure tone="loire" icon="boutique" label="Commerces, services, équipements" value={r.equipements}>
+      <MiniRank onDark rank={r.rang_equipements} total={r.nb_communes} what="le mieux équipé par habitant" />
+    </KeyFigure>
+    <KeyFigure tone="accent" icon="sante" label="Médecins généralistes" value={r.medecins}>
+      <MiniCompare items={versus(r.medecins_pour_10000, r.medecins_pour_10000_37)} />
+      <p class="mt-2 text-xs text-ink-2">pour 10 000 habitants</p>
+    </KeyFigure>
+    <KeyFigure icon="ecole" label={`Élèves, rentrée ${r.derniere_rentree}`} value={r.eleves}>
+      <MiniColumns values={effectifsEcoles.map((e) => ({ label: String(e.rentree), value: e.eleves }))} ariaLabel={`Élèves des écoles de Luynes, rentrées ${r.premiere_rentree} à ${r.derniere_rentree}`} />
+    </KeyFigure>
+    <KeyFigure icon="livre" label="Écoles et collège" value={r.etablissements_scolaires}>
+      <MiniCompare items={versus(r.eleves_par_classe, r.eleves_par_classe_37)} />
+      <p class="mt-2 text-xs text-ink-2">élèves par classe en école</p>
+    </KeyFigure>
+  </section>
+
+  <section id="quotidien" aria-labelledby="quotidien-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="quotidien-titre" class={titreH2}>Au quotidien</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Quelques équipements recensés à Luynes, avec leur nombre.</p>
+    <ul class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {
+        presents.map((q) => (
+          <li class="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 sm:p-4">
+            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-loire-soft text-loire"><Icon name={q.icon} class="h-5 w-5" /></span>
+            <span class="min-w-0">
+              <span class="block font-display text-2xl leading-none font-extrabold">{formatNumber(q.nombre)}</span>
+              <span class="block text-xs leading-tight text-ink-2">{q.libelle}</span>
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section id="domaines" aria-labelledby="domaines-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="domaines-titre" class={titreH2}>Par grand domaine</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Nombre d'équipements pour 1 000 habitants. La moyenne du département est tirée vers le haut par Tours et les villes,
+      où commerces et services se concentrent.
+    </p>
+    <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        domainesEquipements.map((d) => (
+          <li class={carte}>
+            <p class="flex items-center gap-3 font-display text-xl font-bold">
+              <Icon name={ICONES_DOMAINES[d.domaine] ?? 'carte'} class="h-7 w-7 text-loire" />
+              {d.libelle}
+            </p>
+            <p class="mt-1 text-sm text-ink-2">{formatNumber(d.nombre)} à Luynes</p>
+            <MiniCompare items={versus(d.pour_1000_luynes, d.pour_1000_37)} />
+          </li>
+        ))
+      }
+    </ul>
+    <div class="mt-6 max-w-md">
+      <RankGauge label="Équipements par habitant" rank={r.rang_equipements} total={r.nb_communes} icon="boutique" ends={['le mieux équipé', 'le moins équipé']} />
+    </div>
+  </section>
+
+  <section id="sante" aria-labelledby="sante-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="sante-titre" class={titreH2}>La santé</h2>
+    <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+      <div class="flex flex-col justify-between rounded-[1.5rem] bg-loire p-6 text-bg sm:p-8">
+        <Icon name="sante" class="h-9 w-9 opacity-85" />
+        <p class="mt-6 font-display text-6xl font-extrabold tracking-tight">{formatNumber(r.professionnels_sante)}</p>
+        <p class="mt-2 opacity-85">
+          professionnels de santé libéraux (médecins, infirmiers, kinés, dentistes…), une pharmacie, et le centre hospitalier
+          de Luynes ({formatNumber(r.etablissements_sante)} établissements de soins).
+        </p>
+      </div>
+      <div class={carte}>
+        <h3 class="font-display text-xl font-bold">Pour 10 000 habitants</h3>
+        <ul class="mt-2 grid gap-x-8 sm:grid-cols-2">
+          {
+            lignesSante.map((s) => (
+              <li class="mt-4">
+                <p class="text-sm font-medium">{s.libelle}</p>
+                <MiniCompare items={versus(s.t.pour_10000_luynes, s.t.pour_10000_37)} />
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="ecoles" aria-labelledby="ecoles-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="ecoles-titre" class={titreH2}>Les écoles</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Élèves des écoles maternelles et élémentaires de Luynes (publiques et privée) à chaque rentrée :{' '}
+      <strong class="text-ink">{formatNumber(r.evolution_eleves_pct, 0)} %</strong> depuis {r.premiere_rentree},
+      contre {formatNumber(r.evolution_eleves_37_pct, 0)} % en Indre-et-Loire.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <ColumnChart
+        columns={colonnesEleves}
+        unit="élèves"
+        headers={['Rentrée', 'Élèves']}
+        ariaLabel={`Élèves des écoles de Luynes : ${formatNumber(r.eleves_premiere_rentree)} en ${r.premiere_rentree}, ${formatNumber(r.eleves)} en ${r.derniere_rentree}.`}
+        tableCaption="Élèves des écoles de Luynes à chaque rentrée"
+      />
+    </div>
+    <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        etablissementsScolaires.map((e) => (
+          <li class={carte}>
+            <p class="flex items-center gap-2 text-sm font-medium text-loire">
+              <Icon name={e.niveau === 'Collège' ? 'livre' : 'ecole'} class="h-5 w-5" /> {e.niveau} · {e.statut.toLowerCase()}
+            </p>
+            <p class="mt-2 font-display text-xl font-bold">{e.nom}</p>
+            {e.eleves !== null && (
+              <p class="mt-2 text-sm text-ink-2">
+                <strong class="font-display text-2xl text-ink">{formatNumber(e.eleves)}</strong> élèves, {formatNumber(e.classes ?? 0)} classes
+              </p>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <FunFacts facts={faitsEquipements()} id="saviez-vous-equipements" />
+</Base>

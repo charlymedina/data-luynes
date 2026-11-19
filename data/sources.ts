@@ -6,6 +6,8 @@
 import { readFile } from 'node:fs/promises';
 import { SOURCES_BUDGET } from './sources-budget.ts';
 import { SOURCES_REVENUS } from './sources-revenus.ts';
+import { SOURCES_CLIMAT } from './sources-climat.ts';
+import { SOURCES_EQUIPEMENTS } from './sources-equipements.ts';
 
 export interface Source {
   /** Nom du fichier produit dans data/raw/ (sans extension) */
@@ -284,4 +286,10 @@ export const SOURCES: readonly Source[] = [
 
   // — Revenus & emploi (voir data/sources-revenus.ts) —
   ...SOURCES_REVENUS,
+
+  // — Climat (voir data/sources-climat.ts) —
+  ...SOURCES_CLIMAT,
+
+  // — Écoles, santé & services (voir data/sources-equipements.ts) —
+  ...SOURCES_EQUIPEMENTS,
 ];

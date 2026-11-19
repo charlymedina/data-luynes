@@ -20,12 +20,18 @@ import { resumeBudget } from '../data/budget';
 import { faitsBudget } from '../lib/faits-budget';
 import { resumeRevenus } from '../data/revenus';
 import { faitsRevenus } from '../lib/faits-revenus';
+import { resumeAccidents } from '../data/accidents';
+import { faitsAccidents } from '../lib/faits-accidents';
+import { anneesClimat, resumeClimat } from '../data/climat';
+import { faitsClimat } from '../lib/faits-climat';
+import { effectifsEcoles, resumeEquipements } from '../data/equipements';
+import { faitsEquipements } from '../lib/faits-equipements';
 
 const luynes = agesDe('Luynes');
 const france = agesDe('France');
 
 // Mélange des anecdotes des différents thèmes (une de chaque à tour de rôle).
-const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus()];
+const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsClimat(), faitsEquipements()];
 const longueurMax = Math.max(...sources.map((s) => s.length));
 const faits = Array.from({ length: longueurMax }, (_, i) => sources.flatMap((s) => (s[i] ? [s[i]] : []))).flat();
 
@@ -43,6 +49,7 @@ const duo = (luynesValue: number, refs: readonly [string, number][], display: (v
   ...refs.map(([label, value]) => ({ label, value, display: display(value) })),
 ];
 const euros = (v: number): string => `${formatNumber(v)} €`;
+const ecartMax = Math.max(...anneesClimat.map((a) => Math.abs(a.ecart)), 0.1);
 const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
 ---
 
@@ -157,6 +164,20 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
             euros,
           )}
         />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" tone="accent" href="/accidents" icon="voiture" label="Accidents par an pour 1 000 hab." value={resumeAccidents.taux_luynes} decimals={1}>
+        <MiniCompare items={duo(resumeAccidents.taux_luynes, [['Indre-et-Loire', resumeAccidents.taux_37]], (v) => formatNumber(v, 1))} />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" tone="loire" href="/climat" icon="thermometre" label="Réchauffement à Tours depuis les années 1960" value={resumeClimat.rechauffement} decimals={1} unit="°C">
+        <div class="mt-5 flex h-8 overflow-hidden rounded-md" aria-hidden="true">
+          {anneesClimat.map((a) => <span class="h-full min-w-0 flex-1" style={`background:color-mix(in oklab, ${a.ecart >= 0 ? 'var(--chart-2)' : 'var(--chart-3)'} ${Math.round(Math.min(Math.abs(a.ecart) / ecartMax, 1) * 100)}%, var(--div-mid))`} />)}
+        </div>
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" href="/equipements" icon="boutique" label="Commerces, services, équipements" value={resumeEquipements.equipements}>
+        <MiniRank rank={resumeEquipements.rang_equipements} total={resumeEquipements.nb_communes} what="le mieux équipé par habitant" />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" tone="accent" href="/equipements#ecoles" icon="ecole" label={`Élèves dans les écoles (${resumeEquipements.derniere_rentree})`} value={resumeEquipements.eleves}>
+        <MiniColumns values={effectifsEcoles.map((e) => ({ label: String(e.rentree), value: e.eleves }))} ariaLabel={`Élèves des écoles de Luynes, rentrées ${resumeEquipements.premiere_rentree} à ${resumeEquipements.derniere_rentree}`} />
       </KeyFigure>
     </div>
   </section>

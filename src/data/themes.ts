@@ -24,9 +24,9 @@ export const THEMES: readonly Theme[] = [
   { slug: 'immobilier', titre: 'Immobilier', court: 'Immobilier', icon: 'maison', resume: 'Prix au m², ventes, loyers, étiquettes énergie.', statut: 'disponible' },
   { slug: 'budget', titre: 'Budget communal', court: 'Budget', icon: 'pieces', resume: 'Recettes, dépenses, dette, impôts locaux.', statut: 'disponible' },
   { slug: 'revenus-emploi', titre: 'Revenus & emploi', court: 'Revenus', icon: 'mallette', resume: 'Revenus, salaires, emplois, entreprises.', statut: 'disponible' },
-  { slug: 'accidents', titre: 'Accidents de la route', court: 'Accidents', icon: 'voiture', resume: 'Carte des accidents depuis 2005.', statut: 'bientot' },
-  { slug: 'climat', titre: 'Climat', court: 'Climat', icon: 'meteo', resume: 'Températures, pluie et records autour de Tours.', statut: 'bientot' },
-  { slug: 'equipements', titre: 'Écoles & services', court: 'Services', icon: 'ecole', resume: 'Écoles, santé, commerces, services.', statut: 'bientot' },
+  { slug: 'accidents', titre: 'Accidents de la route', court: 'Accidents', icon: 'voiture', resume: 'Carte des accidents depuis 2005.', statut: 'disponible' },
+  { slug: 'climat', titre: 'Climat', court: 'Climat', icon: 'meteo', resume: 'Températures, pluie et records autour de Tours.', statut: 'disponible' },
+  { slug: 'equipements', titre: 'Écoles, santé & services', court: 'Services', icon: 'ecole', resume: 'Écoles, santé, commerces, services.', statut: 'disponible' },
   { slug: 'energie-mobilite', titre: 'Énergie & mobilité', court: 'Énergie', icon: 'eclair', resume: 'Électricité, solaire, voitures, bus.', statut: 'bientot' },
 ];
 

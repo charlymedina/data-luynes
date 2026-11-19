@@ -91,6 +91,49 @@ Notes :
 - Salaires : base Tous salariés, secteur privé ; Melodi ne précise pas dans le jeu s'il s'agit du lieu de résidence ou de travail (le catalogue indique « lieu de travail ») — à confirmer.
 - Requêtes : `data/sql/_revenus.sql` et `data/sql/revenus_*.sql`.
 
+## Thème Accidents de la route
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Bases annuelles des accidents corporels de la circulation (BAAC)](https://www.data.gouv.fr/datasets/53698f4ca3a729239d2036df/) | Accidents corporels 2005 → dernière année : date (mois, jour de la semaine, heure), lumière, météo, commune, coordonnées ; gravité et catégorie des usagers (ni âge ni sexe) ; catégorie des véhicules ; type et numéro de route | ONISR (Observatoire national interministériel de la sécurité routière), d'après les forces de l'ordre | Licence Ouverte 2.0 | Annuelle (automne, année N-1) | Archive `data/archive/baac/<année>-<table>.parquet` |
+
+Notes :
+- **Archive** : les 4 fichiers nationaux de chaque année (~25 Mo) ne sont pas retéléchargés à chaque construction. `scripts/archive-baac.ts` lit la liste des fichiers dans l'API data.gouv, et ne télécharge une année que si sa publication a changé (adresses notées dans `data/archive/baac/manifest.json`). Seule l'Indre-et-Loire est gardée (~0,6 Mo pour 2005-2025). Si data.gouv.fr ne répond pas, l'archive existante est utilisée.
+- **Harmonisation** (`data/sql/baac/*.sql`) : avant 2019, département « 370 » + commune « 139 », heures « 1930 », coordonnées sans virgule (souvent à 0 avant 2010) et fichiers en Windows-1252 ; le fichier 2022 nomme `Accident_Id` la colonne `Num_Acc`.
+- **Rupture 2018** : la définition du « blessé hospitalisé » a changé (plus de 24 h à l'hôpital) ; les années antérieures ne sont pas strictement comparables sur la gravité.
+- 12 des 35 accidents de Luynes (surtout avant 2010) n'ont pas de coordonnées : absents de la carte, comptés partout ailleurs.
+- Taux « pour 1 000 habitants » calculés avec la population légale actuelle (API Géo).
+- Requêtes : `data/sql/_accidents.sql` et `data/sql/accidents_*.sql`.
+
+## Thème Climat
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Données climatologiques de base quotidiennes](https://www.data.gouv.fr/datasets/donnees-climatologiques-de-base-quotidiennes/) — fichiers « RR-T-Vent » de l'Indre-et-Loire (`Q_37_previous-…` et `Q_37_latest-…`) | Températures minimale et maximale, pluie, chaque jour, station de **Tours** (n° 37179001, aéroport de Parçay-Meslay, ~15 km de Luynes), depuis novembre 1959 | Météo-France | Licence Ouverte 2.0 | Quotidienne (fichier « latest ») | `data/raw/meteo_37/` |
+
+Notes :
+- Il n'y a pas de station à Luynes : la page le dit clairement. Fondettes a eu une station de 1992 à 2021 seulement.
+- Les noms de fichiers changent chaque année : leurs adresses sont relues dans l'API data.gouv (`data/sources-climat.ts`).
+- Une année n'est comptée que si elle a au moins 350 jours mesurés (températures et pluie) : 1961-1964 et l'année en cours sont écartées des moyennes ; les records journaliers portent sur tous les jours mesurés.
+- Référence des « bandes du réchauffement » : moyenne 1971-2000 ; normales mensuelles : 1991-2020.
+- Requêtes : `data/sql/_climat.sql` et `data/sql/climat_*.sql`.
+
+## Thème Écoles, santé & services
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [INSEE Melodi — `DS_BPE`](https://api.insee.fr/melodi/data/DS_BPE?GEO=COM-37139) | Nombre d'équipements par type (commerces, services, santé, enseignement, sport, tourisme) — Luynes, Indre-et-Loire, et totaux par domaine des 272 communes | INSEE, base permanente des équipements | Licence Ouverte 2.0 | Annuelle | `data/raw/bpe_luynes.json`, `bpe_37.json`, `bpe_communes_37.json` |
+| Référentiel des codes BPE (`https://api.insee.fr/melodi/range/DS_BPE`) | Libellés des codes d'équipements (ex. D265 = médecin généraliste) | INSEE | Licence Ouverte 2.0 | Avec la BPE | `data/reference/bpe_libelles.csv` (extrait une fois ; le fichier source fait 13 Mo) |
+| [Annuaire de l'éducation](https://data.education.gouv.fr/explore/dataset/fr-en-annuaire-education/) | Écoles et collège de Luynes : nom, public/privé, niveaux, position | Ministère de l'Éducation nationale | Licence Ouverte 2.0 | Quotidienne | `data/raw/ecoles_luynes.json` |
+| [Effectifs d'élèves par école](https://data.education.gouv.fr/explore/dataset/fr-en-ecoles-effectifs-nb_classes/) | Élèves et classes de chaque école à chaque rentrée depuis 2009 — Luynes et total Indre-et-Loire | Ministère de l'Éducation nationale | Licence Ouverte 2.0 | Annuelle | `data/raw/effectifs_ecoles_luynes.json`, `effectifs_ecoles_37.json` |
+
+Notes :
+- ⚠️ Dans les effectifs, la colonne `code_commune_insee` contient le code postal (37230, partagé avec Fondettes) : filtre sur `commune = "LUYNES"` et le département.
+- Collège : présent dans l'annuaire, mais ses effectifs (autre jeu de données) ne sont pas encore repris.
+- Les moyennes « pour 1 000 habitants » du département incluent Tours et les villes, où se concentrent commerces et services.
+- Si l'INSEE change la nomenclature des équipements, régénérer `data/reference/bpe_libelles.csv` (codes inconnus affichés tels quels en attendant).
+- Requêtes : `data/sql/_equipements.sql`, `data/sql/equipements_*.sql`, `data/sql/ecoles_*.sql`.
+
 Les données sont téléchargées à nouveau à chaque construction du site (au moins une fois par semaine),
 avec 3 tentatives par source en cas de panne passagère.
 La liste technique des sources est dans `data/sources.ts`.

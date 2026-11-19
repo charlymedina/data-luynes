@@ -55,11 +55,12 @@ const isCurrent = (slug: string): boolean => current === `/${slug}`;
         aria-expanded="false"
         aria-controls="menu-themes"
         class:list={[
-          'nav-toggle grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink transition hover:border-accent hover:text-accent focus-visible:ring-4 focus-visible:ring-loire/40 focus-visible:outline-none active:scale-90',
-          inline && 'lg:hidden',
+          'nav-toggle flex h-10 min-w-10 items-center justify-center gap-2 rounded-full border border-line bg-surface text-ink transition hover:border-accent hover:text-accent focus-visible:ring-4 focus-visible:ring-loire/40 focus-visible:outline-none active:scale-95',
+          inline ? 'lg:hidden' : 'sm:px-4',
         ]}
       >
         <span class="sr-only" data-nav-label>Ouvrir le menu</span>
+        {!inline && <span class="hidden text-sm font-medium sm:inline" aria-hidden="true">Thèmes</span>}
         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <path class="bar bar-1" d="M4 7h16" />
           <path class="bar bar-2" d="M4 12h16" />
@@ -69,8 +70,14 @@ const isCurrent = (slug: string): boolean => current === `/${slug}`;
     </div>
 
     <div id="menu-themes" data-nav-panel hidden class="nav-panel absolute inset-x-0 top-full px-4 pt-2 sm:px-6">
-      <nav aria-label="Menu des thèmes" class="ml-auto max-w-md rounded-[1.5rem] border border-line bg-surface p-3 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)]">
-        <ul class="grid grid-cols-[minmax(0,1fr)] gap-1">
+      <nav
+        aria-label="Menu des thèmes"
+        class:list={[
+          'ml-auto max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain rounded-[1.5rem] border border-line bg-surface p-3 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)]',
+          inline ? 'max-w-md' : 'max-w-md md:max-w-2xl',
+        ]}
+      >
+        <ul class:list={['grid grid-cols-[minmax(0,1fr)] gap-1', !inline && 'md:grid-cols-2']}>
           <li>
             <a
               href="/"
