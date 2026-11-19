@@ -4,6 +4,8 @@
  * Pense à documenter toute nouvelle source dans docs/sources.md (origine, licence, mise à jour).
  */
 import { readFile } from 'node:fs/promises';
+import { SOURCES_BUDGET } from './sources-budget.ts';
+import { SOURCES_REVENUS } from './sources-revenus.ts';
 
 export interface Source {
   /** Nom du fichier produit dans data/raw/ (sans extension) */
@@ -276,4 +278,10 @@ export const SOURCES: readonly Source[] = [
     url: `${LOYERS_2025.appartement}?DEP__exact=37&page_size=50`,
     pagination: 'tabular',
   },
+
+  // — Budget de la commune (voir data/sources-budget.ts) —
+  ...SOURCES_BUDGET,
+
+  // — Revenus & emploi (voir data/sources-revenus.ts) —
+  ...SOURCES_REVENUS,
 ];

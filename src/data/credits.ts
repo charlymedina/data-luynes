@@ -49,13 +49,27 @@ const CARTE_LOYERS: FooterSource = {
   detail: 'loyers d’annonce charges comprises, par commune — Licence Ouverte 2.0',
 };
 
+const DGFIP_COMPTES: FooterSource = {
+  nom: 'DGFiP — comptes individuels des communes',
+  url: 'https://data.economie.gouv.fr/explore/?q=comptes-individuels-des-communes',
+  detail: 'budgets communaux 2000 → dernière année, moyennes de strate — Licence Ouverte 2.0',
+};
+
+const INSEE_REVENUS_EMPLOI: FooterSource = {
+  nom: 'INSEE — Filosofi, recensement, base Tous salariés, SIDE (API Melodi)',
+  url: 'https://www.insee.fr/fr/information/8193036',
+  detail: 'niveau de vie, pauvreté, activité, trajets domicile-travail, salaires, créations d’entreprises — Licence Ouverte 2.0',
+};
+
 const OPENFREEMAP: FooterSource = {
   nom: 'OpenFreeMap',
   url: 'https://openfreemap.org',
   detail: 'fond de carte, données © contributeurs OpenStreetMap (ODbL)',
 };
 
-export const CREDITS_ACCUEIL: readonly FooterSource[] = [API_GEO, INSEE_RECENSEMENT, TOURS_METROPOLE, MERIMEE, GEORISQUES, DVF];
+export const CREDITS_ACCUEIL: readonly FooterSource[] = [API_GEO, INSEE_RECENSEMENT, TOURS_METROPOLE, MERIMEE, GEORISQUES, DVF, DGFIP_COMPTES, INSEE_REVENUS_EMPLOI];
+export const CREDITS_BUDGET: readonly FooterSource[] = [DGFIP_COMPTES];
+export const CREDITS_REVENUS: readonly FooterSource[] = [INSEE_REVENUS_EMPLOI, API_GEO];
 export const CREDITS_IMMOBILIER: readonly FooterSource[] = [DVF, CARTE_LOYERS, ADEME_DPE, API_GEO, OPENFREEMAP];
 export const CREDITS_PATRIMOINE: readonly FooterSource[] = [MERIMEE, GEORISQUES, API_GEO, OPENFREEMAP];
 export const CREDITS_TERRITOIRE: readonly FooterSource[] = [API_GEO];

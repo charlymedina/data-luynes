@@ -12,12 +12,16 @@ import { faitsCommune, faitsImmobilier, faitsPatrimoine, faitsPopulation } from 
 import { resumeRisques } from '../data/patrimoine';
 import { resumeImmobilier } from '../data/immobilier';
 import { toPercent } from '../lib/scale';
+import { resumeBudget } from '../data/budget';
+import { faitsBudget } from '../lib/faits-budget';
+import { resumeRevenus } from '../data/revenus';
+import { faitsRevenus } from '../lib/faits-revenus';
 
 const luynes = agesDe('Luynes');
 const france = agesDe('France');
 
 // Mélange des anecdotes des différents thèmes (une de chaque à tour de rôle).
-const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier()];
+const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus()];
 const longueurMax = Math.max(...sources.map((s) => s.length));
 const faits = Array.from({ length: longueurMax }, (_, i) => sources.flatMap((s) => (s[i] ? [s[i]] : []))).flat();
 
@@ -61,6 +65,7 @@ const sparkline = historique
         class="sm:col-span-4 sm:row-span-2 sm:[&_.figure-value]:text-8xl"
         tone="loire"
         href="/population"
+        icon="personnes"
         label="Habitants"
         value={commune.population}
         unit="Luynois·es"
@@ -130,6 +135,7 @@ const sparkline = historique
         class="sm:col-span-4"
         tone="accent"
         href="/immobilier"
+        icon="maison"
         label="Prix au m² d'une maison"
         value={resumeImmobilier.prix_m2_maison}
         unit="€/m²"
@@ -138,9 +144,29 @@ const sparkline = historique
       <KeyFigure
         class="sm:col-span-2"
         href="/immobilier#carte"
+        icon="cle"
         label="Ventes immobilières"
         value={resumeImmobilier.ventes}
         note={`Depuis ${resumeImmobilier.annee_debut}, toutes sur une carte.`}
+      />
+      <KeyFigure
+        class="sm:col-span-3"
+        tone="loire"
+        href="/budget"
+        label="Dépenses de la commune"
+        value={resumeBudget.depenses_hab}
+        unit="€/hab."
+        icon="pieces"
+        note={`Budget de fonctionnement ${resumeBudget.annee}. Communes de même taille : ${formatNumber(resumeBudget.depenses_hab_strate)} € par habitant.`}
+      />
+      <KeyFigure
+        class="sm:col-span-3"
+        href="/revenus-emploi"
+        icon="mallette"
+        label="Niveau de vie médian"
+        value={Math.round(resumeRevenus.niveau_vie / 12 / 10) * 10}
+        unit="€/mois"
+        note={`La moitié des Luynois vit avec plus. ${formatRank(resumeRevenus.rang_niveau_vie)} commune d'Indre-et-Loire.`}
       />
     </div>
   </section>

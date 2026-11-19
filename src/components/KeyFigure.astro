@@ -4,8 +4,11 @@
  * sans `href`, c'est une simple carte (pages de thème). Le slot accueille un petit visuel (ex. mini-courbe).
  */
 import { formatNumber } from '../lib/format';
+import Icon, { type IconName } from './Icon.astro';
 
 interface Props {
+  /** Petite icône au trait en haut à droite de la carte (facultative). */
+  icon?: IconName;
   label: string;
   value: number;
   unit?: string;
@@ -16,7 +19,7 @@ interface Props {
   class?: string;
 }
 
-const { label, value, unit, decimals = 0, note, tone = 'plain', href, class: className = '' } = Astro.props;
+const { icon, label, value, unit, decimals = 0, note, tone = 'plain', href, class: className = '' } = Astro.props;
 
 const toneClasses = {
   loire: 'bg-loire text-bg',
@@ -38,7 +41,21 @@ const soft = tone === 'loire' ? 'opacity-85' : 'text-ink-2';
     className,
   ]}
 >
-  <p class:list={['text-sm font-medium tracking-wide uppercase', soft]}>{label}</p>
+  <div class="flex items-start justify-between gap-3">
+    <p class:list={['text-sm font-medium tracking-wide uppercase', soft]}>{label}</p>
+    {
+      icon && (
+        <span
+          class:list={[
+            'grid h-10 w-10 shrink-0 place-items-center rounded-full transition-transform duration-300 group-hover:rotate-[-8deg]',
+            tone === 'loire' ? 'bg-bg/15' : 'bg-loire-soft text-loire',
+          ]}
+        >
+          <Icon name={icon} class="h-5 w-5" />
+        </span>
+      )
+    }
+  </div>
   <p class="mt-3 flex items-baseline gap-2 font-display leading-none">
     <span class="figure-value text-5xl font-extrabold tracking-tight sm:text-6xl" data-count={value} data-decimals={decimals}>
       {formatNumber(value, decimals)}

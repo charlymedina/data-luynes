@@ -1,0 +1,38 @@
+---
+/**
+ * « X personnes sur 100 » en pictogrammes : 100 silhouettes (10 × 10), dont `count` mises en avant.
+ * La couleur n'est pas seule : le libellé et le nombre sont écrits à côté.
+ */
+import { formatNumber } from '../../lib/format';
+
+interface Props {
+  /** Nombre de silhouettes mises en avant (sur 100), arrondi à l'unité */
+  count: number;
+  label: string;
+  ariaLabel: string;
+}
+
+const { count, label, ariaLabel } = Astro.props;
+const highlighted = Math.round(Math.min(Math.max(count, 0), 100));
+const STEP = 14;
+// Silhouette simple : tête + buste (dans une case de 12 × 12)
+const person = (x: number, y: number): string =>
+  `M${x + 6} ${y + 1.2}a2.4 2.4 0 1 1 0 4.8a2.4 2.4 0 1 1 0-4.8Z M${x + 1.8} ${y + 12}c0-3 1.9-5 4.2-5s4.2 2 4.2 5Z`;
+---
+
+<figure class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+  <svg viewBox={`0 0 ${10 * STEP} ${10 * STEP}`} class="w-full max-w-[12rem] shrink-0" role="img" aria-label={ariaLabel}>
+    {
+      Array.from({ length: 100 }, (_, n) => (
+        <path d={person((n % 10) * STEP, Math.floor(n / 10) * STEP)} fill={n < highlighted ? 'var(--chart-2)' : 'var(--bar)'} />
+      ))
+    }
+  </svg>
+  <figcaption class="text-sm text-ink-2">
+    <span class="flex items-baseline gap-2">
+      <span class="inline-block h-3 w-3 translate-y-0.5 rounded-full" style="background:var(--chart-2)" aria-hidden="true"></span>
+      <span><strong class="font-display text-3xl font-extrabold text-ink">{formatNumber(highlighted)}</strong> sur 100</span>
+    </span>
+    <span class="mt-1 block">{label}</span>
+  </figcaption>
+</figure>

@@ -59,6 +59,37 @@ Notes :
 - Les ventes de Luynes sont aussi publiées en `/donnees/ventes-immobilieres.json` (fichier lu par la carte).
 - Requêtes : `data/sql/_dvf.sql` et `data/sql/immobilier_*.sql`.
 
+## Thème Budget de la commune
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Comptes individuels des communes](https://data.economie.gouv.fr/explore/?q=comptes-individuels-des-communes) (data.economie.gouv.fr) | Comptes de Luynes 2000 → dernière année (fonctionnement, investissement, dette, autofinancement, taux de taxe foncière), par habitant et moyenne de la strate | DGFiP (ministère de l'Économie) | Licence Ouverte 2.0 | Annuelle (un jeu par année ou groupe d'années ; 2025 publié en 2026) | `data/raw/budget_luynes/` |
+| idem, dernière année, filtre `dep = 037` | Dépenses, dette, équipement par habitant et taux de taxe foncière des 272 communes d'Indre-et-Loire (classements, médianes) | DGFiP | Licence Ouverte 2.0 | Annuelle | `data/raw/budget_communes_37/` |
+
+Notes :
+- La DGFiP publie un jeu par année ou paire d'années, aux noms irréguliers (`…-2008` contient 2000-2008, `…-20090` contient 2009, `…-2023-2024`) : la liste est retrouvée à chaque build via le catalogue du portail (`data/sources-budget.ts`), rien n'est codé en dur.
+- Montants DGFiP en milliers d'euros ; colonnes `f…` = euros par habitant, `m…` = moyenne de la strate (communes de même taille en France : 3 500-5 000 habitants jusqu'en 2005, 5 000-10 000 ensuite).
+- Taxe foncière : depuis 2021, le taux communal inclut l'ancienne part départementale (réforme de la taxe d'habitation) → saut de série en 2021 qui n'est pas une hausse votée.
+- « Médiane 37 » = médiane des 272 communes du département (non pondérée par la population).
+- Requêtes : `data/sql/_budget.sql` et `data/sql/budget_*.sql`.
+
+## Thème Revenus & emploi
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [INSEE Melodi — `DS_FILOSOFI_CC`](https://api.insee.fr/melodi/data/DS_FILOSOFI_CC?GEO=COM-37139) | Niveau de vie médian et taux de pauvreté 2023 — Luynes, Indre-et-Loire, France métropolitaine ; niveau de vie médian des communes du 37 (classement) | INSEE, Filosofi | Licence Ouverte 2.0 | Annuelle | `data/raw/filosofi.json`, `filosofi_communes_37.json` |
+| [INSEE Melodi — `DS_RP_EMPLOI_LR_PRINC`](https://api.insee.fr/melodi/data/DS_RP_EMPLOI_LR_PRINC?GEO=COM-37139) | Situation des 15-64 ans (emploi, chômage, études, retraite…), 2012-2017-2023 ; chômage des communes du 37 (classement) | INSEE, recensement | Licence Ouverte 2.0 | Annuelle | `data/raw/activite.json`, `chomage_communes_37.json` |
+| [INSEE Melodi — `DS_RP_NAVETTES_PRINC`](https://api.insee.fr/melodi/data/DS_RP_NAVETTES_PRINC?GEO=COM-37139) | Lieu de travail et moyen de transport des actifs en emploi | INSEE, recensement | Licence Ouverte 2.0 | Annuelle | `data/raw/navettes.json` |
+| [INSEE Melodi — `DS_BTS_SAL_EQTP_SEX_AGE`](https://api.insee.fr/melodi/data/DS_BTS_SAL_EQTP_SEX_AGE?GEO=COM-37139) | Salaire net mensuel moyen en équivalent temps plein, secteur privé, par sexe (2023-2024) | INSEE, base Tous salariés | Licence Ouverte 2.0 | Annuelle | `data/raw/salaires.json` |
+| [INSEE Melodi — `DS_SIDE_CREA_COM`](https://api.insee.fr/melodi/data/DS_SIDE_CREA_COM?GEO=COM-37139) | Créations d'entreprises par année, 2012 → 2025 | INSEE, SIDE | Licence Ouverte 2.0 | Annuelle | `data/raw/creations_entreprises.json` |
+
+Notes :
+- Filosofi : seuls le niveau de vie médian et le taux de pauvreté sont publiés pour Luynes ; les déciles et la composition du revenu sont sous secret statistique (valeurs absentes, non extrapolées). 2 communes du 37 n'ont pas de niveau de vie publié (classement sur 270).
+- Chômage « au sens du recensement » (déclaratif), différent du chômage au sens du BIT.
+- Codes de lieu de travail et de transport du recensement décodés dans `data/sql/_revenus.sql` (nomenclature INSEE standard, non revérifiée via l'API `range`).
+- Salaires : base Tous salariés, secteur privé ; Melodi ne précise pas dans le jeu s'il s'agit du lieu de résidence ou de travail (le catalogue indique « lieu de travail ») — à confirmer.
+- Requêtes : `data/sql/_revenus.sql` et `data/sql/revenus_*.sql`.
+
 Les données sont téléchargées à nouveau à chaque construction du site (au moins une fois par semaine),
 avec 3 tentatives par source en cas de panne passagère.
 La liste technique des sources est dans `data/sources.ts`.

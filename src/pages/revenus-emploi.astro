@@ -1,0 +1,201 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon from '../components/Icon.astro';
+import Waffle, { type WaffleItem } from '../components/charts/Waffle.astro';
+import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
+import PictoGrid from '../components/charts/PictoGrid.astro';
+import RankGauge from '../components/charts/RankGauge.astro';
+import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
+import { activiteDe, creations, resumeRevenus as r, trajets } from '../data/revenus';
+import { CREDITS_REVENUS } from '../data/credits';
+import { formatNumber } from '../lib/format';
+import { faitsRevenus, surDix } from '../lib/faits-revenus';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+const euros = (v: number): string => `${formatNumber(v)} €`;
+const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
+
+/** Luynes, Indre-et-Loire, France : trois barres fines. */
+function trio(luynes: number, dep: number, france: number, display: (v: number) => string, franceLabel = 'France'): MiniItem[] {
+  return [
+    { label: 'Luynes', value: luynes, display: display(luynes), highlight: true },
+    { label: 'Indre-et-Loire', value: dep, display: display(dep) },
+    { label: franceLabel, value: france, display: display(france) },
+  ];
+}
+
+const luynes = activiteDe('Luynes');
+const dep = activiteDe('Indre-et-Loire');
+const france = activiteDe('France');
+const situations: WaffleItem[] = [
+  { label: 'En emploi', value: luynes.en_emploi },
+  { label: 'Au chômage', value: luynes.chomage },
+  { label: 'Élèves, étudiants', value: luynes.etudes },
+  { label: 'Retraités, au foyer, autres', value: luynes.retraite_autres },
+];
+const lieux: WaffleItem[] = [
+  { label: 'Ailleurs en Indre-et-Loire', value: trajets.ailleurs_dans_le_37 },
+  { label: 'À Luynes', value: trajets.dans_la_commune },
+  { label: 'Hors du département', value: trajets.hors_departement },
+];
+const transports: WaffleItem[] = [
+  { label: 'Voiture', value: trajets.voiture },
+  { label: 'Transports en commun', value: trajets.transports_en_commun },
+  { label: 'Marche, vélo, deux-roues', value: trajets.marche_velo_deux_roues },
+  { label: 'Pas de trajet', value: trajets.sans_trajet },
+];
+
+const record = Math.max(...creations.map((c) => c.creations));
+const colonnes: Column[] = creations.map((c) => ({
+  label: `’${String(c.annee).slice(2)}`,
+  fullLabel: String(c.annee),
+  value: c.creations,
+  display: formatNumber(c.creations),
+  highlight: c.creations === record,
+}));
+const premiereCreation = creations[0]?.annee ?? 0;
+const derniereCreation = creations.at(-1)?.annee ?? 0;
+const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes - r.salaire_femmes)) / r.salaire_hommes) : 0;
+---
+
+<Base
+  title="Revenus et emploi à Luynes — Luynes en chiffres"
+  description={`Niveau de vie, pauvreté, chômage, trajets domicile-travail, salaires et créations d'entreprises à Luynes, comparés au département et à la France.`}
+  sources={CREDITS_REVENUS}
+  showBack
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="mallette" class="h-5 w-5" /> Thème · Revenus & emploi</p>
+    <h1 id="titre" class="mt-3 font-display text-5xl leading-[0.95] font-extrabold tracking-tight min-[380px]:text-6xl sm:text-8xl">Revenus & emploi</h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">De quoi vivent les Luynois, où et comment ils travaillent : les chiffres de l'INSEE, face au département et à la France.</p>
+  </section>
+
+  <section aria-label="Chiffres clés revenus et emploi" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <KeyFigure tone="loire" icon="pieces" label={`Niveau de vie annuel ${r.annee_revenus}`} value={r.niveau_vie} unit="€">
+      <MiniCompare onDark items={trio(r.niveau_vie, r.niveau_vie_37, r.niveau_vie_france, euros, 'France métro.')} />
+    </KeyFigure>
+    <KeyFigure tone="accent" icon="personnes" label="Taux de pauvreté" value={r.pauvrete} decimals={1} unit="%">
+      <MiniCompare items={trio(r.pauvrete, r.pauvrete_37, r.pauvrete_france, pourcent, 'France métro.')} />
+    </KeyFigure>
+    <KeyFigure icon="mallette" label={`Chômage ${r.annee_recensement}`} value={r.chomage} decimals={1} unit="%">
+      <MiniCompare items={trio(r.chomage, r.chomage_37, r.chomage_france, pourcent)} />
+    </KeyFigure>
+    <KeyFigure icon="graphique" label={`Salaire net ${r.annee_salaires}`} value={r.salaire} unit="€/mois">
+      <MiniCompare items={trio(r.salaire, r.salaire_37, r.salaire_france, euros)} />
+    </KeyFigure>
+  </section>
+
+  <section id="revenus" aria-labelledby="revenus-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="revenus-titre" class={titreH2}>Les revenus</h2>
+    <div class="mt-8 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+      <div class="flex flex-col justify-between rounded-[1.5rem] bg-loire p-6 text-bg sm:p-8">
+        <Icon name="pieces" class="h-9 w-9 opacity-85" />
+        <p class="mt-6 text-lg">La moitié des Luynois vit avec plus de</p>
+        <p class="font-display text-6xl font-extrabold tracking-tight sm:text-7xl">{formatNumber(Math.round(r.niveau_vie / 12 / 10) * 10)} €</p>
+        <p class="mt-2 opacity-85">par mois et par personne, une fois impôts payés et aides reçues (niveau de vie médian {r.annee_revenus}).</p>
+      </div>
+      <div class={carte}>
+        <h3 class="font-display text-xl font-bold">Sous le seuil de pauvreté</h3>
+        <p class="mt-1 mb-6 text-sm text-ink-2">Moins de 60 % du niveau de vie médian national.</p>
+        <PictoGrid
+          count={r.pauvrete}
+          label={`Luynois sous le seuil de pauvreté. ${formatNumber(Math.round(r.pauvrete_37))} sur 100 en Indre-et-Loire.`}
+          ariaLabel={`${formatNumber(r.pauvrete, 1)} % des Luynois vivent sous le seuil de pauvreté, contre ${formatNumber(r.pauvrete_37, 1)} % en Indre-et-Loire et ${formatNumber(r.pauvrete_france, 1)} % en France métropolitaine.`}
+        />
+      </div>
+    </div>
+    <div class="mt-6 max-w-md">
+      <RankGauge label="Niveau de vie médian" rank={r.rang_niveau_vie} total={r.nb_communes_niveau_vie} icon="pieces" />
+    </div>
+  </section>
+
+  <section id="activite" aria-labelledby="activite-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="activite-titre" class={titreH2}>Que font les 15-64 ans ?</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Recensement {r.annee_recensement} : une case = 1 Luynois de 15 à 64 ans sur 100.</p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div class={carte}>
+        <Waffle
+          title="Sur 100 Luynois de 15 à 64 ans"
+          unit="pers."
+          items={situations}
+          ariaLabel={`Sur 100 Luynois de 15 à 64 ans : ${situations.map((s) => `${s.label} ${formatNumber(s.value, 0)}`).join(', ')}.`}
+        />
+      </div>
+      <div class={carte}>
+        <h3 class="font-display text-xl font-bold">En emploi</h3>
+        <MiniCompare items={trio(luynes.en_emploi, dep.en_emploi, france.en_emploi, pourcent)} />
+        <h3 class="mt-8 font-display text-xl font-bold">Au chômage</h3>
+        <MiniCompare items={trio(luynes.chomage, dep.chomage, france.chomage, pourcent)} />
+        <p class="mt-6 text-xs text-ink-2">En % de tous les 15-64 ans (le taux de chômage, lui, se calcule sur les seuls actifs).</p>
+      </div>
+    </div>
+    <div class="mt-6 max-w-md">
+      <RankGauge label="Taux de chômage des 15-64 ans" rank={r.rang_chomage} total={r.nb_communes_chomage} icon="mallette" />
+    </div>
+  </section>
+
+  <section id="trajets" aria-labelledby="trajets-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="trajets-titre" class={titreH2}>Aller travailler</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      <strong class="font-display text-2xl text-ink">{surDix(r.part_travail_ailleurs)}</strong> Luynois en emploi travaillent dans une autre commune.
+    </p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      <div class={carte}>
+        <Waffle
+          title="Où ? Sur 100 actifs en emploi"
+          unit="pers."
+          items={lieux}
+          ariaLabel={`Lieu de travail des Luynois en emploi : ${lieux.map((s) => `${s.label} ${formatNumber(s.value, 0)} %`).join(', ')}.`}
+        />
+      </div>
+      <div class={carte}>
+        <Waffle
+          title="Comment ? Sur 100 actifs en emploi"
+          unit="pers."
+          items={transports}
+          ariaLabel={`Moyen de transport des Luynois pour aller travailler : ${transports.map((s) => `${s.label} ${formatNumber(s.value, 0)} %`).join(', ')}.`}
+        />
+      </div>
+    </div>
+  </section>
+
+  <section id="salaires" aria-labelledby="salaires-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="salaires-titre" class={titreH2}>Les salaires</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Salaire net mensuel moyen dans le secteur privé, en équivalent temps plein ({r.annee_salaires}).</p>
+    <div class="mt-8 grid gap-6 md:grid-cols-2">
+      <div class={carte}>
+        <h3 class="font-display text-xl font-bold">Femmes et hommes à Luynes</h3>
+        <MiniCompare
+          items={[
+            { label: 'Femmes', value: r.salaire_femmes, display: euros(r.salaire_femmes), highlight: true },
+            { label: 'Hommes', value: r.salaire_hommes, display: euros(r.salaire_hommes) },
+          ]}
+        />
+        {ecartSalaires > 0 && <p class="mt-6 text-sm text-ink-2">Écart : <strong class="font-display text-2xl text-ink">−{formatNumber(ecartSalaires)} %</strong> pour les femmes.</p>}
+      </div>
+      <div class={carte}>
+        <h3 class="font-display text-xl font-bold">Tous salariés</h3>
+        <MiniCompare items={trio(r.salaire, r.salaire_37, r.salaire_france, euros)} />
+      </div>
+    </div>
+  </section>
+
+  <section id="entreprises" aria-labelledby="entreprises-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="entreprises-titre" class={titreH2}>Les créations d'entreprises</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Entreprises créées à Luynes chaque année, micro-entreprises comprises. En orange, l'année record.</p>
+    <div class:list={['mt-8', carte]}>
+      <ColumnChart
+        columns={colonnes}
+        unit="créations"
+        headers={['Année', "Entreprises créées"]}
+        ariaLabel={`Créations d'entreprises à Luynes de ${premiereCreation} à ${derniereCreation}, record de ${formatNumber(record)} créations.`}
+        tableCaption="Créations d'entreprises à Luynes par année"
+      />
+    </div>
+  </section>
+
+  <FunFacts facts={faitsRevenus()} id="saviez-vous-revenus" />
+</Base>

@@ -22,6 +22,8 @@
   --chart-2: #d9542a;
   /* 3ᵉ couleur de carte (zone inondable) : validée avec les deux premières, toutes paires confondues. */
   --chart-3: #5a6fd6;
+  /* 4ᵉ couleur (répartitions en cases « sur 100 € ») : ordre 2-1-3-4 validé (catégoriel, clair). */
+  --chart-4: #b08a1e;
   --chart-grid: #ece4d0;
   /* Rampe ordonnée « prix au m² » (du moins cher au plus cher), une seule teinte, validée (--ordinal). */
   --seq-1: #72bcbf;
@@ -51,6 +53,7 @@
     --chart-1: #2ea3aa;
     --chart-2: #e8693c;
     --chart-3: #6a7de3;
+    --chart-4: #b88a22;
     --chart-grid: #22353a;
     /* En sombre, la rampe s'inverse : le plus cher est le plus lumineux. */
     --seq-1: #1d6a6e;
@@ -77,6 +80,7 @@
   --chart-1: #2ea3aa;
   --chart-2: #e8693c;
   --chart-3: #6a7de3;
+  --chart-4: #b88a22;
   --chart-grid: #22353a;
   --seq-1: #1d6a6e;
   --seq-2: #2a8f95;
