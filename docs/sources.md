@@ -3,7 +3,10 @@
 | Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
 |---|---|---|---|---|---|
 | [API Géo — commune 37139](https://geo.api.gouv.fr/communes/37139) | Nom, codes, population, surface, centre, département, région | Etalab / DINUM (population : INSEE, populations légales ; géométries : IGN) | [Licence Ouverte 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/) | Population : chaque année (millésime INSEE en vigueur au 1er janvier) | `data/raw/commune.json` |
-| [API Géo — communes du 37](https://geo.api.gouv.fr/departements/37/communes) | Population, surface et centre des 272 communes d'Indre-et-Loire | idem | Licence Ouverte 2.0 | idem | `data/raw/communes_37.json` |
+| [API Géo — communes du 37](https://geo.api.gouv.fr/departements/37/communes) | Population, surface et centre des 272 communes d'Indre-et-Loire (classements en population, superficie, densité) | idem | Licence Ouverte 2.0 | idem | `data/raw/communes_37.json` |
+| [INSEE Melodi — `DS_RP_POPULATION_PRINC`, 272 communes](https://api.insee.fr/melodi/data/DS_RP_POPULATION_PRINC?GEO=COM-37139) | Population totale, moins de 20 ans, 65 ans et plus de chaque commune d'Indre-et-Loire en 2012, 2017, 2023 (classements en croissance et en âge ; un paramètre `GEO=COM-xxxxx` par commune, liste lue dans le fichier API Géo) | INSEE, recensement | Licence Ouverte 2.0 | Annuelle | `data/raw/ages_communes_37.json` |
+
+Requêtes : `data/sql/_departement.sql` (vues partagées), `rang_departement.sql` (rangs de Luynes), `territoire_communes.sql` (les 272 communes par densité).
 
 ## Thème Population
 

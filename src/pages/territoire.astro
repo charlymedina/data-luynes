@@ -1,0 +1,89 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import RankSkyline from '../components/charts/RankSkyline.astro';
+import CompareBars, { type CompareItem } from '../components/charts/CompareBars.astro';
+import { commune, communesDepartement, rang } from '../data/commune';
+import { CREDITS_TERRITOIRE } from '../data/credits';
+import { formatNumber, formatRank, formatRatio } from '../lib/format';
+import { faitsCommune, partDevancee } from '../lib/faits';
+
+const plusDense = communesDepartement[0];
+const moinsDense = communesDepartement.at(-1);
+const enKm2 = (v: number): string => `${formatNumber(v, 1)} km²`;
+const enDensite = (v: number): string => `${formatNumber(v)} hab./km²`;
+
+const superficies: CompareItem[] = [
+  { label: 'Luynes', value: commune.surface_km2, display: enKm2(commune.surface_km2), highlight: true },
+  { label: 'Moyenne 37', value: rang.surface_moyenne_km2, display: enKm2(rang.surface_moyenne_km2), highlight: false },
+  { label: 'Médiane 37', value: rang.surface_mediane_km2, display: enKm2(rang.surface_mediane_km2), highlight: false },
+];
+const densites: CompareItem[] = [
+  { label: 'Luynes', value: commune.densite_hab_km2, display: enDensite(commune.densite_hab_km2), highlight: true },
+  { label: 'Indre-et-Loire', value: rang.densite_departement, display: enDensite(rang.densite_departement), highlight: false },
+];
+---
+
+<Base
+  title="Territoire de Luynes — Luynes en chiffres"
+  description={`${formatNumber(commune.surface_km2, 1)} km², ${formatNumber(commune.densite_hab_km2)} habitants au km² : la place de Luynes parmi les ${rang.nb_communes} communes d'Indre-et-Loire.`}
+  sources={CREDITS_TERRITOIRE}
+  showBack
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="font-medium text-loire">Thème · 🗺️ Territoire</p>
+    <h1 id="titre" class="mt-3 font-display text-5xl leading-[0.95] min-[380px]:text-6xl font-extrabold tracking-tight sm:text-8xl">Territoire</h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Superficie, densité : comment Luynes se situe parmi les {rang.nb_communes} communes d'Indre-et-Loire.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés du territoire" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <KeyFigure tone="loire" label="Superficie" value={commune.surface_km2} decimals={1} unit="km²" note={`${formatRank(rang.rang_surface)} commune la plus grande du département.`} />
+    <KeyFigure
+      tone="accent"
+      label="Densité"
+      value={commune.densite_hab_km2}
+      unit="hab./km²"
+      note={`Contre ${formatNumber(rang.densite_departement)} en moyenne dans le département.`}
+    />
+    <KeyFigure label="Rang en densité" value={rang.rang_densite} unit={`ᵉ sur ${rang.nb_communes}`} note={`Plus dense que ${partDevancee(rang.rang_densite)} % des communes.`} />
+    <KeyFigure label="Rang en superficie" value={rang.rang_surface} unit={`ᵉ sur ${rang.nb_communes}`} note={`Plus grande que ${partDevancee(rang.rang_surface)} % des communes.`} />
+  </section>
+
+  <section id="densite" aria-labelledby="densite-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="densite-titre" class="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">Les {rang.nb_communes} communes, de la plus dense à la moins dense</h2>
+    {
+      plusDense && moinsDense && (
+        <p class="mt-4 max-w-2xl text-ink-2">
+          Chaque colonne est une commune. En tête, {plusDense.nom} et ses {formatNumber(plusDense.densite_hab_km2)} habitants au km² ;
+          tout au bout, {moinsDense.nom} avec {formatNumber(moinsDense.densite_hab_km2)}. Luynes arrive {formatRank(rang.rang_densite)},
+          {' '}{formatRatio(commune.densite_hab_km2, rang.densite_departement)} fois plus dense que la moyenne du département.
+        </p>
+      )
+    }
+    <div class="mt-8 rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
+      <RankSkyline
+        communes={communesDepartement}
+        ariaLabel={`Densité des ${rang.nb_communes} communes d'Indre-et-Loire, de la plus dense à la moins dense. Luynes est ${formatRank(rang.rang_densite)} avec ${formatNumber(commune.densite_hab_km2)} habitants au km².`}
+      />
+    </div>
+  </section>
+
+  <section id="comparaison" aria-labelledby="comparaison-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="comparaison-titre" class="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">Luynes face au département</h2>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      <div class="rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
+        <CompareBars title="Superficie" items={superficies} />
+        <p class="mt-4 text-sm text-ink-2">La moitié des communes d'Indre-et-Loire font moins de {enKm2(rang.surface_mediane_km2)}.</p>
+      </div>
+      <div class="rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
+        <CompareBars title="Habitants au km²" items={densites} />
+        <p class="mt-4 text-sm text-ink-2">Densité du département = tous ses habitants divisés par toute sa superficie.</p>
+      </div>
+    </div>
+  </section>
+
+  <FunFacts facts={faitsCommune()} id="saviez-vous-territoire" />
+</Base>

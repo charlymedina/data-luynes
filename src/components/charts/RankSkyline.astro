@@ -1,0 +1,126 @@
+---
+/**
+ * « Silhouette » de classement : toutes les communes du département rangées de la plus dense à la moins dense,
+ * une colonne fine par commune (échelle logarithmique, car Tours est 500 fois plus dense que les plus petites).
+ * Luynes est mise en avant en couleur et annotée. Survol : nom et densité de chaque commune. Tableau en dessous.
+ */
+import type { CommuneDepartement } from '../../data/commune';
+import type { TipContent } from '../../lib/chart-tooltip';
+import { formatNumber, formatRank } from '../../lib/format';
+
+interface Props {
+  communes: readonly CommuneDepartement[];
+  ariaLabel: string;
+}
+
+const { communes, ariaLabel } = Astro.props;
+const LOG_TICKS = [10, 100, 1000] as const;
+const values = communes.map((c) => Math.max(c.densite_hab_km2, 1));
+const logMin = Math.log10(Math.min(...values, LOG_TICKS[0]) * 0.7);
+const logMax = Math.log10(Math.max(...values));
+const heightPct = (v: number): number => ((Math.log10(Math.max(v, 1)) - logMin) / (logMax - logMin)) * 100;
+const widthPct = 100 / communes.length;
+const luynes = communes.find((c) => c.est_luynes);
+const luynesIndex = luynes ? communes.indexOf(luynes) : -1;
+const luynesX = (luynesIndex + 0.5) * widthPct;
+
+const tipFor = (c: CommuneDepartement): string => {
+  const content: TipContent = {
+    title: `${formatRank(c.rang_densite)} · ${c.nom}`,
+    rows: [
+      { label: 'hab./km²', value: formatNumber(c.densite_hab_km2), color: c.est_luynes ? 'var(--chart-2)' : 'var(--chart-1)' },
+      { label: 'habitants', value: formatNumber(c.population), color: 'transparent' },
+    ],
+  };
+  return JSON.stringify(content);
+};
+---
+
+<figure data-chart="rows" class="relative">
+  <div class="pb-7 pl-12">
+    <div class="relative h-56 sm:h-72" role="img" aria-label={ariaLabel}>
+      {
+        LOG_TICKS.map((tick) => (
+          <div class="absolute inset-x-0 border-t border-chart-grid" style={`bottom:${heightPct(tick)}%`} aria-hidden="true">
+            <span class="tabular absolute right-full mr-2 -translate-y-1/2 text-xs text-muted">{formatNumber(tick)}</span>
+          </div>
+        ))
+      }
+      <div class="skyline absolute inset-0 flex items-end" aria-hidden="true">
+        {
+          communes.map((c) => (
+            <span class="skyline-col relative flex h-full items-end" style={`width:${widthPct}%`} data-tip={tipFor(c)}>
+              <span
+                class:list={['skyline-bar w-full rounded-t-[2px]', c.est_luynes ? 'bg-chart-2' : 'bg-chart-1/55']}
+                style={`height:${heightPct(c.densite_hab_km2)}%`}
+              />
+            </span>
+          ))
+        }
+      </div>
+      {
+        luynes && (
+          <div
+            class="pointer-events-none absolute"
+            style={`left:${luynesX}%; bottom:${heightPct(luynes.densite_hab_km2)}%`}
+            aria-hidden="true"
+          >
+            <span class="absolute bottom-0 left-0 h-10 w-px -translate-x-1/2 bg-ink/60" />
+            <span class="absolute bottom-10 left-0 -translate-x-[15%] rounded-md bg-surface/95 px-2 py-0.5 text-xs font-bold whitespace-nowrap text-ink shadow-sm sm:text-sm">
+              Luynes · {formatRank(luynes.rang_densite)}
+            </span>
+          </div>
+        )
+      }
+      <span class="absolute top-full mt-2 left-0 text-xs text-muted">← plus denses</span>
+      <span class="absolute top-full mt-2 right-0 text-xs text-muted">moins denses →</span>
+    </div>
+  </div>
+  <p class="mt-1 text-xs text-muted">Habitants au km² (échelle logarithmique : chaque ligne vaut 10 fois la précédente).</p>
+  <div class="chart-tip" hidden></div>
+
+  <details class="mt-4 text-sm text-ink-2">
+    <summary class="cursor-pointer font-medium hover:text-ink">Voir le classement complet en tableau</summary>
+    <div class="mt-3 max-h-72 overflow-auto rounded-xl border border-line">
+      <table class="tabular w-full text-left">
+        <caption class="sr-only">Communes d'Indre-et-Loire classées par densité</caption>
+        <thead class="sticky top-0 bg-surface">
+          <tr>
+            <th scope="col" class="px-3 py-2">Rang</th>
+            <th scope="col" class="px-3 py-2">Commune</th>
+            <th scope="col" class="px-3 py-2 text-right">Hab./km²</th>
+            <th scope="col" class="hidden px-3 py-2 text-right sm:table-cell">Habitants</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            communes.map((c) => (
+              <tr class:list={['border-t border-line', c.est_luynes && 'bg-accent-soft font-bold text-ink']}>
+                <td class="px-3 py-1.5">{c.rang_densite}</td>
+                <th scope="row" class="px-3 py-1.5 font-medium">{c.nom}</th>
+                <td class="px-3 py-1.5 text-right">{formatNumber(c.densite_hab_km2)}</td>
+                <td class="hidden px-3 py-1.5 text-right sm:table-cell">{formatNumber(c.population)}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+
+<style>
+  .skyline-col:hover .skyline-bar {
+    filter: brightness(0.75);
+  }
+  .skyline-bar {
+    transform-origin: bottom center;
+  }
+  :global(.motion .reveal) .skyline-bar {
+    transform: scaleY(0);
+    transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  :global(.motion .reveal.is-visible) .skyline-bar {
+    transform: none;
+  }
+</style>

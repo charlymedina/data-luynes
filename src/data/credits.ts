@@ -20,4 +20,5 @@ const TOURS_METROPOLE: FooterSource = {
 };
 
 export const CREDITS_ACCUEIL: readonly FooterSource[] = [API_GEO, INSEE_RECENSEMENT, TOURS_METROPOLE];
+export const CREDITS_TERRITOIRE: readonly FooterSource[] = [API_GEO];
 export const CREDITS_POPULATION: readonly FooterSource[] = [TOURS_METROPOLE, INSEE_RECENSEMENT, API_GEO];

@@ -2,15 +2,14 @@
 import Base from '../layouts/Base.astro';
 import KeyFigure from '../components/KeyFigure.astro';
 import FunFacts from '../components/FunFacts.astro';
-import NeighbourBars from '../components/NeighbourBars.astro';
 import LineChart from '../components/charts/LineChart.astro';
 import AgePyramid from '../components/charts/AgePyramid.astro';
 import CompareBars, { type CompareItem } from '../components/charts/CompareBars.astro';
-import { rang, voisines } from '../data/commune';
+import { rang } from '../data/commune';
 import { ages, agesDe, evolutionAges, faits, historique, naissancesDeces, pyramide } from '../data/population';
 import { CREDITS_POPULATION } from '../data/credits';
-import { formatNumber, formatPercent, formatRank } from '../lib/format';
-import { faitsPopulation } from '../lib/faits';
+import { formatNumber, formatPercent } from '../lib/format';
+import { faitsPopulation, formatVariation } from '../lib/faits';
 
 const luynes = agesDe('Luynes');
 const anneeRecensement = luynes.annee;
@@ -63,7 +62,7 @@ const arriveesNettes = variationPopulation - soldeNaturelPeriode;
 >
   <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
     <p class="font-medium text-loire">Thème · 👥 Population</p>
-    <h1 id="titre" class="mt-3 font-display text-6xl leading-[0.95] font-extrabold tracking-tight sm:text-8xl">Population</h1>
+    <h1 id="titre" class="mt-3 font-display text-5xl leading-[0.95] min-[380px]:text-6xl font-extrabold tracking-tight sm:text-8xl">Population</h1>
     <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
       De {formatNumber(faits.population_premiere)} habitants en {firstYear} à {formatNumber(faits.population_derniere)} en {lastYear} :
       l'histoire de Luynes racontée par les recensements, la pyramide des âges et l'état civil.
@@ -118,6 +117,9 @@ const arriveesNettes = variationPopulation - soldeNaturelPeriode;
       <div class="rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
         <h3 class="mb-4 font-display text-xl font-bold">Pyramide des âges, {anneeRecensement}</h3>
         <AgePyramid tranches={pyramide} />
+        <p class="mt-3 text-xs text-muted">
+          Le haut de la pyramide est gonflé par les résidents du centre hospitalier Jean-Pagès et de son EHPAD.
+        </p>
       </div>
       <div class="space-y-6 rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
         <h3 class="font-display text-xl font-bold">Luynes face au département et à la France</h3>
@@ -138,6 +140,15 @@ const arriveesNettes = variationPopulation - soldeNaturelPeriode;
           ` Entre ${faits.annee_precedente} et ${faits.annee_derniere}, les décès ont dépassé les naissances de ${formatNumber(-soldeNaturelPeriode)}, mais la population ${variationPopulation < 0 ? `n'a perdu que ${formatNumber(-variationPopulation)} habitants` : `a gagné ${formatNumber(variationPopulation)} habitants`} : ce sont les nouveaux arrivants qui compensent.`
       }
     </p>
+    {
+      totalDeces > totalNaissances && (
+        <p class="mt-3 max-w-2xl rounded-xl border-l-4 border-loire bg-loire-soft/60 px-4 py-3 text-sm text-ink-2">
+          Pourquoi autant de décès ? Luynes accueille le centre hospitalier Jean-Pagès et son EHPAD. Leurs résidents,
+          souvent très âgés, sont comptés comme habitants de la commune : c'est aussi ce qui explique le grand nombre
+          de personnes de 90 ans et plus dans la pyramide des âges.
+        </p>
+      )
+    }
     <div class="mt-8 rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
       <LineChart
         xs={etatCivilYears}
@@ -153,16 +164,30 @@ const arriveesNettes = variationPopulation - soldeNaturelPeriode;
     </div>
   </section>
 
-  <section id="voisines" aria-labelledby="voisines-titre" class="reveal mt-20 grid scroll-mt-8 gap-10 sm:mt-28 lg:grid-cols-[1fr_2fr]">
-    <div>
-      <h2 id="voisines-titre" class="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">Et les voisines ?</h2>
-      <p class="mt-4 text-ink-2">
-        Luynes est la {formatRank(rang.rang_population)} commune la plus peuplée d'Indre-et-Loire sur {rang.nb_communes}.
-        Voici comment elle se situe face aux communes qui l'entourent, de part et d'autre de la Loire.
-      </p>
-    </div>
-    <div class="rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
-      <NeighbourBars voisines={voisines} />
+  <section id="departement" aria-labelledby="departement-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="departement-titre" class="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+      Luynes parmi les {rang.nb_communes} communes d'Indre-et-Loire
+    </h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Entre {rang.annee_debut} et {rang.annee_fin}, la population de Luynes a évolué de {formatVariation(rang.evolution_pct)},
+      contre {formatVariation(rang.evolution_departement_pct)} pour l'ensemble du département.
+      Les 65 ans et plus y pèsent {formatPercent(luynes.part_65_plus)} des habitants, contre {formatPercent(rang.part_65_plus_departement)} en Indre-et-Loire.
+    </p>
+    <div class="mt-8 grid gap-4 sm:grid-cols-3">
+      <KeyFigure tone="loire" label="Population" value={rang.rang_population} unit={`ᵉ sur ${rang.nb_communes}`} note="Rang des communes les plus peuplées." />
+      <KeyFigure
+        label={`Croissance ${rang.annee_debut}-${rang.annee_fin}`}
+        value={rang.rang_evolution}
+        unit={`ᵉ sur ${rang.nb_communes}`}
+        note={`${formatVariation(rang.evolution_pct)} à Luynes, ${formatVariation(rang.evolution_departement_pct)} dans le département.`}
+      />
+      <KeyFigure
+        tone="accent"
+        label="Part des 65 ans et plus"
+        value={rang.rang_65_plus}
+        unit={`ᵉ sur ${rang.nb_communes}`}
+        note="Rang des communes où les 65 ans et plus pèsent le plus."
+      />
     </div>
   </section>
 

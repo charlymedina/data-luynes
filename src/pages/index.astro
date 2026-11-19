@@ -91,6 +91,24 @@ const sparkline = historique
         unit="bébés"
         note={`Et ${formatNumber(derniereAnneeEtatCivil.deces)} décès la même année.`}
       />
+      <KeyFigure
+        class="sm:col-span-3"
+        href="/territoire"
+        label="Superficie"
+        value={commune.surface_km2}
+        decimals={1}
+        unit="km²"
+        note={`${formatRank(rang.rang_surface)} commune la plus grande d'Indre-et-Loire.`}
+      />
+      <KeyFigure
+        class="sm:col-span-3"
+        tone="accent"
+        href="/territoire#densite"
+        label="Densité"
+        value={commune.densite_hab_km2}
+        unit="hab./km²"
+        note={`Contre ${formatNumber(rang.densite_departement)} en moyenne dans le département.`}
+      />
     </div>
   </section>
 

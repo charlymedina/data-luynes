@@ -22,8 +22,12 @@ const FETCH_TIMEOUT_MS = 60_000;
 const MAX_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 2_000;
 
+async function resolveUrl(source: Source): Promise<string> {
+  return typeof source.url === 'string' ? source.url : source.url();
+}
+
 async function fetchJson(source: Source): Promise<string> {
-  const response = await fetch(source.url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  const response = await fetch(await resolveUrl(source), { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const body = await response.text();
   JSON.parse(body); // échoue tôt si la source ne renvoie pas du JSON valide
@@ -41,7 +45,7 @@ async function downloadSource(source: Source): Promise<void> {
     } catch (error: unknown) {
       const reason = error instanceof Error ? error.message : String(error);
       if (attempt === MAX_ATTEMPTS) {
-        throw new Error(`Source « ${source.id} » indisponible après ${MAX_ATTEMPTS} essais (${reason}) : ${source.url}`);
+        throw new Error(`Source « ${source.id} » indisponible après ${MAX_ATTEMPTS} essais (${reason})`);
       }
       console.warn(`… ${source.id} : essai ${attempt} raté (${reason}), nouvel essai`);
       await sleep(RETRY_DELAY_MS * attempt);

@@ -43,7 +43,7 @@ const soft = tone === 'loire' ? 'opacity-85' : 'text-ink-2';
     <span class="figure-value text-5xl font-extrabold tracking-tight sm:text-6xl" data-count={value} data-decimals={decimals}>
       {formatNumber(value, decimals)}
     </span>
-    {unit && <span class="text-lg font-semibold opacity-80">{unit}</span>}
+    {unit && <span class:list={['text-lg font-semibold opacity-80', unit.startsWith('ᵉ') && '-ml-2']}>{unit}</span>}
   </p>
   {note && <p class:list={['mt-4 text-sm leading-snug', soft]}>{note}</p>}
   <slot />
