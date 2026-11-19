@@ -1,12 +1,13 @@
 /**
- * Cartes interactives (MapLibre GL), chargées seulement sur les pages qui en contiennent une :
- * la librairie (~250 Ko) est importée à la demande, quand la carte approche de l'écran.
+ * Cartes « couches » (page Patrimoine & risques) : contour de la commune, zones (polygones semi-transparents,
+ * ex. zone inondable) et couches de points, chacune affichable / masquable depuis la légende.
+ * La librairie MapLibre (~250 Ko) n'est chargée que sur les pages qui ont une carte, quand elle approche de l'écran.
  *
- * Chaque carte lit ses données dans un <script type="application/json" class="map-data"> (voir MapView.astro) :
- * le contour de la commune et des couches de points. Fonds de carte OpenFreeMap (gratuits, sans clé),
- * en version claire ou sombre selon le thème du site ; les couleurs des points viennent des variables CSS.
+ * Chaque carte lit ses données dans un <script type="application/json" class="map-data"> (voir MapView.astro).
+ * Les couleurs viennent des variables CSS du site, donc suivent le thème clair / sombre.
  */
-import type { Map as MapLibreMap, MapLayerMouseEvent } from 'maplibre-gl';
+import type { Map as MapLibreMap } from 'maplibre-gl';
+import { addContour, createBaseMap, cssColor, loadMapLibre, showMapError, whenNearViewport, type Geometry } from './map-base';
 
 export interface MapPoint {
   lat: number;
@@ -23,26 +24,22 @@ export interface MapLayerData {
   points: MapPoint[];
 }
 
+/** Zone colorée (polygone), dessinée sous les points. */
+export interface MapAreaData {
+  id: string;
+  colorVar: string;
+  geometry: Geometry;
+  /** Texte affiché au clic dans la zone. */
+  label: string;
+}
+
 export interface MapData {
-  contour: { type: string; coordinates: unknown };
+  contour: Geometry;
+  areas: MapAreaData[];
   layers: MapLayerData[];
 }
 
-const STYLES = {
-  light: 'https://tiles.openfreemap.org/styles/positron',
-  dark: 'https://tiles.openfreemap.org/styles/dark',
-} as const;
-const CONTOUR_PADDING_PX = 24;
-
-function siteTheme(): 'light' | 'dark' {
-  const forced = document.documentElement.dataset.theme;
-  if (forced === 'light' || forced === 'dark') return forced;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function cssColor(variable: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(variable).trim() || '#888888';
-}
+const AREA_OPACITY = 0.3;
 
 function toFeatures(layer: MapLayerData): GeoJSON.FeatureCollection {
   return {
@@ -55,14 +52,18 @@ function toFeatures(layer: MapLayerData): GeoJSON.FeatureCollection {
   };
 }
 
-/** Ajoute (ou rajoute après un changement de fond de carte) le contour et les couches de points. */
-function addOverlays(map: MapLibreMap, data: MapData): void {
-  const contour = { type: 'Feature', geometry: data.contour, properties: {} } as GeoJSON.Feature;
-  map.addSource('contour', { type: 'geojson', data: contour });
-  map.addLayer({ id: 'contour-fill', type: 'fill', source: 'contour', paint: { 'fill-color': cssColor('--loire'), 'fill-opacity': 0.06 } });
-  map.addLayer({ id: 'contour-line', type: 'line', source: 'contour', paint: { 'line-color': cssColor('--loire'), 'line-width': 2, 'line-dasharray': [2, 1.5] } });
+function addAreas(map: MapLibreMap, areas: readonly MapAreaData[]): void {
+  for (const area of areas) {
+    const color = cssColor(area.colorVar);
+    const feature = { type: 'Feature', geometry: area.geometry, properties: { label: area.label } } as GeoJSON.Feature;
+    map.addSource(area.id, { type: 'geojson', data: feature });
+    map.addLayer({ id: area.id, type: 'fill', source: area.id, paint: { 'fill-color': color, 'fill-opacity': AREA_OPACITY } });
+    map.addLayer({ id: `${area.id}-line`, type: 'line', source: area.id, paint: { 'line-color': color, 'line-width': 1.5 } });
+  }
+}
 
-  for (const layer of data.layers) {
+function addPoints(map: MapLibreMap, layers: readonly MapLayerData[]): void {
+  for (const layer of layers) {
     map.addSource(layer.id, { type: 'geojson', data: toFeatures(layer) });
     map.addLayer({
       id: layer.id,
@@ -79,83 +80,45 @@ function addOverlays(map: MapLibreMap, data: MapData): void {
   }
 }
 
-function contourBounds(data: MapData): [[number, number], [number, number]] {
-  const coords = JSON.stringify(data.contour.coordinates).match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
-  const lons = coords.filter((_, i) => i % 2 === 0);
-  const lats = coords.filter((_, i) => i % 2 === 1);
-  return [
-    [Math.min(...lons), Math.min(...lats)],
-    [Math.max(...lons), Math.max(...lats)],
-  ];
+/** Affiche ou masque une couche (et son contour pour les zones). */
+function setVisible(map: MapLibreMap, id: string, visible: boolean): void {
+  for (const layerId of [id, `${id}-line`]) {
+    if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+  }
 }
 
-/** Cases à cocher de la légende : afficher / masquer chaque couche. */
-function bindLegend(root: HTMLElement, map: MapLibreMap): void {
-  root.querySelectorAll<HTMLInputElement>('input[data-layer]').forEach((input) => {
-    input.addEventListener('change', () => {
-      const id = input.dataset.layer ?? '';
-      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', input.checked ? 'visible' : 'none');
-    });
-  });
-}
-
-function applyLegendVisibility(root: HTMLElement, map: MapLibreMap): void {
-  root.querySelectorAll<HTMLInputElement>('input[data-layer]').forEach((input) => {
-    const id = input.dataset.layer ?? '';
-    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', input.checked ? 'visible' : 'none');
-  });
+/** Applique l'état des cases à cocher de la légende. */
+function applyLegend(root: HTMLElement, map: MapLibreMap): void {
+  root.querySelectorAll<HTMLInputElement>('input[data-layer]').forEach((input) => setVisible(map, input.dataset.layer ?? '', input.checked));
 }
 
 async function createMap(root: HTMLElement, data: MapData): Promise<void> {
   const container = root.querySelector<HTMLElement>('.map-canvas');
   if (!container) return;
-  const [{ default: maplibregl }] = await Promise.all([import('maplibre-gl'), import('maplibre-gl/dist/maplibre-gl.css')]);
-
-  let theme = siteTheme();
-  const map = new maplibregl.Map({
-    container,
-    style: STYLES[theme],
-    bounds: contourBounds(data),
-    fitBoundsOptions: { padding: CONTOUR_PADDING_PX },
-    cooperativeGestures: true,
-    attributionControl: { compact: true },
-    locale: {
-      'CooperativeGesturesHandler.WindowsHelpText': 'Ctrl + molette pour zoomer',
-      'CooperativeGesturesHandler.MacHelpText': '⌘ + molette pour zoomer',
-      'CooperativeGesturesHandler.MobileHelpText': 'Deux doigts pour déplacer la carte',
-    },
+  const maplibregl = await loadMapLibre();
+  const map = createBaseMap(maplibregl, container, data.contour, (m) => {
+    addAreas(m, data.areas);
+    addContour(m, data.contour);
+    addPoints(m, data.layers);
+    applyLegend(root, m);
   });
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
+  // Clic : infobulle de l'élément le plus haut (un point situé dans une zone l'emporte sur la zone).
   const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: true, offset: 10 });
-  const showPopup = (event: MapLayerMouseEvent): void => {
-    const feature = event.features?.[0];
+  const clickable = [...data.layers.map((l) => l.id), ...data.areas.map((a) => a.id)];
+  map.on('click', (event) => {
+    const feature = map.queryRenderedFeatures(event.point, { layers: clickable.filter((id) => map.getLayer(id)) })[0];
     const label = feature?.properties?.label;
-    if (!feature || typeof label !== 'string' || feature.geometry.type !== 'Point') return;
-    popup.setLngLat(feature.geometry.coordinates as [number, number]).setText(label).addTo(map);
-  };
+    if (typeof label === 'string') popup.setLngLat(event.lngLat).setText(label).addTo(map);
+  });
   for (const layer of data.layers) {
-    map.on('click', layer.id, showPopup);
     map.on('mouseenter', layer.id, () => (map.getCanvas().style.cursor = 'pointer'));
     map.on('mouseleave', layer.id, () => (map.getCanvas().style.cursor = ''));
   }
 
-  map.on('style.load', () => {
-    addOverlays(map, data);
-    applyLegendVisibility(root, map);
+  root.querySelectorAll<HTMLInputElement>('input[data-layer]').forEach((input) => {
+    input.addEventListener('change', () => setVisible(map, input.dataset.layer ?? '', input.checked));
   });
-  bindLegend(root, map);
-
-  // Le fond de carte suit le thème du site (bouton clair/sombre ou réglage du navigateur).
-  const syncTheme = (): void => {
-    const next = siteTheme();
-    if (next === theme) return;
-    theme = next;
-    if (!map.getSource('contour')) return;
-    map.setStyle(STYLES[theme]);
-  };
-  new MutationObserver(syncTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncTheme);
   root.dataset.ready = 'true';
 }
 
@@ -167,32 +130,10 @@ function readMapData(root: HTMLElement): MapData | null {
   }
 }
 
-/** Crée chaque carte de la page quand elle approche de l'écran (économise le chargement sur mobile). */
 export function initMaps(): void {
-  const roots = [...document.querySelectorAll<HTMLElement>('[data-map]')];
-  if (roots.length === 0) return;
-  const start = (root: HTMLElement): void => {
+  const roots = [...document.querySelectorAll<HTMLElement>('[data-map="couches"]')];
+  whenNearViewport(roots, (root) => {
     const data = readMapData(root);
-    if (!data) return;
-    createMap(root, data).catch(() => {
-      root.dataset.ready = 'error';
-      const fallback = root.querySelector('.map-fallback');
-      if (fallback) fallback.textContent = 'Carte indisponible pour le moment : les mêmes informations sont détaillées juste en dessous.';
-    });
-  };
-  if (!('IntersectionObserver' in window)) {
-    roots.forEach(start);
-    return;
-  }
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        observer.unobserve(entry.target);
-        start(entry.target as HTMLElement);
-      }
-    },
-    { rootMargin: '300px' },
-  );
-  roots.forEach((root) => observer.observe(root));
+    if (data) createMap(root, data).catch(() => showMapError(root));
+  });
 }

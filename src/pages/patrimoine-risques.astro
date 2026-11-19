@@ -2,10 +2,10 @@
 import Base from '../layouts/Base.astro';
 import KeyFigure from '../components/KeyFigure.astro';
 import FunFacts from '../components/FunFacts.astro';
-import MapView, { type MapLegendItem } from '../components/MapView.astro';
+import MapView, { type MapAreaLegendItem, type MapLegendItem } from '../components/MapView.astro';
 import TimelineRows, { type TimelineRow } from '../components/charts/TimelineRows.astro';
 import CompareBars, { type CompareItem } from '../components/charts/CompareBars.astro';
-import { arretesCatnat, cavites, contourCommune, monuments, mouvementsTerrain, resumeRisques as r } from '../data/patrimoine';
+import { arretesCatnat, cavites, contourCommune, monuments, mouvementsTerrain, resumeRisques as r, zoneInondable } from '../data/patrimoine';
 import { CREDITS_PATRIMOINE } from '../data/credits';
 import { formatNumber, formatRank, formatRatio } from '../lib/format';
 import { faitsPatrimoine, partDevancee } from '../lib/faits';
@@ -32,6 +32,18 @@ const legende: MapLegendItem[] = [
       colorVar: '--chart-2',
       radius: 8,
       points: monuments.map((m) => ({ lat: m.latitude, lon: m.longitude, label: `${m.nom} — ${m.protection} en ${m.annee_protection}` })),
+    },
+  },
+];
+
+const zones: MapAreaLegendItem[] = [
+  {
+    label: 'Zone inondable de la Loire',
+    area: {
+      id: 'zone-inondable',
+      colorVar: '--chart-3',
+      geometry: zoneInondable.zone,
+      label: `Zone inondable de la Loire (crue de référence) : ${formatNumber(zoneInondable.surface_ha)} ha, ${formatNumber(zoneInondable.part_commune_pct, 1)} % de la commune`,
     },
   },
 ];
@@ -66,7 +78,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
     </h1>
     <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
       Un aqueduc romain, un château, des caves creusées dans le tuffeau… Le coteau qui fait le charme de Luynes
-      est aussi celui qui bouge : éboulements, sécheresses, crues de la Loire.
+      est aussi celui qui bouge : éboulements, effondrements, sols qui travaillent pendant les sécheresses.
     </p>
   </section>
 
@@ -80,14 +92,26 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
   <section id="carte" aria-labelledby="carte-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
     <h2 id="carte-titre" class={titreH2}>La carte</h2>
     <p class="mt-4 max-w-2xl text-ink-2">
-      Les gros points orange sont les monuments historiques, les petits points bleu-vert les cavités recensées par le BRGM.
+      Les gros points orange sont les monuments historiques, les petits points bleu-vert les cavités recensées par le BRGM,
+      la zone bleue la partie de la commune que la Loire peut recouvrir lors d'une crue de référence.
       Le pointillé marque la limite de la commune.
     </p>
+    <aside class="mt-6 flex max-w-2xl items-start gap-4 rounded-[1.25rem] border border-line bg-surface p-5">
+      <span class="tabular shrink-0 font-display text-4xl leading-none font-extrabold text-chart-3">
+        {formatNumber(zoneInondable.part_commune_pct, 1)} %
+      </span>
+      <p class="text-sm text-ink-2">
+        <strong class="text-ink">de la commune est en zone inondable</strong>, soit {formatNumber(zoneInondable.surface_ha)} hectares
+        entre le coteau et la Loire. C'est la carte officielle de la crue « de probabilité moyenne » (une crue qui revient
+        en moyenne tous les 100 à 300 ans) établie pour le territoire à risque d'inondation de Tours.
+      </p>
+    </aside>
     <div class="mt-8">
       <MapView
-        ariaLabel={`Carte de Luynes : ${formatNumber(r.monuments)} monuments historiques et ${formatNumber(r.cavites)} cavités souterraines`}
+        ariaLabel={`Carte de Luynes : ${formatNumber(r.monuments)} monuments historiques, ${formatNumber(r.cavites)} cavités souterraines et la zone inondable de la Loire (${formatNumber(zoneInondable.part_commune_pct, 1)} % de la commune)`}
         contour={contourCommune}
         legend={legende}
+        areas={zones}
       >
         <details class="text-sm text-ink-2">
           <summary class="cursor-pointer font-medium hover:text-ink">Voir la liste des monuments</summary>

@@ -8,6 +8,7 @@ import contourRows from './generated/patrimoine_contour.json';
 import cavitesRows from './generated/risques_cavites.json';
 import catnatRows from './generated/risques_catnat.json';
 import mouvementsRows from './generated/risques_mouvements.json';
+import zonesInondablesRows from './generated/risques_zones_inondables.json';
 import { firstRow } from './rows';
 
 export interface Monument {
@@ -70,7 +71,17 @@ export interface ContourGeometry {
   coordinates: unknown;
 }
 
+/** Zone inondable de la Loire à Luynes (crue de référence), découpée à la limite de la commune. */
+export interface ZoneInondable {
+  surface_ha: number;
+  part_commune_pct: number;
+  zone: ContourGeometry;
+}
+
 export const monuments: readonly Monument[] = monumentsRows as Monument[];
+/** DuckDB exporte la forme GeoJSON sous forme de texte : on la relit en objet. */
+const zoneBrute = firstRow(zonesInondablesRows as { surface_ha: number; part_commune_pct: number; zone: string }[], 'risques_zones_inondables');
+export const zoneInondable: ZoneInondable = { ...zoneBrute, zone: JSON.parse(zoneBrute.zone) as ContourGeometry };
 export const cavites: readonly Cavite[] = cavitesRows as Cavite[];
 export const arretesCatnat: readonly ArreteCatnat[] = catnatRows as ArreteCatnat[];
 export const mouvementsTerrain: readonly MouvementTerrain[] = mouvementsRows as MouvementTerrain[];

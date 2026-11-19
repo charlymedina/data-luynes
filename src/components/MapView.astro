@@ -1,40 +1,54 @@
 ---
 /**
- * Carte interactive de Luynes : contour de la commune + couches de points, avec légende
- * (cases à cocher pour afficher / masquer chaque couche). La carte elle-même est dessinée
+ * Carte interactive de Luynes : contour de la commune, zones colorées (ex. zone inondable) et couches de points,
+ * avec légende (cases à cocher pour afficher / masquer chaque couche). La carte elle-même est dessinée
  * dans le navigateur par src/lib/map.ts, chargé seulement sur les pages qui ont une carte.
  * Le slot reçoit l'alternative accessible (liste ou tableau des mêmes informations).
  */
-import type { MapData, MapLayerData } from '../lib/map';
+import type { MapAreaData, MapData, MapLayerData } from '../lib/map';
+import type { Geometry } from '../lib/map-base';
 
 export interface MapLegendItem {
   layer: MapLayerData;
   label: string;
 }
 
-interface Props {
-  ariaLabel: string;
-  contour: MapData['contour'];
-  legend: readonly MapLegendItem[];
+export interface MapAreaLegendItem {
+  area: MapAreaData;
+  label: string;
 }
 
-const { ariaLabel, contour, legend } = Astro.props;
-const data: MapData = { contour, layers: legend.map((item) => item.layer) };
+interface Props {
+  ariaLabel: string;
+  contour: Geometry;
+  legend: readonly MapLegendItem[];
+  areas?: readonly MapAreaLegendItem[];
+}
+
+const { ariaLabel, contour, legend, areas = [] } = Astro.props;
+const data: MapData = { contour, areas: areas.map((item) => item.area), layers: legend.map((item) => item.layer) };
 const json = JSON.stringify(data).replaceAll('<', '\\u003c');
+const entries = [
+  ...areas.map((item) => ({ id: item.area.id, colorVar: item.area.colorVar, label: item.label, shape: 'rounded-[3px] opacity-60' })),
+  ...legend.map((item) => ({ id: item.layer.id, colorVar: item.layer.colorVar, label: item.label, shape: 'rounded-full' })),
+];
 ---
 
-<figure data-map class="map-root overflow-hidden rounded-[1.5rem] border border-line bg-surface">
+<figure data-map="couches" class="map-root overflow-hidden rounded-[1.5rem] border border-line bg-surface">
   <div class="flex flex-wrap gap-x-5 gap-y-2 border-b border-line px-4 py-3 text-sm sm:px-6">
     {
-      legend.map((item) => (
+      entries.map((entry) => (
         <label class="flex cursor-pointer items-center gap-2 select-none">
-          <input type="checkbox" checked data-layer={item.layer.id} class="peer sr-only" />
+          <input type="checkbox" checked data-layer={entry.id} class="peer sr-only" />
           <span
-            class="inline-block size-3.5 rounded-full ring-2 ring-surface transition peer-checked:opacity-100 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-loire opacity-30"
-            style={`background:var(${item.layer.colorVar})`}
+            class:list={[
+              'inline-block size-3.5 ring-2 ring-surface transition peer-checked:opacity-100 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-loire opacity-30',
+              entry.shape,
+            ]}
+            style={`background:var(${entry.colorVar})`}
             aria-hidden="true"
           />
-          <span class="text-ink-2 peer-checked:text-ink">{item.label}</span>
+          <span class="text-ink-2 peer-checked:text-ink">{entry.label}</span>
         </label>
       ))
     }
@@ -50,7 +64,7 @@ const json = JSON.stringify(data).replaceAll('<', '\\u003c');
   </div>
   <script is:inline type="application/json" class="map-data" set:html={json} />
   <figcaption class="border-t border-line px-4 py-3 text-xs text-muted sm:px-6">
-    Cliquer sur un point pour le détail. Fond de carte © OpenFreeMap, données © contributeurs OpenStreetMap.
+    Cliquer sur un point ou une zone pour le détail. Fond de carte © OpenFreeMap, données © contributeurs OpenStreetMap.
   </figcaption>
   <div class="border-t border-line px-4 py-3 sm:px-6">
     <slot />
@@ -68,18 +82,5 @@ const json = JSON.stringify(data).replaceAll('<', '\\u003c');
   }
   .map-root[data-ready='error'] .map-fallback {
     color: var(--ink-2);
-  }
-  /* Infobulles et contrôles MapLibre aux couleurs du site */
-  .map-root :global(.maplibregl-popup-content) {
-    background: var(--ink);
-    color: var(--bg);
-    border-radius: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8125rem;
-    font-family: var(--font-sans);
-  }
-  .map-root :global(.maplibregl-popup-tip) {
-    border-top-color: var(--ink);
-    border-bottom-color: var(--ink);
   }
 </style>
