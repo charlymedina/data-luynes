@@ -25,9 +25,8 @@ export const THEMES: readonly Theme[] = [
   { slug: 'budget', titre: 'Budget communal', court: 'Budget', icon: 'pieces', resume: 'Recettes, dépenses, dette, impôts locaux.', statut: 'disponible' },
   { slug: 'revenus-emploi', titre: 'Revenus & emploi', court: 'Revenus', icon: 'mallette', resume: 'Revenus, salaires, emplois, entreprises.', statut: 'disponible' },
   { slug: 'accidents', titre: 'Accidents de la route', court: 'Accidents', icon: 'voiture', resume: 'Carte des accidents depuis 2005.', statut: 'disponible' },
-  { slug: 'climat', titre: 'Climat', court: 'Climat', icon: 'meteo', resume: 'Températures, pluie et records autour de Tours.', statut: 'disponible' },
   { slug: 'equipements', titre: 'Écoles, santé & services', court: 'Services', icon: 'ecole', resume: 'Écoles, santé, commerces, services.', statut: 'disponible' },
-  { slug: 'energie-mobilite', titre: 'Énergie & mobilité', court: 'Énergie', icon: 'eclair', resume: 'Électricité, solaire, voitures, bus.', statut: 'bientot' },
+  { slug: 'energie-mobilite', titre: 'Énergie & mobilité', court: 'Énergie', icon: 'eclair', resume: 'Électricité, gaz, solaire, voitures électriques, bornes.', statut: 'disponible' },
 ];
 
 export const themesDisponibles: readonly Theme[] = THEMES.filter((theme) => theme.statut === 'disponible');

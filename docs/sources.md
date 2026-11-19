@@ -102,21 +102,9 @@ Notes :
 - **Harmonisation** (`data/sql/baac/*.sql`) : avant 2019, département « 370 » + commune « 139 », heures « 1930 », coordonnées sans virgule (souvent à 0 avant 2010) et fichiers en Windows-1252 ; le fichier 2022 nomme `Accident_Id` la colonne `Num_Acc`.
 - **Rupture 2018** : la définition du « blessé hospitalisé » a changé (plus de 24 h à l'hôpital) ; les années antérieures ne sont pas strictement comparables sur la gravité.
 - 12 des 35 accidents de Luynes (surtout avant 2010) n'ont pas de coordonnées : absents de la carte, comptés partout ailleurs.
+- **2025 vérifié** (19/11/2026) : fichiers publiés le 30/10/2026, 517 accidents en Indre-et-Loire (523 en 2024, 585 en 2023) donc millésime complet ; aucun accident codé 37139 ni situé dans le contour de la commune. La page cite la date de publication du fichier de la dernière année (lue dans `manifest.json`).
 - Taux « pour 1 000 habitants » calculés avec la population légale actuelle (API Géo).
 - Requêtes : `data/sql/_accidents.sql` et `data/sql/accidents_*.sql`.
-
-## Thème Climat
-
-| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
-|---|---|---|---|---|---|
-| [Données climatologiques de base quotidiennes](https://www.data.gouv.fr/datasets/donnees-climatologiques-de-base-quotidiennes/) — fichiers « RR-T-Vent » de l'Indre-et-Loire (`Q_37_previous-…` et `Q_37_latest-…`) | Températures minimale et maximale, pluie, chaque jour, station de **Tours** (n° 37179001, aéroport de Parçay-Meslay, ~15 km de Luynes), depuis novembre 1959 | Météo-France | Licence Ouverte 2.0 | Quotidienne (fichier « latest ») | `data/raw/meteo_37/` |
-
-Notes :
-- Il n'y a pas de station à Luynes : la page le dit clairement. Fondettes a eu une station de 1992 à 2021 seulement.
-- Les noms de fichiers changent chaque année : leurs adresses sont relues dans l'API data.gouv (`data/sources-climat.ts`).
-- Une année n'est comptée que si elle a au moins 350 jours mesurés (températures et pluie) : 1961-1964 et l'année en cours sont écartées des moyennes ; les records journaliers portent sur tous les jours mesurés.
-- Référence des « bandes du réchauffement » : moyenne 1971-2000 ; normales mensuelles : 1991-2020.
-- Requêtes : `data/sql/_climat.sql` et `data/sql/climat_*.sql`.
 
 ## Thème Écoles, santé & services
 
@@ -126,13 +114,33 @@ Notes :
 | Référentiel des codes BPE (`https://api.insee.fr/melodi/range/DS_BPE`) | Libellés des codes d'équipements (ex. D265 = médecin généraliste) | INSEE | Licence Ouverte 2.0 | Avec la BPE | `data/reference/bpe_libelles.csv` (extrait une fois ; le fichier source fait 13 Mo) |
 | [Annuaire de l'éducation](https://data.education.gouv.fr/explore/dataset/fr-en-annuaire-education/) | Écoles et collège de Luynes : nom, public/privé, niveaux, position | Ministère de l'Éducation nationale | Licence Ouverte 2.0 | Quotidienne | `data/raw/ecoles_luynes.json` |
 | [Effectifs d'élèves par école](https://data.education.gouv.fr/explore/dataset/fr-en-ecoles-effectifs-nb_classes/) | Élèves et classes de chaque école à chaque rentrée depuis 2009 — Luynes et total Indre-et-Loire | Ministère de l'Éducation nationale | Licence Ouverte 2.0 | Annuelle | `data/raw/effectifs_ecoles_luynes.json`, `effectifs_ecoles_37.json` |
+| [Effectifs des collèges par niveau](https://data.education.gouv.fr/explore/dataset/fr-en-college-effectifs-niveau-sexe-lv/) | Élèves du collège Lucie-et-Raymond-Aubrac par niveau (6ᵉ → 3ᵉ), rentrées 2019 → dernière | Ministère de l'Éducation nationale | Licence Ouverte 2.0 | Annuelle | `data/raw/effectifs_college_luynes.json` |
+| [IPS des écoles](https://data.education.gouv.fr/explore/dataset/fr-en-ips-ecoles-ap2022/) et [IPS des collèges](https://data.education.gouv.fr/explore/dataset/fr-en-ips-colleges-ap2023/) | Indice de position sociale de chaque établissement + moyennes départementales et nationales par secteur (public / privé) | Ministère de l'Éducation nationale (DEPP) | Licence Ouverte 2.0 | Annuelle | `data/raw/ips_ecoles_luynes.json`, `ips_college_luynes.json` |
 
 Notes :
 - ⚠️ Dans les effectifs, la colonne `code_commune_insee` contient le code postal (37230, partagé avec Fondettes) : filtre sur `commune = "LUYNES"` et le département.
-- Collège : présent dans l'annuaire, mais ses effectifs (autre jeu de données) ne sont pas encore repris.
+- Collège et IPS : filtrés par les identifiants (UAI) des établissements ouverts de l'annuaire, en plus du code commune. L'IPS n'est pas publié pour les écoles maternelles seules ; chaque établissement est affiché à sa dernière rentrée publiée (pour l'école Pasteur, 2022-2023). Le nombre de classes du collège n'est pas publié dans ce jeu.
+- Requêtes : `data/sql/ecoles_ips.sql`, `data/sql/ecoles_college.sql`.
 - Les moyennes « pour 1 000 habitants » du département incluent Tours et les villes, où se concentrent commerces et services.
 - Si l'INSEE change la nomenclature des équipements, régénérer `data/reference/bpe_libelles.csv` (codes inconnus affichés tels quels en attendant).
 - Requêtes : `data/sql/_equipements.sql`, `data/sql/equipements_*.sql`, `data/sql/ecoles_*.sql`.
+
+## Thème Énergie & mobilité
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Consommation annuelle d'électricité et de gaz par commune](https://opendata.agenceore.fr/explore/dataset/consommation-annuelle-d-electricite-et-gaz-par-commune/) | Luynes : toutes les années (2011 → dernière), par filière, secteur et catégorie ; Indre-et-Loire : les 272 communes, dernière année | Agence ORE (gestionnaires de réseaux : Enedis, GRDF…) | Licence Ouverte 2.0 | Annuelle | `data/raw/energie_ore_luynes.json`, `energie_ore_37.json` |
+| [Registre national des installations de production d'électricité (agrégé)](https://odre.opendatasoft.com/explore/dataset/registre-national-installation-production-stockage-electricite-agrege/) | Installations raccordées à Luynes ; puissance solaire et nombre d'installations par commune du 37 | ODRÉ (RTE, Enedis, ELD) | Licence Ouverte 2.0 | Mensuelle | `data/raw/solaire_luynes.json`, `solaire_communes_37.json` |
+| [Parc de véhicules au niveau communal](https://data.statistiques.developpement-durable.gouv.fr/dido/api/v1/datafiles/1582861b-e042-4490-9161-6429d8229703) (plateforme DiDo) | Véhicules au 1er janvier 2011 → dernière année, par carburant, Crit'Air, catégorie — Luynes (tout) et voitures particulières des communes du 37 (3 années) | SDES, ministère de la Transition écologique | Licence Ouverte 2.0 | Annuelle | `data/raw/parc_vehicules_luynes.json`, `parc_vp_37.json` |
+| [Fichier consolidé des bornes de recharge (IRVE)](https://www.data.gouv.fr/datasets/fichier-consolide-des-bornes-de-recharge-pour-vehicules-electriques/) via l'API tabulaire | Points de charge dans un rectangle autour de Luynes, puis filtrés par le contour de la commune | Etalab / data.gouv.fr, d'après les aménageurs | Licence Ouverte 2.0 | Quotidienne | `data/raw/bornes_recharge.json` |
+
+Notes :
+- Uniquement des données de la commune (pas de station ni de capteur situé ailleurs).
+- ORE : les lignes « secrétisées » (trop peu de clients) n'ont pas de valeur et sont ignorées ; la consommation dépend de la météo et la méthode a évolué : tendance plutôt que petites variations. « Par logement » = MWh divisés par le nombre de points de livraison résidentiels.
+- Parc auto : le fichier a une colonne par année (`PARC_2011` … ) dépliée en SQL (`UNPIVOT`) ; il contient d'anciens codes de communes fusionnées, exclus des classements (272 communes actuelles). « HR » = hybride rechargeable, « HNR » = hybride non rechargeable.
+- IRVE : le code commune est souvent vide → filtre par position + contour (`ST_Contains`) ; une station = les points de charge à la même adresse. La puissance est parfois non renseignée (0).
+- GTFS Fil Bleu (bus) : pas encore repris.
+- Requêtes : `data/sql/_energie.sql`, `data/sql/energie_*.sql`, `data/sql/mobilite_*.sql`.
 
 Les données sont téléchargées à nouveau à chaque construction du site (au moins une fois par semaine),
 avec 3 tentatives par source en cas de panne passagère.

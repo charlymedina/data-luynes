@@ -22,8 +22,8 @@ import { resumeRevenus } from '../data/revenus';
 import { faitsRevenus } from '../lib/faits-revenus';
 import { resumeAccidents } from '../data/accidents';
 import { faitsAccidents } from '../lib/faits-accidents';
-import { anneesClimat, resumeClimat } from '../data/climat';
-import { faitsClimat } from '../lib/faits-climat';
+import { resumeEnergie } from '../data/energie';
+import { faitsEnergie } from '../lib/faits-energie';
 import { effectifsEcoles, resumeEquipements } from '../data/equipements';
 import { faitsEquipements } from '../lib/faits-equipements';
 
@@ -31,7 +31,7 @@ const luynes = agesDe('Luynes');
 const france = agesDe('France');
 
 // Mélange des anecdotes des différents thèmes (une de chaque à tour de rôle).
-const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsClimat(), faitsEquipements()];
+const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie()];
 const longueurMax = Math.max(...sources.map((s) => s.length));
 const faits = Array.from({ length: longueurMax }, (_, i) => sources.flatMap((s) => (s[i] ? [s[i]] : []))).flat();
 
@@ -49,7 +49,6 @@ const duo = (luynesValue: number, refs: readonly [string, number][], display: (v
   ...refs.map(([label, value]) => ({ label, value, display: display(value) })),
 ];
 const euros = (v: number): string => `${formatNumber(v)} €`;
-const ecartMax = Math.max(...anneesClimat.map((a) => Math.abs(a.ecart)), 0.1);
 const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
 ---
 
@@ -129,10 +128,10 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
         <MiniCompare items={duo(commune.densite_hab_km2, [['Moyenne 37', rang.densite_departement]], (v) => formatNumber(v))} />
       </KeyFigure>
       <KeyFigure class="sm:col-span-3" tone="loire" href="/patrimoine-risques#monuments" icon="aqueduc" label="Monuments historiques" value={resumeRisques.monuments}>
-        <MiniRank onDark rank={resumeRisques.rang_monuments} total={resumeRisques.nb_communes} what="du département" />
+        <MiniRank onDark rank={resumeRisques.rang_monuments} total={resumeRisques.nb_communes} what="pour les monuments" />
       </KeyFigure>
       <KeyFigure class="sm:col-span-3" href="/patrimoine-risques#carte" icon="cave" label="Cavités souterraines" value={resumeRisques.cavites}>
-        <MiniRank rank={resumeRisques.rang_cavites} total={resumeRisques.nb_communes} what="du département" />
+        <MiniRank rank={resumeRisques.rang_cavites} total={resumeRisques.nb_communes} what="pour les cavités" />
       </KeyFigure>
       <KeyFigure class="sm:col-span-4" tone="accent" href="/immobilier" icon="maison" label="Prix au m² d'une maison" value={resumeImmobilier.prix_m2_maison} unit="€/m²">
         <MiniCompare items={duo(resumeImmobilier.prix_m2_maison, [['Indre-et-Loire', resumeImmobilier.prix_m2_maison_37]], euros)} />
@@ -168,10 +167,17 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
       <KeyFigure class="sm:col-span-3" tone="accent" href="/accidents" icon="voiture" label="Accidents par an pour 1 000 hab." value={resumeAccidents.taux_luynes} decimals={1}>
         <MiniCompare items={duo(resumeAccidents.taux_luynes, [['Indre-et-Loire', resumeAccidents.taux_37]], (v) => formatNumber(v, 1))} />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-3" tone="loire" href="/climat" icon="thermometre" label="Réchauffement à Tours depuis les années 1960" value={resumeClimat.rechauffement} decimals={1} unit="°C">
-        <div class="mt-5 flex h-8 overflow-hidden rounded-md" aria-hidden="true">
-          {anneesClimat.map((a) => <span class="h-full min-w-0 flex-1" style={`background:color-mix(in oklab, ${a.ecart >= 0 ? 'var(--chart-2)' : 'var(--chart-3)'} ${Math.round(Math.min(Math.abs(a.ecart) / ecartMax, 1) * 100)}%, var(--div-mid))`} />)}
-        </div>
+      <KeyFigure
+        class="sm:col-span-3"
+        tone="loire"
+        href="/energie-mobilite#voitures"
+        icon="eclair"
+        label={`Voitures électriques (${resumeEnergie.annee_parc})`}
+        value={resumeEnergie.part_electrique_pct}
+        decimals={1}
+        unit="%"
+      >
+        <MiniCompare onDark items={duo(resumeEnergie.part_electrique_pct, [['Indre-et-Loire', resumeEnergie.part_electrique_37_pct]], (v) => `${formatNumber(v, 1)} %`)} />
       </KeyFigure>
       <KeyFigure class="sm:col-span-3" href="/equipements" icon="boutique" label="Commerces, services, équipements" value={resumeEquipements.equipements}>
         <MiniRank rank={resumeEquipements.rang_equipements} total={resumeEquipements.nb_communes} what="le mieux équipé par habitant" />

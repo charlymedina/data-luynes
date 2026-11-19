@@ -67,12 +67,6 @@ const ONISR_BAAC: FooterSource = {
   detail: 'accidents 2005 → dernière année publiée, archive du site pour l’Indre-et-Loire — Licence Ouverte 2.0',
 };
 
-const METEO_FRANCE: FooterSource = {
-  nom: 'Météo-France — données climatologiques de base quotidiennes (meteo.data.gouv.fr)',
-  url: 'https://www.data.gouv.fr/datasets/donnees-climatologiques-de-base-quotidiennes/',
-  detail: 'station de Tours (n° 37179001), températures et pluie depuis 1959 — Licence Ouverte 2.0',
-};
-
 const INSEE_BPE: FooterSource = {
   nom: 'INSEE — base permanente des équipements (API Melodi)',
   url: 'https://www.insee.fr/fr/metadonnees/source/serie/s1161',
@@ -85,15 +79,39 @@ const EDUCATION_NATIONALE: FooterSource = {
   detail: 'écoles et collèges, élèves et classes à chaque rentrée — Licence Ouverte 2.0',
 };
 
+const AGENCE_ORE: FooterSource = {
+  nom: 'Agence ORE — consommation annuelle d’électricité et de gaz par commune',
+  url: 'https://opendata.agenceore.fr/explore/dataset/consommation-annuelle-d-electricite-et-gaz-par-commune/',
+  detail: 'données des gestionnaires de réseaux (Enedis, GRDF…), par secteur — Licence Ouverte 2.0',
+};
+
+const ODRE_SOLAIRE: FooterSource = {
+  nom: 'ODRÉ — registre national des installations de production d’électricité',
+  url: 'https://odre.opendatasoft.com/explore/dataset/registre-national-installation-production-stockage-electricite-agrege/',
+  detail: 'installations solaires raccordées (RTE, Enedis…) — Licence Ouverte 2.0',
+};
+
+const SDES_PARC: FooterSource = {
+  nom: 'SDES — parc de véhicules par commune (ministère de la Transition écologique)',
+  url: 'https://data.statistiques.developpement-durable.gouv.fr/dido/api/v1/datafiles/1582861b-e042-4490-9161-6429d8229703',
+  detail: 'véhicules au 1er janvier par carburant et vignette Crit’Air — Licence Ouverte 2.0',
+};
+
+const IRVE: FooterSource = {
+  nom: 'Base nationale des infrastructures de recharge (IRVE, data.gouv.fr)',
+  url: 'https://www.data.gouv.fr/datasets/fichier-consolide-des-bornes-de-recharge-pour-vehicules-electriques/',
+  detail: 'bornes de recharge publiques, fichier consolidé — Licence Ouverte 2.0',
+};
+
 const OPENFREEMAP: FooterSource = {
   nom: 'OpenFreeMap',
   url: 'https://openfreemap.org',
   detail: 'fond de carte, données © contributeurs OpenStreetMap (ODbL)',
 };
 
-export const CREDITS_ACCUEIL: readonly FooterSource[] = [API_GEO, INSEE_RECENSEMENT, TOURS_METROPOLE, MERIMEE, GEORISQUES, DVF, DGFIP_COMPTES, INSEE_REVENUS_EMPLOI, ONISR_BAAC, METEO_FRANCE, INSEE_BPE, EDUCATION_NATIONALE];
+export const CREDITS_ACCUEIL: readonly FooterSource[] = [API_GEO, INSEE_RECENSEMENT, TOURS_METROPOLE, MERIMEE, GEORISQUES, DVF, DGFIP_COMPTES, INSEE_REVENUS_EMPLOI, ONISR_BAAC, INSEE_BPE, EDUCATION_NATIONALE, AGENCE_ORE, ODRE_SOLAIRE, SDES_PARC, IRVE];
 export const CREDITS_EQUIPEMENTS: readonly FooterSource[] = [INSEE_BPE, EDUCATION_NATIONALE, API_GEO];
-export const CREDITS_CLIMAT: readonly FooterSource[] = [METEO_FRANCE, API_GEO];
+export const CREDITS_ENERGIE: readonly FooterSource[] = [AGENCE_ORE, ODRE_SOLAIRE, SDES_PARC, IRVE, API_GEO];
 export const CREDITS_ACCIDENTS: readonly FooterSource[] = [ONISR_BAAC, API_GEO, OPENFREEMAP];
 export const CREDITS_BUDGET: readonly FooterSource[] = [DGFIP_COMPTES];
 export const CREDITS_REVENUS: readonly FooterSource[] = [INSEE_REVENUS_EMPLOI, API_GEO];
