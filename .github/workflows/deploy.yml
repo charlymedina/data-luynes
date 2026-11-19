@@ -1,0 +1,42 @@
+# Construit le site (données + pages) et le publie sur Cloudflare Pages.
+# Se lance : à chaque push sur main, chaque lundi à 6 h (heure de Paris, hiver) et à la demande.
+# Si une source de données est en panne, la construction échoue et le site déjà en ligne reste inchangé.
+name: Construire et publier
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Préparer les données (SQL) et construire le site
+        run: npm run build
+
+      - name: Publier sur Cloudflare Pages
+        # Le projet Pages « luynes » a été créé une fois pour toutes (mode Pages classique).
+        run: npx wrangler pages deploy dist --project-name=luynes --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

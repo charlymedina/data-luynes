@@ -1,0 +1,75 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/inter';
+
+/* Palette « Loire & tuffeau » : la pierre blanche de Touraine et le fleuve. */
+:root {
+  --bg: #f6f0e1;
+  --surface: #fffcf5;
+  --ink: #1b2a2e;
+  --ink-2: #46585d;
+  --muted: #6f7f82;
+  --line: #e4d9c0;
+  --loire: #0b6b72;
+  --loire-soft: #d6ebe9;
+  --accent: #d9542a;
+  --accent-soft: #fbe3d8;
+  --bar: #b9c7c6;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e181b;
+    --surface: #152328;
+    --ink: #f1ebdd;
+    --ink-2: #b8c3c3;
+    --muted: #8a9897;
+    --line: #253940;
+    --loire: #5cc3c0;
+    --loire-soft: #173a3d;
+    --accent: #ff8a5e;
+    --accent-soft: #3d2219;
+    --bar: #3c5257;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-loire: var(--loire);
+  --color-loire-soft: var(--loire-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-bar: var(--bar);
+  --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --font-sans: 'Inter Variable', system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Apparition douce au défilement. La classe .motion n'est posée que par le JavaScript,
+   et seulement si le visiteur n'a pas demandé à limiter les animations : sans JS, tout reste visible. */
+.motion .reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.motion .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}

@@ -2,7 +2,7 @@
 
 Site de **données ouvertes sur Luynes** (Indre-et-Loire, code INSEE `37139`) : rassembler, nettoyer et présenter simplement les données publiques de la commune (population, logement, environnement, équipements, etc.).
 
-> 🚧 **Projet en démarrage** : la structure et la stack technique sont en cours de définition.
+> 🚧 **v0 en ligne** : stack DuckDB (SQL) + Astro + GitHub Actions + Cloudflare Pages.
 
 ---
 
@@ -33,10 +33,25 @@ Le détail de chaque source sera documenté dans `docs/sources.md`.
 
 ```
 data-luynes/
-├── CLAUDE.md        # Consignes pour l'assistant Claude Code
-├── .claude/rules/   # Règles de qualité de code (TypeScript, web)
-└── README.md
+├── data/
+│   ├── sources.ts       # Liste des sources téléchargées (→ data/raw/)
+│   └── sql/*.sql        # Requêtes DuckDB : un fichier .sql = un fichier JSON pour le site
+├── scripts/build-data.ts  # Télécharge les sources et exécute les requêtes SQL
+├── src/                 # Site Astro (pages, composants, styles)
+├── docs/sources.md      # Origine, licence et mise à jour de chaque source
+└── .github/workflows/   # Construction + publication sur Cloudflare Pages (push + chaque lundi)
 ```
+
+## 🚀 Commandes
+
+```bash
+npm install
+npm run data   # télécharge les données et exécute les requêtes SQL
+npm run dev    # site en local (relance aussi les données)
+npm run build  # version finale dans dist/
+```
+
+Site en ligne : **https://luynes.pages.dev**
 
 ---
 
