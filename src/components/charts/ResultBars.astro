@@ -1,0 +1,147 @@
+---
+/**
+ * Résultats d'un scrutin, présentés de façon neutre : une barre par candidat ou liste (part des voix exprimées
+ * à Luynes), toutes de la même couleur — aucune couleur de parti, aucune étiquette politique.
+ * Pour les scrutins nationaux, deux repères de forme différente situent l'Indre-et-Loire (rond) et la France (trait),
+ * pour que la comparaison ne repose jamais sur la couleur seule. Tableau des valeurs repliable.
+ */
+import { formatNumber } from '../../lib/format';
+
+export interface ResultItem {
+  libelle: string;
+  part_luynes: number;
+  part_37: number | null;
+  part_france: number | null;
+  voix_luynes: number;
+  /** Ligne de regroupement « Autres » (affichée en gris, en dernier) */
+  autres?: boolean;
+  /** Nombre de candidats regroupés dans « Autres » */
+  nombre?: number;
+}
+
+interface Props {
+  items: readonly ResultItem[];
+  caption: string;
+}
+
+const { items, caption } = Astro.props;
+const avecReperes = items.some((i) => i.part_37 !== null || i.part_france !== null);
+const max = Math.max(...items.flatMap((i) => [i.part_luynes, i.part_37 ?? 0, i.part_france ?? 0]), 1);
+const pos = (v: number): string => `${(v / max) * 100}%`;
+const pct = (v: number | null): string => (v === null ? '—' : `${formatNumber(v, 1)} %`);
+/** « LA FRANCE INSOUMISE - UNION POPULAIRE » → « La France insoumise - union populaire » : plus lisible, même texte. */
+const lisible = (texte: string): string =>
+  texte === texte.toUpperCase() && /[A-ZÉ]{4}/.test(texte) ? texte.charAt(0) + texte.slice(1).toLowerCase() : texte;
+const nom = (i: ResultItem): string => (i.autres ? `Autres (${formatNumber(i.nombre ?? 0)} candidats ou listes)` : lisible(i.libelle));
+---
+
+<figure>
+  {
+    avecReperes && (
+      <ul class="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-2" aria-label="Légende">
+        <li class="flex items-center gap-2"><span class="inline-block h-2.5 w-5 rounded-r-[3px] bg-chart-1" aria-hidden="true" />Luynes</li>
+        <li class="flex items-center gap-2"><span class="repere-37 relative inline-block" aria-hidden="true" />Indre-et-Loire</li>
+        <li class="flex items-center gap-2"><span class="repere-fr relative inline-block" aria-hidden="true" />France</li>
+      </ul>
+    )
+  }
+  <ol class="space-y-3.5">
+    {
+      items.map((item) => (
+        <li>
+          <p class="flex items-baseline justify-between gap-3 text-sm">
+            <span class:list={['min-w-0', item.autres ? 'text-ink-2' : 'font-medium text-ink']}>{nom(item)}</span>
+            <span class="tabular shrink-0 font-semibold">{pct(item.part_luynes)}</span>
+          </p>
+          <div class="relative mt-1 h-3">
+            <span class="absolute inset-y-0 left-0 w-full rounded-r-[3px] bg-chart-grid" aria-hidden="true" />
+            <span
+              data-bar
+              class:list={['result-bar absolute inset-y-0 left-0 rounded-r-[4px]', item.autres ? 'bg-bar' : 'bg-chart-1']}
+              style={`width:${pos(item.part_luynes)}`}
+              aria-hidden="true"
+            />
+            {item.part_37 !== null && <span class="repere-37 absolute top-1/2" style={`left:${pos(item.part_37)}`} aria-hidden="true" />}
+            {item.part_france !== null && <span class="repere-fr absolute top-1/2" style={`left:${pos(item.part_france)}`} aria-hidden="true" />}
+          </div>
+          {avecReperes && (
+            <p class="tabular mt-1 text-xs text-muted">
+              Indre-et-Loire {pct(item.part_37)} · France {pct(item.part_france)}
+            </p>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+
+  <details class="mt-4 text-sm text-ink-2">
+    <summary class="cursor-pointer font-medium hover:text-ink">Voir les résultats en tableau</summary>
+    <div class="mt-3 max-h-80 overflow-auto rounded-xl border border-line">
+      <table class="tabular w-full text-left">
+        <caption class="sr-only">{caption}</caption>
+        <thead class="sticky top-0 bg-surface">
+          <tr>
+            <th scope="col" class="px-3 py-2">Candidat ou liste</th>
+            <th scope="col" class="px-3 py-2 text-right">Voix à Luynes</th>
+            <th scope="col" class="px-3 py-2 text-right">Luynes</th>
+            {avecReperes && <th scope="col" class="px-3 py-2 text-right">Indre-et-Loire</th>}
+            {avecReperes && <th scope="col" class="px-3 py-2 text-right">France</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {
+            items.map((item) => (
+              <tr class="border-t border-line">
+                <th scope="row" class="px-3 py-1.5 font-medium">{nom(item)}</th>
+                <td class="px-3 py-1.5 text-right whitespace-nowrap">{formatNumber(item.voix_luynes)}</td>
+                <td class="px-3 py-1.5 text-right whitespace-nowrap">{pct(item.part_luynes)}</td>
+                {avecReperes && <td class="px-3 py-1.5 text-right whitespace-nowrap">{pct(item.part_37)}</td>}
+                {avecReperes && <td class="px-3 py-1.5 text-right whitespace-nowrap">{pct(item.part_france)}</td>}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+
+<style>
+  /* Repère Indre-et-Loire : un rond cerclé ; repère France : un trait vertical. Formes différentes, pas seulement des couleurs. */
+  .repere-37 {
+    width: 0.8rem;
+    height: 0.8rem;
+    margin-left: -0.4rem;
+    margin-top: -0.4rem;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 2.5px solid var(--ink);
+  }
+  .repere-fr {
+    width: 3px;
+    height: 1.15rem;
+    margin-left: -1.5px;
+    margin-top: -0.575rem;
+    border-radius: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 0 1.5px var(--surface);
+  }
+  /* Dans la légende, les repères sont posés à plat (sans centrage sur la barre). */
+  ul .repere-37,
+  ul .repere-fr {
+    margin: 0;
+  }
+  ul .repere-fr {
+    height: 0.9rem;
+  }
+  .result-bar {
+    transform-origin: left center;
+  }
+  :global(html.motion) .result-bar {
+    transform: scaleX(0);
+    transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  :global(html.motion) .result-bar:global(.is-visible) {
+    transform: none;
+  }
+</style>

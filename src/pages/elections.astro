@@ -1,0 +1,294 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon from '../components/Icon.astro';
+import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
+import MiniRank from '../components/charts/MiniRank.astro';
+import PictoGrid from '../components/charts/PictoGrid.astro';
+import LineChart, { type LineSeries } from '../components/charts/LineChart.astro';
+import ResultBars from '../components/charts/ResultBars.astro';
+import { dernierDe, derniersScrutins, municipales, premiersTours, resultats, resumeElections as r, type FamilleScrutin } from '../data/elections';
+import { CREDITS_ELECTIONS } from '../data/credits';
+import { formatNumber } from '../lib/format';
+import { faitsElections } from '../lib/faits-elections';
+import type { IconName } from '../lib/icons';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
+const trio = (luynes: number, dep: number, france: number): MiniItem[] => [
+  { label: 'Luynes', value: luynes, display: pourcent(luynes), highlight: true },
+  { label: 'Indre-et-Loire', value: dep, display: pourcent(dep) },
+  { label: 'France', value: france, display: pourcent(france) },
+];
+
+const ICONES: Record<FamilleScrutin, IconName> = {
+  pres: 'banque',
+  legi: 'livre',
+  euro: 'etoiles',
+  muni: 'mairie',
+  regi: 'carte',
+  dpmt: 'immeuble',
+};
+const NOMS: Record<FamilleScrutin, string> = {
+  pres: 'Présidentielle',
+  legi: 'Législatives',
+  euro: 'Européennes',
+  muni: 'Municipales',
+  regi: 'Régionales',
+  dpmt: 'Départementales (cantonales avant 2015)',
+};
+
+const pres = dernierDe('pres');
+const muni = dernierDe('muni');
+
+// — Participation au 1er tour depuis 1999, une petite courbe par type de scrutin —
+const multiples = derniersScrutins.map((d) => {
+  const tours = premiersTours(d.famille);
+  const series: LineSeries[] = [
+    { name: 'Luynes', color: 'var(--chart-2)', values: tours.map((t) => t.participation_luynes) },
+    { name: 'France', color: 'var(--chart-1)', values: tours.map((t) => t.participation_france) },
+  ];
+  const xs = tours.map((t) => t.annee);
+  return { famille: d.famille, xs, series, ticks: graduations(xs) };
+});
+
+/** Une année sur deux, plus la dernière — sauf si elle est trop proche de la précédente graduation (textes qui se chevauchent). */
+function graduations(xs: readonly number[]): number[] {
+  if (xs.length <= 5) return [...xs];
+  const derniere = xs.at(-1) ?? 0;
+  const paires = xs.filter((_x, i) => i % 2 === 0 && derniere - (xs[i] ?? derniere) >= 4);
+  return [...paires, derniere];
+}
+
+// — Résultats : tous les tours du dernier scrutin de chaque type (hors municipales, présentées à part avec les sièges) —
+const ORDRE: readonly FamilleScrutin[] = ['pres', 'euro', 'legi', 'regi', 'dpmt'];
+const blocs = ORDRE.flatMap((famille) => {
+  const lignes = resultats.filter((x) => x.famille === famille);
+  const tours = [...new Set(lignes.map((x) => x.tour))].sort();
+  const premier = lignes[0];
+  if (!premier) return [];
+  return [{ famille, annee: premier.annee, tours: tours.map((tour) => ({ tour, items: lignes.filter((x) => x.tour === tour) })) }];
+});
+const NOTES: Partial<Record<FamilleScrutin, string>> = {
+  legi: 'Les candidats sont ceux de la circonscription de Luynes : la comparaison avec le département ou la France n’aurait pas de sens.',
+  regi: 'Listes de la région Centre-Val de Loire, désignées par leur tête de liste.',
+  dpmt: 'Binômes du canton de Luynes.',
+};
+
+const siegesTotal = municipales.reduce((s, l) => s + l.sieges_cm, 0);
+const tourDecisif = municipales.some((l) => l.voix_t2 !== null) ? 2 : 1;
+---
+
+<Base
+  title="Élections à Luynes — Luynes en chiffres"
+  description="Participation à chaque élection depuis 1999 et résultats des derniers scrutins à Luynes, comparés à l'Indre-et-Loire et à la France, présentés de façon neutre."
+  sources={CREDITS_ELECTIONS}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="urne" class="h-5 w-5" /> Thème · Élections</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.6rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      Élections
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Combien de Luynois vont voter, et comment se répartissent leurs voix : {formatNumber(r.nb_tours)} tours de scrutin
+      depuis {r.premiere_annee}, comparés à l'Indre-et-Loire et à la France. Les résultats sont donnés tels que publiés,
+      sans étiquette politique ni commentaire.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés des élections" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <KeyFigure tone="loire" icon="urne" label={`Électeurs inscrits (${r.derniere_annee})`} value={r.inscrits}>
+      <p class="mt-5 text-sm opacity-85">répartis dans {formatNumber(r.bureaux)} bureaux de vote</p>
+    </KeyFigure>
+    {
+      pres && (
+        <KeyFigure tone="accent" icon="banque" label={`Présidentielle ${pres.annee}, 1er tour`} value={pres.participation_luynes} decimals={1} unit="% de votants">
+          <MiniCompare items={trio(pres.participation_luynes, pres.participation_37, pres.participation_france)} />
+        </KeyFigure>
+      )
+    }
+    {
+      muni && (
+        <KeyFigure icon="mairie" label={`Municipales ${muni.annee}, 1er tour`} value={muni.participation_luynes} decimals={1} unit="% de votants">
+          <MiniRank rank={muni.rang} total={muni.nb_communes} what="la participation la plus forte" />
+        </KeyFigure>
+      )
+    }
+    <KeyFigure icon="graphique" label="1ers tours où Luynes a voté plus que la France" value={r.fois_au_dessus_france} unit={`sur ${formatNumber(r.nb_premiers_tours)}`}>
+      <p class="mt-5 text-sm text-ink-2">depuis {r.premiere_annee}, tous scrutins confondus</p>
+    </KeyFigure>
+  </section>
+
+  {
+    pres && muni && (
+      <section id="votants" aria-labelledby="votants-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+        <h2 id="votants-titre" class={titreH2}>Sur 100 inscrits</h2>
+        <p class="mt-4 max-w-2xl text-ink-2">Électeurs luynois qui se sont déplacés au 1er tour des deux derniers grands rendez-vous.</p>
+        <div class="mt-8 grid gap-6 lg:grid-cols-2">
+          <div class={carte}>
+            <h3 class="flex items-center gap-2 font-display text-xl font-bold"><Icon name="banque" class="h-6 w-6 text-loire" /> Présidentielle {pres.annee}</h3>
+            <div class="mt-5">
+              <PictoGrid count={pres.participation_luynes} label="ont voté" ariaLabel={`${formatNumber(Math.round(pres.participation_luynes))} inscrits sur 100 ont voté à Luynes au 1er tour de la présidentielle ${pres.annee}`} />
+            </div>
+          </div>
+          <div class={carte}>
+            <h3 class="flex items-center gap-2 font-display text-xl font-bold"><Icon name="mairie" class="h-6 w-6 text-loire" /> Municipales {muni.annee}</h3>
+            <div class="mt-5">
+              <PictoGrid count={muni.participation_luynes} label="ont voté" ariaLabel={`${formatNumber(Math.round(muni.participation_luynes))} inscrits sur 100 ont voté à Luynes au 1er tour des municipales ${muni.annee}`} />
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <section id="participation" aria-labelledby="participation-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="participation-titre" class={titreH2}>La participation, scrutin par scrutin</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Votants sur 100 inscrits au 1er tour du dernier scrutin de chaque type, et place de Luynes dans le département.</p>
+    <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        derniersScrutins.map((d) => (
+          <li class={carte}>
+            <p class="flex items-center gap-2.5 font-display text-lg font-bold">
+              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-loire-soft text-loire"><Icon name={ICONES[d.famille]} class="h-5 w-5" /></span>
+              {d.type} {d.annee}
+            </p>
+            <MiniCompare items={trio(d.participation_luynes, d.participation_37, d.participation_france)} />
+            <MiniRank rank={d.rang} total={d.nb_communes} what="la participation la plus forte" />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section id="depuis-1999" aria-labelledby="historique-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="historique-titre" class={titreH2}>Depuis {r.premiere_annee}</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      {`Participation au 1er tour, à Luynes et en France. Record à Luynes : ${pourcent(r.record_haut_participation)} (${r.record_haut_type.toLowerCase()} ${r.record_haut_annee}).`}
+    </p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      {
+        multiples.map((m) => (
+          <div class={carte}>
+            <h3 class="flex items-center gap-2 font-display text-lg font-bold">
+              <Icon name={ICONES[m.famille]} class="h-5 w-5 text-loire" /> {NOMS[m.famille]}
+            </h3>
+            <div class="mt-4">
+              <LineChart
+                xs={m.xs}
+                series={m.series}
+                xTicks={m.ticks}
+                unit="%"
+                heightClass="h-44 sm:h-52"
+                ariaLabel={`Participation au 1er tour (${NOMS[m.famille]}) à Luynes et en France, de ${m.xs[0]} à ${m.xs.at(-1)}`}
+                tableCaption={`Participation au 1er tour, ${NOMS[m.famille]} (votants sur 100 inscrits)`}
+              />
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section id="resultats" aria-labelledby="resultats-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="resultats-titre" class={titreH2}>Les résultats</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Part des voix exprimées à Luynes pour chaque candidat ou liste, dans l'ordre des voix obtenues, au dernier scrutin
+      de chaque type. Les noms sont ceux publiés par le ministère de l'Intérieur ; les candidats sous 3 % partout sont
+      regroupés dans « Autres ».
+    </p>
+
+    <details class:list={['group mt-8', carte]} open>
+      <summary class="flex cursor-pointer items-center justify-between gap-4 font-display text-2xl font-bold">
+        <span class="flex items-center gap-2"><Icon name="mairie" class="h-6 w-6 text-loire" /> Municipales 2026</span>
+        <span class="text-base text-muted transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
+      </summary>
+      <p class="mt-3 text-sm text-ink-2">
+        {formatNumber(municipales.length)} listes. Le conseil municipal compte {formatNumber(siegesTotal)} sièges, attribués au {tourDecisif === 2 ? '2nd' : '1er'} tour.
+      </p>
+      <ol class="mt-6 space-y-6">
+        {
+          municipales.map((l) => (
+            <li>
+              <p class="font-semibold text-ink">{l.liste}</p>
+              {l.tete_de_liste && <p class="text-sm text-ink-2">Tête de liste : {l.tete_de_liste}</p>}
+              <dl class="mt-3 grid gap-2 text-sm">
+                {[
+                  { tour: '1er tour', part: l.part_t1 },
+                  { tour: '2nd tour', part: l.part_t2 },
+                ]
+                  .filter((t) => t.part !== null)
+                  .map((t) => (
+                    <div class="grid grid-cols-[4.5rem_1fr_3.5rem] items-center gap-3">
+                      <dt class="text-ink-2">{t.tour}</dt>
+                      <dd class="relative h-3">
+                        <span class="absolute inset-y-0 left-0 w-full rounded-r-[3px] bg-chart-grid" />
+                        <span data-bar class="result-bar absolute inset-y-0 left-0 rounded-r-[4px] bg-chart-1" style={`width:${t.part}%`} />
+                      </dd>
+                      <dd class="tabular text-right font-semibold">{pourcent(t.part ?? 0)}</dd>
+                    </div>
+                  ))}
+              </dl>
+              <p class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-2">
+                <span class="flex flex-wrap gap-[3px]" aria-hidden="true">
+                  {Array.from({ length: l.sieges_cm }, () => (
+                    <span class="h-3 w-3 rounded-full bg-ink" />
+                  ))}
+                </span>
+                <span>
+                  <strong class="text-ink">{formatNumber(l.sieges_cm)}</strong> {l.sieges_cm > 1 ? 'sièges' : 'siège'} au conseil municipal
+                  {l.sieges_cc > 0 && ` · ${formatNumber(l.sieges_cc)} au conseil de Tours Métropole`}
+                </span>
+              </p>
+            </li>
+          ))
+        }
+      </ol>
+    </details>
+
+    {
+      blocs.map((bloc) => (
+        <details class:list={['group mt-4', carte]}>
+          <summary class="flex cursor-pointer items-center justify-between gap-4 font-display text-2xl font-bold">
+            <span class="flex items-center gap-2">
+              <Icon name={ICONES[bloc.famille]} class="h-6 w-6 text-loire" /> {NOMS[bloc.famille].replace(/ \(.*\)$/, '')} {bloc.annee}
+            </span>
+            <span class="text-base text-muted transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
+          </summary>
+          {NOTES[bloc.famille] && <p class="mt-3 text-sm text-ink-2">{NOTES[bloc.famille]}</p>}
+          <div class:list={['mt-6 grid gap-8', bloc.tours.length > 1 && 'lg:grid-cols-2']}>
+            {bloc.tours.map((t) => (
+              <div class="min-w-0">
+                <h3 class="mb-4 text-sm font-semibold text-muted">{t.tour === 1 ? '1er tour' : '2nd tour'}</h3>
+                <ResultBars items={t.items} caption={`${NOMS[bloc.famille]} ${bloc.annee}, ${t.tour === 1 ? '1er' : '2nd'} tour : part des voix exprimées`} />
+              </div>
+            ))}
+          </div>
+        </details>
+      ))
+    }
+  </section>
+
+  <FunFacts facts={faitsElections()} id="saviez-vous-elections" />
+</Base>
+
+<style>
+  .result-bar {
+    transform-origin: left center;
+  }
+  :global(html.motion) .result-bar {
+    transform: scaleX(0);
+    transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  :global(html.motion) .result-bar:global(.is-visible) {
+    transform: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary {
+    list-style: none;
+  }
+</style>
