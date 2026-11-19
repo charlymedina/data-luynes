@@ -1,12 +1,18 @@
 ---
 import '../styles/global.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter, { type FooterSource } from '../components/SiteFooter.astro';
 
 interface Props {
   title: string;
   description: string;
+  /** Sources citées en pied de page (origine + licence). */
+  sources: readonly FooterSource[];
+  /** Affiche un lien « ← Accueil » dans l'en-tête (pages de thème). */
+  showBack?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, sources, showBack = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -15,12 +21,12 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#f6f0e1" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0e181b" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f6f0e1" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -28,10 +34,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   </head>
   <body class="min-h-dvh">
     <div class="grain" aria-hidden="true"></div>
-    <slot />
+    <SiteHeader showBack={showBack} />
+    <main class="mx-auto max-w-6xl px-4 sm:px-6">
+      <slot />
+    </main>
+    <SiteFooter sources={sources} />
     <script>
       import { initAnimations } from '../lib/animations.ts';
+      import { initChartTooltips } from '../lib/chart-tooltip.ts';
       initAnimations();
+      initChartTooltips();
     </script>
   </body>
 </html>

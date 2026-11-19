@@ -1,0 +1,35 @@
+---
+import { generatedAt } from '../data/commune';
+
+export interface FooterSource {
+  nom: string;
+  url: string;
+  /** Producteur et licence, ex. « INSEE — Licence Ouverte 2.0 » */
+  detail: string;
+}
+
+interface Props {
+  sources: readonly FooterSource[];
+}
+
+const { sources } = Astro.props;
+const dateMaj = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(generatedAt);
+const linkClass = 'underline decoration-accent underline-offset-4 hover:text-ink';
+---
+
+<footer class="mx-auto mt-24 max-w-6xl border-t border-line px-4 py-10 text-sm text-ink-2 sm:px-6">
+  <p class="font-semibold text-ink">Sources</p>
+  <ul class="mt-2 space-y-1">
+    {
+      sources.map((source) => (
+        <li>
+          <a class={linkClass} href={source.url}>{source.nom}</a> — {source.detail}
+        </li>
+      ))
+    }
+  </ul>
+  <p class="mt-4">Données mises à jour le {dateMaj}. Site indépendant, non officiel, fait avec ❤️ à Luynes.</p>
+  <p class="mt-2">
+    <a class={linkClass} href="https://github.com/charlymedina/data-luynes">Code source et requêtes SQL sur GitHub</a>
+  </p>
+</footer>

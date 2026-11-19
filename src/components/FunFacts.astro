@@ -1,0 +1,45 @@
+---
+/** Carte « Le saviez-vous ? » avec un bouton qui fait défiler les anecdotes (calculées à partir des données). */
+interface Props {
+  facts: readonly string[];
+  id?: string;
+}
+
+const { facts, id = 'saviez-vous' } = Astro.props;
+const factsJson = JSON.stringify(facts).replaceAll('<', '\\u003c');
+---
+
+<section aria-labelledby={id} class="fun-facts reveal relative mt-16 sm:mt-24">
+  <div class="relative rotate-[-1deg] rounded-[2rem] bg-ink p-8 text-bg shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:p-12">
+    <h2 id={id} class="font-display text-sm font-bold tracking-[0.2em] text-accent uppercase">Le saviez-vous ?</h2>
+    <p class="fact-text mt-4 min-h-[5.5rem] max-w-3xl font-display text-2xl leading-snug font-semibold sm:text-4xl" aria-live="polite">
+      {facts[0]}
+    </p>
+    {
+      facts.length > 1 && (
+        <button
+          type="button"
+          class="fact-next mt-8 rounded-full bg-accent px-5 py-2.5 font-semibold text-ink transition hover:scale-105 hover:rotate-[-2deg] focus-visible:ring-4 focus-visible:ring-accent/40 focus-visible:outline-none active:scale-95"
+        >
+          Une autre ! 🎲
+        </button>
+      )
+    }
+  </div>
+  <script is:inline type="application/json" class="facts-data" set:html={factsJson} />
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.fun-facts').forEach((section) => {
+    const text = section.querySelector('.fact-text');
+    const button = section.querySelector('.fact-next');
+    const raw = section.querySelector('.facts-data')?.textContent ?? '[]';
+    const facts: unknown = JSON.parse(raw);
+    if (!text || !button || !Array.isArray(facts) || facts.length < 2) return;
+    let index = 0;
+    button.addEventListener('click', () => {
+      index = (index + 1) % facts.length;
+      text.textContent = String(facts[index]);
+    });
+  });
+</script>

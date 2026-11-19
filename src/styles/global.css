@@ -2,7 +2,8 @@
 @import '@fontsource-variable/bricolage-grotesque';
 @import '@fontsource-variable/inter';
 
-/* Palette « Loire & tuffeau » : la pierre blanche de Touraine et le fleuve. */
+/* Palette « Loire & tuffeau » : la pierre blanche de Touraine et le fleuve.
+   Thème clair uniquement (choix éditorial : rendu « grand public », même si le téléphone est en mode sombre). */
 :root {
   --bg: #f6f0e1;
   --surface: #fffcf5;
@@ -15,24 +16,11 @@
   --accent: #d9542a;
   --accent-soft: #fbe3d8;
   --bar: #b9c7c6;
+  /* Couleurs des séries de graphiques (palette validée : contraste, daltonisme, saturation). */
+  --chart-1: #00909a;
+  --chart-2: #d9542a;
+  --chart-grid: #ece4d0;
   color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0e181b;
-    --surface: #152328;
-    --ink: #f1ebdd;
-    --ink-2: #b8c3c3;
-    --muted: #8a9897;
-    --line: #253940;
-    --loire: #5cc3c0;
-    --loire-soft: #173a3d;
-    --accent: #ff8a5e;
-    --accent-soft: #3d2219;
-    --bar: #3c5257;
-    color-scheme: dark;
-  }
 }
 
 @theme inline {
@@ -47,6 +35,9 @@
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-bar: var(--bar);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-grid: var(--chart-grid);
   --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
   --font-sans: 'Inter Variable', system-ui, sans-serif;
 }
@@ -72,4 +63,31 @@ body {
 .motion .reveal.is-visible {
   opacity: 1;
   transform: none;
+}
+
+/* Les courbes se « dessinent » de gauche à droite quand leur section apparaît. */
+.motion .reveal .chart-draw {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+}
+.motion .reveal.is-visible .chart-draw {
+  clip-path: inset(0 0 0 0);
+}
+
+/* Infobulle commune à tous les graphiques (contenu inséré en textContent par chart-tooltip.ts). */
+.chart-tip {
+  position: absolute;
+  z-index: 20;
+  pointer-events: none;
+  min-width: 9rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.75rem;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  box-shadow: 0 12px 30px -12px rgb(0 0 0 / 0.45);
+}
+.chart-tip[hidden] {
+  display: none;
 }

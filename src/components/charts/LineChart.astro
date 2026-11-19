@@ -1,0 +1,174 @@
+---
+/**
+ * Graphique en courbes dessiné côté serveur.
+ * Les tracés sont en SVG (étirés à la taille du cadre, traits d'épaisseur constante) ;
+ * les textes (graduations, annotations) sont en HTML pour rester nets et lisibles sur mobile.
+ * Survol / flèches du clavier : infobulle (src/lib/chart-tooltip.ts). Tableau des valeurs en dessous.
+ */
+import { formatNumber } from '../../lib/format';
+import { niceTicks, toPercent } from '../../lib/scale';
+import type { LinePoint } from '../../lib/chart-tooltip';
+
+export interface LineSeries {
+  name: string;
+  /** Couleur CSS, ex. « var(--chart-1) » */
+  color: string;
+  values: readonly number[];
+}
+
+export interface LineAnnotation {
+  x: number;
+  y: number;
+  label: string;
+}
+
+interface Props {
+  xs: readonly number[];
+  series: readonly LineSeries[];
+  xTicks: readonly number[];
+  ariaLabel: string;
+  tableCaption: string;
+  unit?: string;
+  /** Voile coloré sous la courbe (à réserver aux graphiques à une seule série). */
+  area?: boolean;
+  annotations?: readonly LineAnnotation[];
+  heightClass?: string;
+}
+
+const { xs, series, xTicks, ariaLabel, tableCaption, unit = '', area = false, annotations = [], heightClass = 'h-64 sm:h-80' } =
+  Astro.props;
+
+const xMin = Math.min(...xs);
+const xMax = Math.max(...xs);
+const yTicks = niceTicks(Math.max(...series.flatMap((s) => s.values)));
+const yTop = yTicks.at(-1) ?? 1;
+const px = (x: number): number => toPercent(x, xMin, xMax);
+const py = (y: number): number => 100 - toPercent(y, 0, yTop);
+const withUnit = (value: number): string => `${formatNumber(value)}${unit ? ` ${unit}` : ''}`;
+
+const lines = series.map((s) => ({
+  ...s,
+  points: s.values.map((v, i) => `${px(xs[i] ?? xMin)},${py(v)}`).join(' '),
+}));
+const firstLine = lines[0];
+const areaPoints = area && firstLine ? `0,100 ${firstLine.points} 100,100` : '';
+
+const tooltipPoints: LinePoint[] = xs.map((x, i) => ({
+  x: px(x),
+  title: String(x),
+  rows: series.map((s) => ({ label: s.name, value: withUnit(s.values[i] ?? 0), color: s.color, y: py(s.values[i] ?? 0) })),
+}));
+const tooltipJson = JSON.stringify(tooltipPoints).replaceAll('<', '\\u003c');
+---
+
+<figure data-chart="line" class="relative">
+  {
+    series.length > 1 && (
+      <ul class="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2" aria-label="Légende">
+        {series.map((s) => (
+          <li class="flex items-center gap-2">
+            <span class="inline-block h-[3px] w-5 rounded-full" style={`background:${s.color}`} aria-hidden="true" />
+            {s.name}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  <div class="pb-7 pl-12">
+    <div
+      class:list={['chart-plot relative cursor-crosshair rounded-sm focus-visible:ring-2 focus-visible:ring-loire focus-visible:outline-none', heightClass]}
+      tabindex="0"
+      role="group"
+      aria-roledescription="graphique"
+      aria-label={`${ariaLabel}. Flèches gauche et droite pour parcourir les années.`}
+    >
+      <!-- Grille horizontale + graduations de l'axe vertical -->
+      {
+        yTicks.map((tick) => (
+          <div class="absolute inset-x-0 border-t border-chart-grid" style={`top:${py(tick)}%`} aria-hidden="true">
+            <span class="tabular absolute right-full mr-2 -translate-y-1/2 text-xs text-muted">{formatNumber(tick)}</span>
+          </div>
+        ))
+      }
+      <!-- Graduations de l'axe horizontal (années) -->
+      {
+        xTicks.map((tick) => (
+          <span class="tabular absolute top-full mt-2 -translate-x-1/2 text-xs text-muted" style={`left:${px(tick)}%`} aria-hidden="true">
+            {tick}
+          </span>
+        ))
+      }
+
+      <svg class="chart-draw absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        {areaPoints && <polygon points={areaPoints} fill={firstLine?.color} fill-opacity="0.1" />}
+        {
+          lines.map((line) => (
+            <polyline
+              points={line.points}
+              fill="none"
+              stroke={line.color}
+              stroke-width="2"
+              stroke-linejoin="round"
+              stroke-linecap="round"
+              vector-effect="non-scaling-stroke"
+            />
+          ))
+        }
+      </svg>
+
+      <!-- Annotations (records, repères) -->
+      {
+        annotations.map((note) => (
+          <div class="pointer-events-none absolute" style={`left:${px(note.x)}%; top:${py(note.y)}%`} aria-hidden="true">
+            <span class="absolute -top-[5px] -left-[5px] h-[10px] w-[10px] rounded-full border-2 border-surface bg-ink" />
+            <span
+              class:list={[
+                'absolute bottom-3 rounded-md bg-surface/90 px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-ink',
+                px(note.x) > 70 ? 'right-0' : px(note.x) < 15 ? 'left-0' : '-translate-x-1/2',
+              ]}
+            >
+              {note.label}
+            </span>
+          </div>
+        ))
+      }
+
+      <!-- Couche de survol -->
+      <div class="chart-cross pointer-events-none absolute inset-y-0 w-px bg-ink/30" hidden></div>
+      {
+        series.map(() => (
+          <span class="chart-hover-dot pointer-events-none absolute -mt-[6px] -ml-[6px] h-3 w-3 rounded-full border-2 border-surface" hidden />
+        ))
+      }
+      <div class="chart-tip top-0" hidden></div>
+    </div>
+  </div>
+
+  <script is:inline type="application/json" class="chart-data" set:html={tooltipJson} />
+
+  <details class="mt-2 text-sm text-ink-2">
+    <summary class="cursor-pointer font-medium hover:text-ink">Voir les données en tableau</summary>
+    <div class="mt-3 max-h-72 overflow-auto rounded-xl border border-line">
+      <table class="tabular w-full text-left">
+        <caption class="sr-only">{tableCaption}</caption>
+        <thead class="sticky top-0 bg-surface">
+          <tr>
+            <th scope="col" class="px-3 py-2">Année</th>
+            {series.map((s) => <th scope="col" class="px-3 py-2 text-right">{s.name}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {
+            xs.map((x, i) => (
+              <tr class="border-t border-line">
+                <th scope="row" class="px-3 py-1.5 font-medium">{x}</th>
+                {series.map((s) => <td class="px-3 py-1.5 text-right">{formatNumber(s.values[i] ?? 0)}</td>)}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>

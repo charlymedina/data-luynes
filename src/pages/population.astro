@@ -1,0 +1,170 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import NeighbourBars from '../components/NeighbourBars.astro';
+import LineChart from '../components/charts/LineChart.astro';
+import AgePyramid from '../components/charts/AgePyramid.astro';
+import CompareBars, { type CompareItem } from '../components/charts/CompareBars.astro';
+import { rang, voisines } from '../data/commune';
+import { ages, agesDe, evolutionAges, faits, historique, naissancesDeces, pyramide } from '../data/population';
+import { CREDITS_POPULATION } from '../data/credits';
+import { formatNumber, formatPercent, formatRank } from '../lib/format';
+import { faitsPopulation } from '../lib/faits';
+
+const luynes = agesDe('Luynes');
+const anneeRecensement = luynes.annee;
+
+// — Histoire : graduations tous les 25 ans entre la première et la dernière année —
+const years = historique.map((r) => r.annee);
+const firstYear = years[0] ?? 0;
+const lastYear = years.at(-1) ?? 0;
+const QUARTER_CENTURY = 25;
+const historyTicks = [
+  firstYear,
+  ...Array.from({ length: 8 }, (_, i) => 1900 + i * QUARTER_CENTURY).filter((y) => y > firstYear + 10 && y < lastYear - 10),
+  lastYear,
+];
+
+// — Âges : la part des 65 ans et plus a-t-elle augmenté depuis le plus ancien recensement disponible ? —
+const evolutionDebut = evolutionAges[0];
+const evolutionFin = evolutionAges.at(-1);
+const vieillit = !!evolutionDebut && !!evolutionFin && evolutionFin.part_65_plus > evolutionDebut.part_65_plus;
+const compare = (pick: (row: (typeof ages)[number]) => number, display: (v: number) => string): CompareItem[] =>
+  ages.map((row) => ({ label: row.territoire, value: pick(row), display: display(pick(row)), highlight: row.territoire === 'Luynes' }));
+const enAns = (v: number): string => `${formatNumber(v, 1)} ans`;
+
+// — Naissances et décès —
+const etatCivilYears = naissancesDeces.map((r) => r.annee);
+const etatCivilFirst = etatCivilYears[0] ?? 0;
+const etatCivilLast = etatCivilYears.at(-1) ?? 0;
+// Une graduation tous les 4 ans + la dernière année (sauf si elle colle à la précédente).
+const TICK_STEP = 4;
+const etatCivilTicks = etatCivilYears.filter(
+  (y) => (y - etatCivilFirst) % TICK_STEP === 0 || (y === etatCivilLast && (y - etatCivilFirst) % TICK_STEP >= TICK_STEP / 2),
+);
+const totalNaissances = naissancesDeces.reduce((sum, r) => sum + r.naissances, 0);
+const totalDeces = naissancesDeces.reduce((sum, r) => sum + r.deces, 0);
+
+// Entre les deux derniers recensements : la population a-t-elle mieux résisté que ce que laissait prévoir le solde naturel ?
+// (population au 1er janvier : les naissances et décès comptés sont ceux des années précédant le dernier recensement)
+const soldeNaturelPeriode = naissancesDeces
+  .filter((r) => r.annee >= faits.annee_precedente && r.annee < faits.annee_derniere)
+  .reduce((sum, r) => sum + r.solde_naturel, 0);
+const variationPopulation = faits.population_derniere - faits.population_precedente;
+const arriveesNettes = variationPopulation - soldeNaturelPeriode;
+---
+
+<Base
+  title="Population de Luynes — Luynes en chiffres"
+  description={`${formatNumber(faits.population_derniere)} habitants, ${formatNumber(luynes.age_median, 1)} ans d'âge médian : la population de Luynes depuis ${firstYear}.`}
+  sources={CREDITS_POPULATION}
+  showBack
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="font-medium text-loire">Thème · 👥 Population</p>
+    <h1 id="titre" class="mt-3 font-display text-6xl leading-[0.95] font-extrabold tracking-tight sm:text-8xl">Population</h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      De {formatNumber(faits.population_premiere)} habitants en {firstYear} à {formatNumber(faits.population_derniere)} en {lastYear} :
+      l'histoire de Luynes racontée par les recensements, la pyramide des âges et l'état civil.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés de la population" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <KeyFigure tone="loire" label={`Habitants en ${lastYear}`} value={faits.population_derniere} />
+    <KeyFigure label="Depuis 1968" value={faits.multiplie_depuis_1968} decimals={1} unit="fois plus" note="d'habitants qu'en 1968." />
+    <KeyFigure tone="accent" label="Âge médian" value={luynes.age_median} decimals={1} unit="ans" note={`Recensement ${anneeRecensement}.`} />
+    <KeyFigure label="65 ans et plus" value={luynes.part_65_plus} decimals={1} unit="%" note="de la population." />
+  </section>
+
+  <section id="histoire" aria-labelledby="histoire-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="histoire-titre" class="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">{lastYear - firstYear} ans de recensements</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Point le plus bas en {faits.annee_creux} ({formatNumber(faits.population_creux)} habitants), puis Luynes repart à la hausse.
+      Le grand boom a lieu entre {faits.hausse_annee_debut} et {faits.hausse_annee_fin} :
+      +{formatNumber(faits.hausse_par_an)} habitants par an. Record en {faits.annee_pic} avec {formatNumber(faits.population_pic)} habitants.
+    </p>
+    <div class="mt-8 rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
+      <LineChart
+        xs={years}
+        series={[{ name: 'Habitants', color: 'var(--chart-1)', values: historique.map((r) => r.population) }]}
+        xTicks={historyTicks}
+        area
+        unit="habitants"
+        ariaLabel={`Population de Luynes à chaque recensement, de ${firstYear} à ${lastYear}`}
+        tableCaption="Population de Luynes à chaque recensement"
+        annotations={[
+          { x: faits.annee_creux, y: faits.population_creux, label: `${faits.annee_creux} : ${formatNumber(faits.population_creux)}` },
+          { x: faits.annee_pic, y: faits.population_pic, label: `Record : ${formatNumber(faits.population_pic)}` },
+        ]}
+      />
+    </div>
+  </section>
+
+  <section id="ages" aria-labelledby="ages-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="ages-titre" class="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+      {vieillit ? "Une commune qui prend de l'âge" : 'La pyramide des âges'}
+    </h2>
+    {
+      evolutionDebut && evolutionFin && (
+        <p class="mt-4 max-w-2xl text-ink-2">
+          Les 65 ans et plus représentent {formatPercent(evolutionFin.part_65_plus)} des habitants en {evolutionFin.annee},
+          contre {formatPercent(evolutionDebut.part_65_plus)} en {evolutionDebut.annee}. Les moins de 20 ans, eux, passent de{' '}
+          {formatPercent(evolutionDebut.part_moins_20)} à {formatPercent(evolutionFin.part_moins_20)}.
+        </p>
+      )
+    }
+    <div class="mt-8 grid gap-6 lg:grid-cols-[3fr_2fr]">
+      <div class="rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
+        <h3 class="mb-4 font-display text-xl font-bold">Pyramide des âges, {anneeRecensement}</h3>
+        <AgePyramid tranches={pyramide} />
+      </div>
+      <div class="space-y-6 rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
+        <h3 class="font-display text-xl font-bold">Luynes face au département et à la France</h3>
+        <CompareBars title="Âge médian" items={compare((r) => r.age_median, enAns)} />
+        <CompareBars title="Part des 65 ans et plus" items={compare((r) => r.part_65_plus, formatPercent)} />
+        <CompareBars title="Part des moins de 20 ans" items={compare((r) => r.part_moins_20, formatPercent)} />
+      </div>
+    </div>
+  </section>
+
+  <section id="naissances" aria-labelledby="naissances-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="naissances-titre" class="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">Naissances et décès</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      De {etatCivilFirst} à {etatCivilLast} : {formatNumber(totalNaissances)} naissances et {formatNumber(totalDeces)} décès
+      d'habitants de Luynes.
+      {
+        soldeNaturelPeriode < 0 && arriveesNettes > 0 &&
+          ` Entre ${faits.annee_precedente} et ${faits.annee_derniere}, les décès ont dépassé les naissances de ${formatNumber(-soldeNaturelPeriode)}, mais la population ${variationPopulation < 0 ? `n'a perdu que ${formatNumber(-variationPopulation)} habitants` : `a gagné ${formatNumber(variationPopulation)} habitants`} : ce sont les nouveaux arrivants qui compensent.`
+      }
+    </p>
+    <div class="mt-8 rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
+      <LineChart
+        xs={etatCivilYears}
+        series={[
+          { name: 'Naissances', color: 'var(--chart-1)', values: naissancesDeces.map((r) => r.naissances) },
+          { name: 'Décès', color: 'var(--chart-2)', values: naissancesDeces.map((r) => r.deces) },
+        ]}
+        xTicks={etatCivilTicks}
+        heightClass="h-56 sm:h-72"
+        ariaLabel={`Naissances et décès d'habitants de Luynes par année, de ${etatCivilFirst} à ${etatCivilLast}`}
+        tableCaption="Naissances et décès d'habitants de Luynes par année"
+      />
+    </div>
+  </section>
+
+  <section id="voisines" aria-labelledby="voisines-titre" class="reveal mt-20 grid scroll-mt-8 gap-10 sm:mt-28 lg:grid-cols-[1fr_2fr]">
+    <div>
+      <h2 id="voisines-titre" class="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">Et les voisines ?</h2>
+      <p class="mt-4 text-ink-2">
+        Luynes est la {formatRank(rang.rang_population)} commune la plus peuplée d'Indre-et-Loire sur {rang.nb_communes}.
+        Voici comment elle se situe face aux communes qui l'entourent, de part et d'autre de la Loire.
+      </p>
+    </div>
+    <div class="rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
+      <NeighbourBars voisines={voisines} />
+    </div>
+  </section>
+
+  <FunFacts facts={faitsPopulation()} id="saviez-vous-population" />
+</Base>

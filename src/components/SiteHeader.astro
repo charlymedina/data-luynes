@@ -1,0 +1,27 @@
+---
+interface Props {
+  showBack?: boolean;
+}
+
+const { showBack = false } = Astro.props;
+---
+
+<header class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pt-6 sm:px-6">
+  <div class="flex items-center gap-4">
+    <a href="/" class="group flex items-center gap-2 font-display text-lg font-bold tracking-tight">
+      <img src="/favicon.svg" alt="" width="28" height="28" class="transition-transform group-hover:rotate-12" />
+      luynes<span class="text-accent">·</span>data
+    </a>
+    {
+      showBack && (
+        <a
+          href="/"
+          class="rounded-full px-3 py-1 text-sm font-medium text-ink-2 transition hover:bg-surface hover:text-ink focus-visible:ring-2 focus-visible:ring-loire focus-visible:outline-none"
+        >
+          ← Accueil
+        </a>
+      )
+    }
+  </div>
+  <span class="hidden rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-2 sm:inline">v0 · en construction</span>
+</header>

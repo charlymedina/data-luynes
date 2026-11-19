@@ -1,0 +1,117 @@
+---
+/**
+ * Pyramide des âges : hommes à gauche, femmes à droite, en % de la population totale.
+ * Le contour fin montre la France au même âge, pour comparer la « forme » de Luynes.
+ * Barres en HTML/CSS (nettes à toutes les tailles), infobulle au survol, tableau en dessous.
+ */
+import type { TranchePyramide } from '../../data/population';
+import type { TipContent } from '../../lib/chart-tooltip';
+import { formatNumber, formatPercent } from '../../lib/format';
+
+interface Props {
+  tranches: readonly TranchePyramide[];
+}
+
+const { tranches } = Astro.props;
+const max = Math.max(...tranches.flatMap((t) => [t.part_hommes, t.part_femmes, t.part_hommes_france, t.part_femmes_france]));
+const width = (part: number): string => `${(part / max) * 100}%`;
+const shortLabel = (libelle: string): string => libelle.replace(' ans et +', '+').replace(' ans', '');
+
+const tipFor = (t: TranchePyramide): string => {
+  const content: TipContent = {
+    title: t.libelle,
+    rows: [
+      { label: `hommes (${formatPercent(t.part_hommes)})`, value: formatNumber(t.hommes), color: 'var(--chart-1)' },
+      { label: `femmes (${formatPercent(t.part_femmes)})`, value: formatNumber(t.femmes), color: 'var(--chart-2)' },
+      {
+        label: 'France, hommes / femmes',
+        value: `${formatPercent(t.part_hommes_france)} / ${formatPercent(t.part_femmes_france)}`,
+        color: 'var(--ink-2)',
+      },
+    ],
+  };
+  return JSON.stringify(content);
+};
+---
+
+<figure data-chart="rows" class="relative">
+  <ul class="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2" aria-label="Légende">
+    <li class="flex items-center gap-2"><span class="h-3 w-3 rounded-[3px] bg-chart-1" aria-hidden="true"></span>Hommes</li>
+    <li class="flex items-center gap-2"><span class="h-3 w-3 rounded-[3px] bg-chart-2" aria-hidden="true"></span>Femmes</li>
+    <li class="flex items-center gap-2">
+      <span class="h-3 w-3 rounded-[3px] border-[1.5px] border-ink/50" aria-hidden="true"></span>France (même âge)
+    </li>
+  </ul>
+
+  <div class="space-y-[2px]" aria-hidden="true">
+    {
+      tranches.map((t, i) => (
+        <div class="pyramid-row grid h-[15px] grid-cols-[1fr_3rem_1fr] items-center sm:h-[17px]" data-tip={tipFor(t)} style={`--delay:${(tranches.length - i) * 30}ms`}>
+          <div class="relative flex h-full justify-end">
+            <span class="bar-left h-full rounded-l-[4px] bg-chart-1" style={`width:${width(t.part_hommes)}`} />
+            <span class="absolute inset-y-0 right-0 rounded-l-[4px] border-[1.5px] border-r-0 border-ink/45" style={`width:${width(t.part_hommes_france)}`} />
+          </div>
+          <span class="tabular text-center text-[11px] leading-none text-muted">{shortLabel(t.libelle)}</span>
+          <div class="relative flex h-full">
+            <span class="bar-right h-full rounded-r-[4px] bg-chart-2" style={`width:${width(t.part_femmes)}`} />
+            <span class="absolute inset-y-0 left-0 rounded-r-[4px] border-[1.5px] border-l-0 border-ink/45" style={`width:${width(t.part_femmes_france)}`} />
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  <div class="chart-tip" hidden></div>
+
+  <details class="mt-4 text-sm text-ink-2">
+    <summary class="cursor-pointer font-medium hover:text-ink">Voir les données en tableau</summary>
+    <div class="mt-3 max-h-72 overflow-auto rounded-xl border border-line">
+      <table class="tabular w-full text-left">
+        <caption class="sr-only">Population de Luynes par tranche d'âge et par sexe</caption>
+        <thead class="sticky top-0 bg-surface">
+          <tr>
+            <th scope="col" class="px-3 py-2">Âge</th>
+            <th scope="col" class="px-3 py-2 text-right">Hommes</th>
+            <th scope="col" class="px-3 py-2 text-right">Femmes</th>
+            <th scope="col" class="px-3 py-2 text-right">% Luynes</th>
+            <th scope="col" class="px-3 py-2 text-right">% France</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            [...tranches].reverse().map((t) => (
+              <tr class="border-t border-line">
+                <th scope="row" class="px-3 py-1.5 font-medium whitespace-nowrap">{t.libelle}</th>
+                <td class="px-3 py-1.5 text-right">{formatNumber(t.hommes)}</td>
+                <td class="px-3 py-1.5 text-right">{formatNumber(t.femmes)}</td>
+                <td class="px-3 py-1.5 text-right">{formatPercent(t.part_hommes + t.part_femmes)}</td>
+                <td class="px-3 py-1.5 text-right">{formatPercent(t.part_hommes_france + t.part_femmes_france)}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+
+<style>
+  .pyramid-row:hover {
+    background: color-mix(in srgb, var(--loire-soft) 60%, transparent);
+    border-radius: 4px;
+  }
+  .bar-left {
+    transform-origin: right center;
+  }
+  .bar-right {
+    transform-origin: left center;
+  }
+  :global(.motion .reveal) .bar-left,
+  :global(.motion .reveal) .bar-right {
+    transform: scaleX(0);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) var(--delay);
+  }
+  :global(.motion .reveal.is-visible) .bar-left,
+  :global(.motion .reveal.is-visible) .bar-right {
+    transform: none;
+  }
+</style>

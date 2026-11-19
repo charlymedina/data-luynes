@@ -1,0 +1,55 @@
+---
+/**
+ * Petites barres de comparaison (ex. âge médian à Luynes, en Indre-et-Loire, en France).
+ * Luynes est mise en avant en couleur, les références en gris. Valeur écrite au bout de chaque barre.
+ */
+export interface CompareItem {
+  label: string;
+  value: number;
+  /** Valeur déjà mise en forme, ex. « 49,2 ans » */
+  display: string;
+  highlight: boolean;
+}
+
+interface Props {
+  title: string;
+  items: readonly CompareItem[];
+}
+
+const { title, items } = Astro.props;
+const max = Math.max(...items.map((item) => item.value));
+---
+
+<figure>
+  <figcaption class="text-sm font-semibold text-ink">{title}</figcaption>
+  <ul class="mt-3 space-y-2">
+    {
+      items.map((item) => (
+        <li class="grid grid-cols-[6.5rem_1fr] items-center gap-3 text-sm">
+          <span class:list={[item.highlight ? 'font-bold text-ink' : 'text-ink-2']}>{item.label}</span>
+          <span class="flex items-center gap-2">
+            <span
+              data-bar
+              class:list={['compare-bar h-5 rounded-r-[4px]', item.highlight ? 'bg-accent' : 'bg-bar']}
+              style={`width:${(item.value / max) * 82}%`}
+            />
+            <span class:list={['tabular shrink-0', item.highlight ? 'font-bold text-ink' : 'text-ink-2']}>{item.display}</span>
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+</figure>
+
+<style>
+  .compare-bar {
+    transform-origin: left center;
+  }
+  :global(html.motion) .compare-bar {
+    transform: scaleX(0);
+    transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  :global(html.motion) .compare-bar:global(.is-visible) {
+    transform: none;
+  }
+</style>
