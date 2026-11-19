@@ -1,0 +1,171 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon from '../components/Icon.astro';
+import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
+import CompareBars from '../components/charts/CompareBars.astro';
+import AnnualStrip from '../components/charts/AnnualStrip.astro';
+import { indicateursDelinquance, indicateursPublies, periodeDelinquance as periode, serieDe, type IndicateurDelinquance } from '../data/delinquance';
+import { CREDITS_DELINQUANCE } from '../data/credits';
+import { formatNumber } from '../lib/format';
+import { faitsDelinquance } from '../lib/faits-delinquance';
+import type { IconName } from '../lib/icons';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+const taux = (v: number): string => formatNumber(v, 1);
+
+const ICONES: Record<string, IconName> = {
+  'Cambriolages de logement': 'maison',
+  'Vols sans violence contre des personnes': 'sac',
+  'Vols dans les véhicules': 'voiture',
+  'Vols de véhicule': 'cle',
+  'Vols violents sans arme': 'sac',
+  'Vols avec armes': 'alerte',
+  'Destructions et dégradations volontaires': 'vitre',
+  'Escroqueries et fraudes aux moyens de paiement': 'carte_bancaire',
+  'Violences physiques hors cadre familial': 'personnes',
+  'Violences physiques intrafamiliales': 'famille',
+  'Violences sexuelles': 'bouclier',
+};
+const icone = (i: IndicateurDelinquance): IconName => ICONES[i.indicateur] ?? 'bouclier';
+const pour1000 = (i: IndicateurDelinquance): string => `pour 1 000 ${i.rapporte_a} par an`;
+
+const sous37 = indicateursPublies.filter((i) => i.taux_luynes < i.taux_37);
+const cambriolages = indicateursPublies.find((i) => i.indicateur === 'Cambriolages de logement');
+const degradations = indicateursPublies.find((i) => i.indicateur === 'Destructions et dégradations volontaires');
+const trio = (i: IndicateurDelinquance & { taux_luynes: number }): MiniItem[] => [
+  { label: 'Luynes', value: i.taux_luynes, display: taux(i.taux_luynes), highlight: true },
+  { label: 'Indre-et-Loire', value: i.taux_37, display: taux(i.taux_37) },
+  { label: 'France', value: i.taux_france, display: taux(i.taux_france) },
+];
+const periodeTexte = `${periode.debut}-${periode.fin}`;
+---
+
+<Base
+  title="Délinquance enregistrée à Luynes — Luynes en chiffres"
+  description={`Cambriolages, vols, dégradations, escroqueries, violences : les faits enregistrés par la police et la gendarmerie à Luynes (moyenne ${periodeTexte}), comparés à l'Indre-et-Loire et à la France.`}
+  sources={CREDITS_DELINQUANCE}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="bouclier" class="h-5 w-5" /> Thème · Délinquance</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.4rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      Délinquance
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Les faits enregistrés par la police et la gendarmerie à Luynes, en moyenne sur {periodeTexte}, rapportés au nombre
+      d'habitants (ou de logements pour les cambriolages) et comparés à l'Indre-et-Loire et à la France.
+    </p>
+    <p class="mt-4 max-w-2xl rounded-2xl bg-loire-soft p-4 text-sm leading-relaxed text-ink">
+      Ces chiffres ne mesurent que les faits <strong>signalés et enregistrés</strong>, pas toute la délinquance réelle.
+      Dans une commune de cette taille, quelques faits de plus ou de moins suffisent à faire bouger un taux :
+      les comparaisons entre petites communes sont fragiles.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés de la délinquance" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <KeyFigure tone="loire" icon="bouclier" label={`Indicateurs sous la moyenne de l'Indre-et-Loire (${periodeTexte})`} value={sous37.length} unit={`sur ${formatNumber(indicateursPublies.length)}`}>
+      <ul class="mt-5 flex flex-wrap gap-1.5" aria-label="Indicateurs publiés pour Luynes">
+        {
+          indicateursPublies.map((i) => (
+            <li
+              class:list={['grid h-8 w-8 place-items-center rounded-full', i.taux_luynes < i.taux_37 ? 'bg-bg text-loire' : 'bg-bg/30 text-bg']}
+              title={`${i.libelle} : ${i.taux_luynes < i.taux_37 ? 'sous' : 'au-dessus de'} la moyenne de l'Indre-et-Loire`}
+            >
+              <Icon name={icone(i)} class="h-4.5 w-4.5" />
+              <span class="sr-only">{i.libelle} : {i.taux_luynes < i.taux_37 ? 'sous' : 'au-dessus de'} la moyenne de l'Indre-et-Loire</span>
+            </li>
+          ))
+        }
+      </ul>
+    </KeyFigure>
+    {
+      cambriolages && (
+        <KeyFigure tone="accent" icon="maison" label="Cambriolages pour 1 000 logements" value={cambriolages.taux_luynes} decimals={1}>
+          <MiniCompare items={trio(cambriolages)} />
+        </KeyFigure>
+      )
+    }
+    {
+      degradations && (
+        <KeyFigure icon="vitre" label="Dégradations pour 1 000 habitants" value={degradations.taux_luynes} decimals={1}>
+          <MiniCompare items={trio(degradations)} />
+        </KeyFigure>
+      )
+    }
+  </section>
+
+  <section id="indicateurs" aria-labelledby="indicateurs-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="indicateurs-titre" class={titreH2}>Indicateur par indicateur</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      {`Taux moyen par an sur ${periodeTexte}, puis le nombre de faits enregistrés à Luynes chaque année depuis ${serieDe(indicateursDelinquance[0]?.indicateur ?? '')[0]?.annee ?? ''}.`}
+    </p>
+    <ul class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {
+        indicateursDelinquance.map((i) => (
+          <li class={carte}>
+            <p class="flex items-center gap-2.5 font-display text-lg leading-tight font-bold">
+              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-loire-soft text-loire"><Icon name={icone(i)} class="h-5 w-5" /></span>
+              {i.libelle}
+            </p>
+            <div class="mt-4">
+              {i.taux_luynes !== null ? (
+                <CompareBars
+                  title={pour1000(i)}
+                  items={[
+                    { label: 'Luynes', value: i.taux_luynes, display: taux(i.taux_luynes), highlight: true },
+                    { label: 'Indre-et-Loire', value: i.taux_37, display: taux(i.taux_37), highlight: false },
+                    { label: 'France', value: i.taux_france, display: taux(i.taux_france), highlight: false },
+                  ]}
+                />
+              ) : (
+                <p class="rounded-xl border border-dashed border-line p-3 text-sm text-ink-2">
+                  Non publié pour Luynes sur {periodeTexte} : moins de 5 faits sur 3 ans, une valeur couverte par le secret
+                  statistique. Pour repère : {taux(i.taux_37)} en Indre-et-Loire, {taux(i.taux_france)} en France ({pour1000(i)}).
+                </p>
+              )}
+            </div>
+            <AnnualStrip values={serieDe(i.indicateur).map((a) => ({ annee: a.annee, nombre: a.nombre }))} label={i.libelle} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section id="lire" aria-labelledby="lire-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="lire-titre" class={titreH2}>Comment lire ces chiffres</h2>
+    <ul class="mt-8 grid gap-4 md:grid-cols-2">
+      <li class={carte}>
+        <h3 class="font-display text-lg font-bold">Des faits enregistrés</h3>
+        <p class="mt-2 text-sm text-ink-2">
+          Un fait n'apparaît que s'il a été signalé (plainte, constat) et enregistré par la police ou la gendarmerie.
+          Une hausse peut aussi venir d'une plus grande facilité à porter plainte.
+        </p>
+      </li>
+      <li class={carte}>
+        <h3 class="font-display text-lg font-bold">Ce qu'on compte</h3>
+        <p class="mt-2 text-sm text-ink-2">
+          Selon l'indicateur, le ministère compte des infractions (cambriolages, dégradations), des victimes (violences,
+          escroqueries, vols sans violence) ou des véhicules (vols de ou dans les véhicules).
+        </p>
+      </li>
+      <li class={carte}>
+        <h3 class="font-display text-lg font-bold">Le secret statistique</h3>
+        <p class="mt-2 text-sm text-ink-2">
+          Quand un indicateur compte moins de 5 faits sur 3 ans, le ministère ne publie pas la valeur. Elle apparaît
+          ici en pointillé et n'est jamais estimée.
+        </p>
+      </li>
+      <li class={carte}>
+        <h3 class="font-display text-lg font-bold">Pas de classement</h3>
+        <p class="mt-2 text-sm text-ink-2">
+          Avec si peu de faits par an, un classement des communes du département varierait trop d'une année sur l'autre :
+          on compare seulement des taux moyens sur 3 ans.
+        </p>
+      </li>
+    </ul>
+  </section>
+
+  <FunFacts facts={faitsDelinquance()} id="saviez-vous-delinquance" />
+</Base>

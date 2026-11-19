@@ -26,12 +26,16 @@ import { resumeEnergie } from '../data/energie';
 import { faitsEnergie } from '../lib/faits-energie';
 import { effectifsEcoles, resumeEquipements } from '../data/equipements';
 import { faitsEquipements } from '../lib/faits-equipements';
+import { dernierDe } from '../data/elections';
+import { faitsElections } from '../lib/faits-elections';
+import { indicateursPublies, periodeDelinquance } from '../data/delinquance';
+import { faitsDelinquance } from '../lib/faits-delinquance';
 
 const luynes = agesDe('Luynes');
 const france = agesDe('France');
 
 // Mélange des anecdotes des différents thèmes (une de chaque à tour de rôle).
-const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie()];
+const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie(), faitsElections(), faitsDelinquance()];
 const longueurMax = Math.max(...sources.map((s) => s.length));
 const faits = Array.from({ length: longueurMax }, (_, i) => sources.flatMap((s) => (s[i] ? [s[i]] : []))).flat();
 
@@ -49,6 +53,9 @@ const duo = (luynesValue: number, refs: readonly [string, number][], display: (v
   ...refs.map(([label, value]) => ({ label, value, display: display(value) })),
 ];
 const euros = (v: number): string => `${formatNumber(v)} €`;
+const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
+const presidentielle = dernierDe('pres');
+const delinquanceSous37 = indicateursPublies.filter((i) => i.taux_luynes < i.taux_37).length;
 const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
 ---
 
@@ -184,6 +191,40 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
       </KeyFigure>
       <KeyFigure class="sm:col-span-3" tone="accent" href="/equipements#ecoles" icon="ecole" label={`Élèves dans les écoles (${resumeEquipements.derniere_rentree})`} value={resumeEquipements.eleves}>
         <MiniColumns values={effectifsEcoles.map((e) => ({ label: String(e.rentree), value: e.eleves }))} ariaLabel={`Élèves des écoles de Luynes, rentrées ${resumeEquipements.premiere_rentree} à ${resumeEquipements.derniere_rentree}`} />
+      </KeyFigure>
+      {
+        presidentielle && (
+          <KeyFigure
+            class="sm:col-span-3"
+            tone="loire"
+            href="/elections"
+            icon="urne"
+            label={`Participation, présidentielle ${presidentielle.annee}`}
+            value={presidentielle.participation_luynes}
+            decimals={1}
+            unit="%"
+          >
+            <MiniCompare
+              onDark
+              items={duo(presidentielle.participation_luynes, [['Indre-et-Loire', presidentielle.participation_37], ['France', presidentielle.participation_france]], pourcent)}
+            />
+          </KeyFigure>
+        )
+      }
+      <KeyFigure
+        class="sm:col-span-3"
+        href="/delinquance"
+        icon="bouclier"
+        label={`Indicateurs de délinquance sous la moyenne du 37 (${periodeDelinquance.debut}-${periodeDelinquance.fin})`}
+        value={delinquanceSous37}
+        unit={`sur ${formatNumber(indicateursPublies.length)}`}
+      >
+        <ul class="mt-5 flex gap-1" aria-hidden="true">
+          {indicateursPublies.map((i) => (
+            <li class:list={['h-3 flex-1 rounded-full', i.taux_luynes < i.taux_37 ? 'bg-loire' : 'bg-bar']} />
+          ))}
+        </ul>
+        <p class="mt-2 text-xs text-ink-2">taux sur 3 ans, faits enregistrés par la police et la gendarmerie</p>
       </KeyFigure>
     </div>
   </section>

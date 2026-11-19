@@ -1,0 +1,50 @@
+---
+/**
+ * Petite frise de colonnes « un fait par année » : nombre de faits enregistrés chaque année à Luynes.
+ * Une année non publiée (secret statistique) est dessinée en pointillé avec « n.p. » : elle n'est jamais estimée.
+ * Le nombre est écrit au survol (infobulle native) et lu par les lecteurs d'écran via la liste.
+ */
+import { formatNumber } from '../../lib/format';
+
+export interface AnneeCompte {
+  annee: number;
+  nombre: number | null;
+}
+
+interface Props {
+  values: readonly AnneeCompte[];
+  label: string;
+}
+
+const { values, label } = Astro.props;
+const max = Math.max(...values.map((v) => v.nombre ?? 0), 1);
+const premiere = values[0]?.annee;
+const derniere = values.at(-1)?.annee;
+const texte = (v: AnneeCompte): string => (v.nombre === null ? `${v.annee} : non publié` : `${v.annee} : ${formatNumber(v.nombre)}`);
+---
+
+<figure class="mt-4">
+  <ol class="flex h-12 items-end gap-[3px]" aria-label={`${label}, faits enregistrés par année à Luynes`}>
+    {
+      values.map((v) => (
+        <li class="flex h-full flex-1 flex-col justify-end" title={texte(v)}>
+          <span class="sr-only">{texte(v)}</span>
+          {v.nombre === null ? (
+            <span class="block h-full rounded-t-[3px] border border-dashed border-line" aria-hidden="true" />
+          ) : (
+            <span
+              class="block rounded-t-[3px] bg-chart-1"
+              style={`height:${v.nombre === 0 ? 2 : Math.max((v.nombre / max) * 100, 6)}%; opacity:${v.nombre === 0 ? 0.35 : 1}`}
+              aria-hidden="true"
+            />
+          )}
+        </li>
+      ))
+    }
+  </ol>
+  <figcaption class="mt-1 flex justify-between text-[11px] text-muted" aria-hidden="true">
+    <span>{premiere}</span>
+    <span>pointillés : non publié</span>
+    <span>{derniere}</span>
+  </figcaption>
+</figure>

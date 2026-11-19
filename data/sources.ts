@@ -8,6 +8,8 @@ import { SOURCES_BUDGET } from './sources-budget.ts';
 import { SOURCES_REVENUS } from './sources-revenus.ts';
 import { SOURCES_EQUIPEMENTS } from './sources-equipements.ts';
 import { SOURCES_ENERGIE } from './sources-energie.ts';
+import { SOURCES_ELECTIONS } from './sources-elections.ts';
+import { SOURCES_DELINQUANCE } from './sources-delinquance.ts';
 
 export interface Source {
   /** Nom du fichier produit dans data/raw/ (sans extension) */
@@ -292,4 +294,10 @@ export const SOURCES: readonly Source[] = [
 
   // — Énergie & mobilité (voir data/sources-energie.ts) —
   ...SOURCES_ENERGIE,
+
+  // — Élections (voir data/sources-elections.ts ; l'historique est archivé par scripts/archive-elections.ts) —
+  ...SOURCES_ELECTIONS,
+
+  // — Délinquance (voir data/sources-delinquance.ts) —
+  ...SOURCES_DELINQUANCE,
 ];

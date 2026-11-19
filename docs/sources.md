@@ -139,8 +139,35 @@ Notes :
 - ORE : les lignes « secrétisées » (trop peu de clients) n'ont pas de valeur et sont ignorées ; la consommation dépend de la météo et la méthode a évolué : tendance plutôt que petites variations. « Par logement » = MWh divisés par le nombre de points de livraison résidentiels.
 - Parc auto : le fichier a une colonne par année (`PARC_2011` … ) dépliée en SQL (`UNPIVOT`) ; il contient d'anciens codes de communes fusionnées, exclus des classements (272 communes actuelles). « HR » = hybride rechargeable, « HNR » = hybride non rechargeable.
 - IRVE : le code commune est souvent vide → filtre par position + contour (`ST_Contains`) ; une station = les points de charge à la même adresse. La puissance est parfois non renseignée (0).
-- GTFS Fil Bleu (bus) : pas encore repris.
+- GTFS Fil Bleu (bus) : écarté (choix éditorial).
 - Requêtes : `data/sql/_energie.sql`, `data/sql/energie_*.sql`, `data/sql/mobilite_*.sql`.
+
+## Thème Élections
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Données des élections agrégées](https://www.data.gouv.fr/datasets/donnees-des-elections-agregees) (`general_results.parquet`, `candidats_results.parquet`) | Inscrits, votants, voix par bureau de vote, tous scrutins 1999 → dernier (Luynes, Indre-et-Loire, France) | data.gouv.fr, d'après les résultats du ministère de l'Intérieur | Licence Ouverte 2.0 | À chaque nouvelle élection | archive `data/archive/elections/*.parquet` |
+| [Municipales 2026 — résultats du 1er tour](https://www.data.gouv.fr/datasets/elections-municipales-2026-resultats-du-premier-tour/) et [du second tour](https://www.data.gouv.fr/datasets/elections-municipales-2026-resultats-du-second-tour/) (fichiers « Résultats - Communes », via l'API tabulaire) | Listes, têtes de liste, voix, sièges au conseil municipal et communautaire à Luynes | Ministère de l'Intérieur | Licence Ouverte 2.0 | Ponctuelle | `data/raw/municipales_2026_t1.json`, `municipales_2026_t2.json` |
+
+Notes :
+- **Archive** : DuckDB lit les fichiers nationaux à distance (seulement les colonnes utiles) et n'en garde que de petits extraits (≈ 60 Ko) : participation de Luynes / du 37 / de la France à chaque scrutin, participation des communes du 37 (classements), voix des candidats (Luynes partout ; 37 et France pour la présidentielle et les européennes). L'archive n'est refaite que si la source change (empreinte dans `manifest.json`) ; si la source est injoignable, l'archive existante sert. Requêtes d'extraction : `data/sql/elections/*.sql`, script `scripts/archive-elections.ts`.
+- **Neutralité** : candidats ou listes dans l'ordre des voix obtenues à Luynes, une seule couleur pour tous, aucune nuance politique reprise ; les « Le saviez-vous ? » ne portent que sur la participation. Les candidats sous 3 % partout sont regroupés dans « Autres ».
+- Participation = votants / inscrits. Les comparaisons utilisent les 1ers tours (au 2nd tour, seules certaines communes ou circonscriptions votent). Les cantonales (jusqu'en 2011) sont rangées avec les départementales.
+- Les fichiers officiels des municipales sont « larges » (une série de colonnes par liste) : dépliés en SQL (`elections_municipales.sql`).
+- Requêtes : `data/sql/_elections.sql`, `data/sql/elections_*.sql`.
+
+## Thème Délinquance
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Bases statistiques communale et départementale de la délinquance enregistrée](https://www.data.gouv.fr/datasets/bases-statistiques-communale-departementale-et-regionale-de-la-delinquance-enregistree-par-la-police-et-la-gendarmerie-nationales/) (fichiers « COM » Parquet et « DEP » CSV) | Faits enregistrés par indicateur et par année, 2016 → dernière année : Luynes, Indre-et-Loire, France (somme des départements) | SSMSI, ministère de l'Intérieur | Licence Ouverte 2.0 | Annuelle (juillet) | `data/raw/delinquance_communes/`, `data/raw/delinquance_departements/` |
+
+Notes :
+- Les adresses des fichiers changent à chaque publication : elles sont retrouvées via l'API data.gouv (`data/sources-delinquance.ts`).
+- **Secret statistique** : une valeur communale n'est pas publiée quand il y a moins de 5 faits sur 3 ans (`est_diffuse = 'ndiff'`) ; elle reste vide, jamais estimée (la colonne `complement_info_nombre` n'est pas utilisée).
+- Taux = moyenne des 3 dernières années (faits / population ou logements × 1 000) ; le taux de Luynes n'est calculé que si les 3 années sont publiées. Les cambriolages se rapportent aux logements, le reste aux habitants.
+- Indicateurs « stupéfiants » non repris (ils mesurent l'activité des services, pas des victimes). Pas de classement départemental (trop instable avec si peu de faits).
+- Requêtes : `data/sql/_delinquance.sql`, `data/sql/delinquance_*.sql`.
 
 Les données sont téléchargées à nouveau à chaque construction du site (au moins une fois par semaine),
 avec 3 tentatives par source en cas de panne passagère.

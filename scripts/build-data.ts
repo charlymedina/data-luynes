@@ -7,7 +7,8 @@
  *       des vues partagées par plusieurs requêtes et ne produisent pas de fichier ;
  *     - chaque autre fichier <nom>.sql produit src/data/generated/<nom>.json, que les pages importent.
  *  (entre les deux, les ventes DVF sont archivées dans data/archive/dvf/ : voir scripts/archive-dvf.ts ;
- *   les accidents de la route sont archivés dans data/archive/baac/ : voir scripts/archive-baac.ts)
+ *   les accidents de la route sont archivés dans data/archive/baac/ : voir scripts/archive-baac.ts ;
+ *   les résultats électoraux sont archivés dans data/archive/elections/ : voir scripts/archive-elections.ts)
  *
  * Règle simple : un fichier .sql = un fichier .json. Chaque requête doit renvoyer au moins une ligne,
  * sinon la construction s'arrête (et le site déjà en ligne reste inchangé).
@@ -19,6 +20,7 @@ import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { SOURCES, type Source } from '../data/sources.ts';
 import { archiverDvf } from './archive-dvf.ts';
 import { archiverBaac } from './archive-baac.ts';
+import { archiverElections } from './archive-elections.ts';
 
 const RAW_DIR = 'data/raw';
 const SQL_DIR = 'data/sql';
@@ -157,6 +159,8 @@ async function runQueries(): Promise<void> {
     await archiverDvf(connection);
     // Les accidents de la route (BAAC) sont lus depuis leur archive (data/archive/baac/), mise à jour si besoin.
     await archiverBaac(connection);
+    // Les résultats électoraux sont lus depuis leur archive (data/archive/elections/), refaite si la source a changé.
+    await archiverElections(connection);
     for (const file of sharedFiles) {
       await connection.run(await readFile(path.join(SQL_DIR, file), 'utf8'));
       console.log(`✓ ${file} (vues partagées)`);

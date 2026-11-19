@@ -103,13 +103,33 @@ const IRVE: FooterSource = {
   detail: 'bornes de recharge publiques, fichier consolidé — Licence Ouverte 2.0',
 };
 
+const ELECTIONS_AGREGEES: FooterSource = {
+  nom: 'Données des élections agrégées (data.gouv.fr, à partir des résultats du ministère de l’Intérieur)',
+  url: 'https://www.data.gouv.fr/datasets/donnees-des-elections-agregees/',
+  detail: 'participation et voix par bureau de vote, 1999 → dernier scrutin, archive du site — Licence Ouverte 2.0',
+};
+
+const MUNICIPALES_2026: FooterSource = {
+  nom: 'Ministère de l’Intérieur — élections municipales 2026',
+  url: 'https://www.data.gouv.fr/datasets/elections-municipales-2026-resultats-du-premier-tour/',
+  detail: 'résultats des deux tours et sièges attribués, par commune — Licence Ouverte 2.0',
+};
+
+const SSMSI: FooterSource = {
+  nom: 'SSMSI — bases statistiques communale et départementale de la délinquance enregistrée',
+  url: 'https://www.data.gouv.fr/datasets/bases-statistiques-communale-departementale-et-regionale-de-la-delinquance-enregistree-par-la-police-et-la-gendarmerie-nationales/',
+  detail: 'faits enregistrés par la police et la gendarmerie, 2016 → dernière année — Licence Ouverte 2.0',
+};
+
 const OPENFREEMAP: FooterSource = {
   nom: 'OpenFreeMap',
   url: 'https://openfreemap.org',
   detail: 'fond de carte, données © contributeurs OpenStreetMap (ODbL)',
 };
 
-export const CREDITS_ACCUEIL: readonly FooterSource[] = [API_GEO, INSEE_RECENSEMENT, TOURS_METROPOLE, MERIMEE, GEORISQUES, DVF, DGFIP_COMPTES, INSEE_REVENUS_EMPLOI, ONISR_BAAC, INSEE_BPE, EDUCATION_NATIONALE, AGENCE_ORE, ODRE_SOLAIRE, SDES_PARC, IRVE];
+export const CREDITS_ACCUEIL: readonly FooterSource[] = [API_GEO, INSEE_RECENSEMENT, TOURS_METROPOLE, MERIMEE, GEORISQUES, DVF, DGFIP_COMPTES, INSEE_REVENUS_EMPLOI, ONISR_BAAC, INSEE_BPE, EDUCATION_NATIONALE, AGENCE_ORE, ODRE_SOLAIRE, SDES_PARC, IRVE, ELECTIONS_AGREGEES, MUNICIPALES_2026, SSMSI];
+export const CREDITS_ELECTIONS: readonly FooterSource[] = [ELECTIONS_AGREGEES, MUNICIPALES_2026];
+export const CREDITS_DELINQUANCE: readonly FooterSource[] = [SSMSI];
 export const CREDITS_EQUIPEMENTS: readonly FooterSource[] = [INSEE_BPE, EDUCATION_NATIONALE, API_GEO];
 export const CREDITS_ENERGIE: readonly FooterSource[] = [AGENCE_ORE, ODRE_SOLAIRE, SDES_PARC, IRVE, API_GEO];
 export const CREDITS_ACCIDENTS: readonly FooterSource[] = [ONISR_BAAC, API_GEO, OPENFREEMAP];

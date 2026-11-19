@@ -48,6 +48,22 @@ export const ICON_PATHS = {
   /** Borne de recharge : un boîtier, son câble et un éclair. */
   borne: 'M6 20.5V5a1.5 1.5 0 0 1 1.5-1.5h5A1.5 1.5 0 0 1 14 5v15.5 M4.5 20.5h11 M14 9h1.5a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 0 3 0V8l-1.5-2 M10.5 7 8.5 10.5h3l-2 3.5',
   livre: 'M4 5.5c2.7-1 5.3-1 8 .8 2.7-1.8 5.3-1.8 8-.8v13c-2.7-1-5.3-1-8 .8-2.7-1.8-5.3-1.8-8-.8Z M12 6.3v13',
+  /** Mairie : un fronton, une horloge et un drapeau (municipales). */
+  mairie: 'M3.5 20.5h17 M5 20.5V11h14v9.5 M3.5 11 12 6.5l8.5 4.5 M12 6.5V3 M12 3h3v1.8h-3 M12 13.2a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2Z M8 20.5v-3 M16 20.5v-3',
+  /** Cercle d'étoiles (européennes). */
+  etoiles: 'M12 3.5v.01 M16.25 4.64v.01 M19.36 7.75v.01 M20.5 12v.01 M19.36 16.25v.01 M16.25 19.36v.01 M12 20.5v.01 M7.75 19.36v.01 M4.64 16.25v.01 M3.5 12v.01 M4.64 7.75v.01 M7.75 4.64v.01',
+  /** Urne : une boîte avec sa fente et un bulletin qui y entre (élections). */
+  urne: 'M4.5 11.5h15v8h-15Z M8 11.5h8 M9.5 3.5h5v6.5h-5Z M11 6h2',
+  /** Bouclier : la sécurité (délinquance). */
+  bouclier: 'M12 3.5 19 6v5.5c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6Z M9 12l2 2 4-4',
+  /** Carte bancaire : escroqueries et fraudes aux moyens de paiement. */
+  carte_bancaire: 'M3.5 6.5h17v11h-17Z M3.5 10h17 M6.5 14.5h4',
+  /** Sac à main : vols sans violence. */
+  sac: 'M5 9h14l-1.2 11H6.2Z M9 9V7a3 3 0 0 1 6 0v2',
+  /** Vitre fêlée : destructions et dégradations. */
+  vitre: 'M4.5 4.5h15v15h-15Z M11 4.5l1.5 5-3 2.5 2 7.5 M12.5 9.5l4 1.5 M9.5 12l-5 .5',
+  /** Famille : deux adultes et un enfant (violences intrafamiliales). */
+  famille: 'M7.5 8.5a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z M16.5 8.5a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z M3.5 18.5c.4-3.6 1.8-6.5 4-6.5s3.6 2.9 4 6.5 M12.5 18.5c.4-3.6 1.8-6.5 4-6.5s3.6 2.9 4 6.5 M12 14.5a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2Z',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

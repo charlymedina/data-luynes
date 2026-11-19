@@ -27,6 +27,8 @@ export const THEMES: readonly Theme[] = [
   { slug: 'accidents', titre: 'Accidents de la route', court: 'Accidents', icon: 'voiture', resume: 'Carte des accidents depuis 2005.', statut: 'disponible' },
   { slug: 'equipements', titre: 'Écoles, santé & services', court: 'Services', icon: 'ecole', resume: 'Écoles, santé, commerces, services.', statut: 'disponible' },
   { slug: 'energie-mobilite', titre: 'Énergie & mobilité', court: 'Énergie', icon: 'eclair', resume: 'Électricité, gaz, solaire, voitures électriques, bornes.', statut: 'disponible' },
+  { slug: 'elections', titre: 'Élections', court: 'Élections', icon: 'urne', resume: 'Participation depuis 1999, résultats des derniers scrutins.', statut: 'disponible' },
+  { slug: 'delinquance', titre: 'Délinquance', court: 'Délinquance', icon: 'bouclier', resume: 'Faits enregistrés, comparés au département et à la France.', statut: 'disponible' },
 ];
 
 export const themesDisponibles: readonly Theme[] = THEMES.filter((theme) => theme.statut === 'disponible');
