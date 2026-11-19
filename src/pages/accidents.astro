@@ -1,0 +1,263 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon, { type IconName } from '../components/Icon.astro';
+import MapView, { type MapLegendItem } from '../components/MapView.astro';
+import Waffle, { type WaffleItem } from '../components/charts/Waffle.astro';
+import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
+import MiniColumns from '../components/charts/MiniColumns.astro';
+import RankGauge from '../components/charts/RankGauge.astro';
+import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
+import CompareBars from '../components/charts/CompareBars.astro';
+import {
+  LIBELLE_GRAVITE,
+  accidentsCarte,
+  anneesAccidents,
+  momentsAccidents,
+  nomMois,
+  resumeAccidents as r,
+  routesAccidents,
+  usagersAccidents,
+  type AccidentCarte,
+  type Gravite,
+  type ModeAccident,
+} from '../data/accidents';
+import { contourCommune } from '../data/patrimoine';
+import { CREDITS_ACCIDENTS } from '../data/credits';
+import { formatNumber } from '../lib/format';
+import { faitsAccidents } from '../lib/faits-accidents';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
+const parMille = (v: number): string => formatNumber(v, 1);
+
+/** Texte de la fiche d'un accident sur la carte (aucune information sur les personnes). */
+function fiche(a: AccidentCarte): string {
+  const quand = `${nomMois(a.mois)} ${a.annee}, ${a.moment.toLowerCase()}`;
+  const conditions = [a.lumiere, a.meteo].filter(Boolean).join(', ');
+  const ou = a.route ? ` · ${a.route}` : '';
+  return `${LIBELLE_GRAVITE[a.gravite]} — ${quand}${ou}. Impliqués : ${a.impliques || 'non précisé'}.${conditions ? ` ${conditions[0]?.toUpperCase()}${conditions.slice(1)}.` : ''}`;
+}
+
+const couches: { gravite: Gravite; colorVar: string; radius: number }[] = [
+  { gravite: 'leger', colorVar: '--chart-1', radius: 6 },
+  { gravite: 'grave', colorVar: '--chart-4', radius: 7 },
+  { gravite: 'mortel', colorVar: '--chart-2', radius: 8 },
+];
+const legende: MapLegendItem[] = couches.map((c) => {
+  const points = accidentsCarte.filter((a) => a.gravite === c.gravite);
+  return {
+    label: `${LIBELLE_GRAVITE[c.gravite]} (${formatNumber(points.length)})`,
+    layer: { id: `accidents-${c.gravite}`, colorVar: c.colorVar, radius: c.radius, points: points.map((a) => ({ lat: a.lat, lon: a.lon, label: fiche(a) })) },
+  };
+});
+const nonLocalises = r.accidents - r.accidents_geolocalises;
+
+const maxAnnee = Math.max(...anneesAccidents.map((a) => a.accidents));
+const colonnes: Column[] = anneesAccidents.map((a) => ({
+  label: `’${String(a.annee).slice(2)}`,
+  fullLabel: String(a.annee),
+  value: a.accidents,
+  display: formatNumber(a.accidents),
+  highlight: a.accidents === maxAnnee,
+}));
+
+const gravites: WaffleItem[] = [
+  { label: 'Au moins un mort', value: (100 * r.accidents_mortels) / r.accidents },
+  { label: 'Blessé(s) hospitalisé(s)', value: (100 * r.accidents_graves) / r.accidents },
+  { label: 'Blessé(s) léger(s) seulement', value: (100 * r.accidents_legers) / r.accidents },
+];
+
+const ICONES: Record<ModeAccident, IconName> = {
+  voiture: 'voiture',
+  deux_roues: 'moto',
+  pieton: 'pieton',
+  velo: 'velo',
+  poids_lourd: 'camion',
+  trottinette: 'trottinette',
+};
+const versus = (luynes: number, dep: number): MiniItem[] => [
+  { label: 'Luynes', value: luynes, display: pourcent(luynes), highlight: true },
+  { label: 'Indre-et-Loire', value: dep, display: pourcent(dep) },
+];
+
+const moments = momentsAccidents.filter((m) => m.dimension === 'moment');
+const weekEnd = momentsAccidents.find((m) => m.libelle === 'Week-end');
+const routePrincipale = routesAccidents.find((x) => !x.est_autres);
+---
+
+<Base
+  title="Accidents de la route à Luynes — Luynes en chiffres"
+  description={`${formatNumber(r.accidents)} accidents corporels à Luynes de ${r.annee_debut} à ${r.annee_fin} : carte, évolution, routes concernées et comparaison avec l'Indre-et-Loire.`}
+  sources={CREDITS_ACCIDENTS}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="voiture" class="h-5 w-5" /> Thème · Accidents de la route</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.6rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      Accidents <span class="text-accent">de la route</span>
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Les accidents corporels (au moins un blessé) constatés par les forces de l'ordre à Luynes depuis {r.annee_debut} :
+      où, quand, et qui était sur la route. Peu d'accidents chaque année, ce qui invite à regarder la période entière plutôt qu'une année isolée.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés des accidents" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <KeyFigure tone="loire" icon="voiture" label={`Accidents ${r.annee_debut}-${r.annee_fin}`} value={r.accidents}>
+      <MiniColumns onDark values={anneesAccidents.map((a) => ({ label: String(a.annee), value: a.accidents }))} ariaLabel={`Accidents par année, de ${r.annee_debut} à ${r.annee_fin}`} />
+    </KeyFigure>
+    <KeyFigure tone="accent" icon="personnes" label="Par an pour 1 000 habitants" value={r.taux_luynes} decimals={1}>
+      <MiniCompare
+        items={[
+          { label: 'Luynes', value: r.taux_luynes, display: parMille(r.taux_luynes), highlight: true },
+          { label: 'Indre-et-Loire', value: r.taux_37, display: parMille(r.taux_37) },
+        ]}
+      />
+    </KeyFigure>
+    <KeyFigure icon="calendrier" label="Années sans accident" value={r.annees_sans_accident} unit={`sur ${r.nb_annees}`}>
+      <ol class="mt-5 flex flex-wrap gap-1" aria-label={`Années sans accident corporel entre ${r.annee_debut} et ${r.annee_fin}`}>
+        {
+          anneesAccidents.map((a) => (
+            <li
+              class:list={['h-4 w-4 rounded-[4px]', a.accidents === 0 ? 'bg-chart-1' : 'bg-line']}
+              title={`${a.annee} : ${a.accidents === 0 ? 'aucun accident' : `${formatNumber(a.accidents)} accident(s)`}`}
+            >
+              <span class="sr-only">{a.annee} : {a.accidents === 0 ? 'aucun accident' : `${formatNumber(a.accidents)} accident(s)`}</span>
+            </li>
+          ))
+        }
+      </ol>
+    </KeyFigure>
+  </section>
+
+  <section id="carte" aria-labelledby="carte-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="carte-titre" class={titreH2}>La carte</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Un point par accident, de la couleur de sa conséquence la plus grave. Cliquer sur un point pour la date (mois),
+      le moment de la journée, la route et les modes de déplacement impliqués.
+      {nonLocalises > 0 && <> {formatNumber(nonLocalises)} accidents anciens, sans coordonnées, n'apparaissent pas sur la carte.</>}
+    </p>
+    <div class="mt-8">
+      <MapView ariaLabel={`Carte des ${formatNumber(r.accidents_geolocalises)} accidents corporels localisés à Luynes depuis ${r.annee_debut}`} contour={contourCommune} legend={legende}>
+        <details class="text-sm text-ink-2">
+          <summary class="cursor-pointer font-medium hover:text-ink">Voir la liste des accidents localisés</summary>
+          <ul class="mt-3 space-y-1">{accidentsCarte.map((a) => <li>{fiche(a)}</li>)}</ul>
+        </details>
+      </MapView>
+    </div>
+  </section>
+
+  <section id="evolution" aria-labelledby="evolution-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="evolution-titre" class={titreH2}>Année après année</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Nombre d'accidents corporels à Luynes chaque année. En orange, les années qui en ont compté le plus.</p>
+    <div class:list={['mt-8', carte]}>
+      <ColumnChart
+        columns={colonnes}
+        unit="accidents"
+        headers={['Année', 'Accidents corporels']}
+        ariaLabel={`Accidents corporels à Luynes de ${r.annee_debut} à ${r.annee_fin} : ${formatNumber(r.accidents)} au total, ${formatNumber(r.annees_sans_accident)} années sans accident.`}
+        tableCaption="Accidents corporels à Luynes par année"
+      />
+    </div>
+    <div class="mt-6 grid gap-6 md:grid-cols-2">
+      <div class={carte}>
+        <h3 class="font-display text-xl font-bold">5 premières et 5 dernières années</h3>
+        <MiniCompare
+          items={[
+            { label: `${r.annee_debut}-${r.annee_debut + 4}`, value: r.accidents_5_premieres_annees, display: formatNumber(r.accidents_5_premieres_annees) },
+            { label: `${r.annee_fin - 4}-${r.annee_fin}`, value: r.accidents_5_ans, display: formatNumber(r.accidents_5_ans), highlight: true },
+          ]}
+        />
+      </div>
+      <RankGauge label="Accidents par habitant (période entière)" rank={r.rang_taux} total={r.nb_communes} icon="voiture" ends={['le plus d’accidents', 'le moins d’accidents']} />
+    </div>
+  </section>
+
+  <section id="gravite" aria-labelledby="gravite-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="gravite-titre" class={titreH2}>La gravité</h2>
+    <div class="mt-8 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+      <div class={carte}>
+        <Waffle
+          title="Sur 100 accidents à Luynes"
+          unit="accidents"
+          colors={['var(--chart-2)', 'var(--chart-4)', 'var(--chart-1)']}
+          items={gravites}
+          ariaLabel={`Sur ${formatNumber(r.accidents)} accidents à Luynes : ${formatNumber(r.accidents_mortels)} mortels, ${formatNumber(r.accidents_graves)} avec au moins un blessé hospitalisé, ${formatNumber(r.accidents_legers)} avec des blessés légers seulement.`}
+        />
+      </div>
+      <div class={carte}>
+        <h3 class="font-display text-xl font-bold">Accidents avec un blessé hospitalisé ou un mort</h3>
+        <MiniCompare items={versus(r.part_graves_luynes, r.part_graves_37)} />
+        <ul class="mt-8 grid grid-cols-3 gap-3 text-center">
+          <li class="rounded-2xl bg-accent-soft p-3"><Icon name="alerte" class="mx-auto h-6 w-6 text-accent" /><p class="mt-2 font-display text-3xl font-extrabold">{formatNumber(r.tues)}</p><p class="text-xs text-ink-2">tués</p></li>
+          <li class="rounded-2xl bg-loire-soft p-3"><Icon name="sante" class="mx-auto h-6 w-6 text-loire" /><p class="mt-2 font-display text-3xl font-extrabold">{formatNumber(r.hospitalises)}</p><p class="text-xs text-ink-2">hospitalisés</p></li>
+          <li class="rounded-2xl border border-line p-3"><Icon name="personnes" class="mx-auto h-6 w-6 text-ink-2" /><p class="mt-2 font-display text-3xl font-extrabold">{formatNumber(r.blesses_legers)}</p><p class="text-xs text-ink-2">blessés légers</p></li>
+        </ul>
+        <p class="mt-6 text-xs text-ink-2">
+          Depuis 2018, « hospitalisé » veut dire plus de 24 heures à l'hôpital : les années antérieures ne sont pas
+          strictement comparables sur ce point.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="usagers" aria-labelledby="usagers-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="usagers-titre" class={titreH2}>Qui était sur la route ?</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Part des accidents où au moins un usager de chaque type était impliqué (un accident peut en compter plusieurs).</p>
+    <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        usagersAccidents.map((u) => (
+          <li class={carte}>
+            <p class="flex items-center gap-3 font-display text-xl font-bold">
+              <Icon name={ICONES[u.mode]} class="h-7 w-7 text-loire" />
+              {u.libelle}
+            </p>
+            <MiniCompare items={versus(u.part_luynes, u.part_37)} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section id="moments" aria-labelledby="moments-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="moments-titre" class={titreH2}>Quand ?</h2>
+    <div class="mt-8 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+      <div class={carte}>
+        <Waffle
+          title="Sur 100 accidents à Luynes"
+          unit="accidents"
+          items={moments.map((m) => ({ label: `${m.libelle}`, value: m.part_luynes }))}
+          ariaLabel={`Moment des accidents à Luynes : ${moments.map((m) => `${m.libelle} ${formatNumber(m.part_luynes, 0)} %`).join(', ')}.`}
+        />
+        <p class="mt-4 text-xs text-ink-2">Matin : 6 h-12 h · après-midi : 12 h-18 h · soirée : 18 h-22 h · nuit : 22 h-6 h.</p>
+      </div>
+      {
+        weekEnd && (
+          <div class={carte}>
+            <h3 class="flex items-center gap-2 font-display text-xl font-bold"><Icon name="calendrier" class="h-6 w-6 text-loire" /> Le week-end</h3>
+            <p class="mt-1 text-sm text-ink-2">Part des accidents survenus un samedi ou un dimanche.</p>
+            <MiniCompare items={versus(weekEnd.part_luynes, weekEnd.part_37)} />
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <section id="routes" aria-labelledby="routes-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="routes-titre" class={titreH2}>Sur quelles routes ?</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Accidents depuis {r.annee_debut} par route. Les routes départementales de la métropole sont devenues « métropolitaines »
+      (M) en 2017 : elles sont comptées sous leur ancien nom.
+    </p>
+    <div class:list={['mt-8 max-w-3xl', carte]}>
+      <CompareBars
+        title="Accidents par route"
+        items={routesAccidents.map((x) => ({ label: x.route, value: x.accidents, display: formatNumber(x.accidents), highlight: x === routePrincipale }))}
+      />
+    </div>
+  </section>
+
+  <FunFacts facts={faitsAccidents()} id="saviez-vous-accidents" />
+</Base>
