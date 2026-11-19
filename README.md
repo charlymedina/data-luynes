@@ -36,6 +36,7 @@ data-luynes/
 ├── data/
 │   ├── sources.ts       # Liste des sources téléchargées (→ data/raw/)
 │   └── sql/*.sql        # Requêtes DuckDB : un fichier .sql = un fichier JSON pour le site
+│                        #   (les fichiers « _*.sql » préparent des vues partagées, sans JSON)
 ├── scripts/build-data.ts  # Télécharge les sources et exécute les requêtes SQL
 ├── src/                 # Site Astro (pages, composants, styles)
 ├── docs/sources.md      # Origine, licence et mise à jour de chaque source
