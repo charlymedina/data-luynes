@@ -1,0 +1,105 @@
+---
+/**
+ * « Bandes du réchauffement » : une bande verticale par année, colorée selon l'écart de température à une
+ * moyenne de référence (bleu = plus frais, orange = plus chaud, neutre = proche de la moyenne).
+ * Échelle divergente : deux pôles déjà validés (--chart-3 / --chart-2) et un milieu sans teinte (--div-mid).
+ * Les années absentes (données incomplètes) laissent un trou hachuré. Infobulle au survol, tableau repliable.
+ */
+import { formatNumber } from '../../lib/format';
+import type { TipContent } from '../../lib/chart-tooltip';
+
+export interface Stripe {
+  annee: number;
+  temperature: number;
+  ecart: number;
+}
+
+interface Props {
+  stripes: readonly Stripe[];
+  ariaLabel: string;
+  reference: string;
+}
+
+const { stripes, ariaLabel, reference } = Astro.props;
+const first = stripes[0]?.annee ?? 0;
+const last = stripes.at(-1)?.annee ?? 0;
+const byYear = new Map(stripes.map((s) => [s.annee, s]));
+const years = Array.from({ length: last - first + 1 }, (_, i) => first + i);
+const maxAbs = Math.max(...stripes.map((s) => Math.abs(s.ecart)), 0.1);
+
+const signe = (v: number): string => `${v > 0 ? '+' : v < 0 ? '−' : ''}${formatNumber(Math.abs(v), 1)} °C`;
+function color(ecart: number): string {
+  const pole = ecart >= 0 ? 'var(--chart-2)' : 'var(--chart-3)';
+  const pct = Math.round((Math.min(Math.abs(ecart) / maxAbs, 1)) * 100);
+  return `color-mix(in oklab, ${pole} ${pct}%, var(--div-mid))`;
+}
+const tip = (s: Stripe): string =>
+  JSON.stringify({
+    title: String(s.annee),
+    rows: [
+      { label: 'moyenne', value: `${formatNumber(s.temperature, 1)} °C`, color: color(s.ecart) },
+      { label: `écart à ${reference}`, value: signe(s.ecart), color: color(s.ecart) },
+    ],
+  } satisfies TipContent);
+const ticks = years.filter((y) => y % 10 === 0);
+---
+
+<figure data-chart="rows" class="relative">
+  <div class="flex h-40 overflow-hidden rounded-xl sm:h-56" role="img" aria-label={ariaLabel}>
+    {
+      years.map((y) => {
+        const s = byYear.get(y);
+        return s ? (
+          <span class="stripe h-full min-w-0 flex-1" style={`background:${color(s.ecart)}`} data-tip={tip(s)} />
+        ) : (
+          <span class="stripe-gap h-full min-w-0 flex-1" title={`${y} : données incomplètes`} />
+        );
+      })
+    }
+  </div>
+  <div class="relative mt-2 h-4 text-[0.65rem] text-muted sm:text-xs" aria-hidden="true">
+    {ticks.map((y) => <span class="tabular absolute -translate-x-1/2" style={`left:${((y - first + 0.5) / years.length) * 100}%`}>{y}</span>)}
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-ink-2">
+    <span>Plus frais</span>
+    <span class="h-3 w-40 rounded-full" style="background:linear-gradient(90deg,var(--chart-3),var(--div-mid),var(--chart-2))" aria-hidden="true"></span>
+    <span>Plus chaud que la moyenne {reference}</span>
+  </div>
+  <div class="chart-tip" hidden></div>
+
+  <details class="mt-4 text-sm text-ink-2">
+    <summary class="cursor-pointer font-medium hover:text-ink">Voir les données en tableau</summary>
+    <div class="mt-3 max-h-72 overflow-auto rounded-xl border border-line">
+      <table class="tabular w-full text-left">
+        <caption class="sr-only">Température moyenne annuelle à Tours et écart à la moyenne {reference}</caption>
+        <thead class="sticky top-0 bg-surface">
+          <tr>
+            <th scope="col" class="px-3 py-2">Année</th>
+            <th scope="col" class="px-3 py-2 text-right">Moyenne</th>
+            <th scope="col" class="px-3 py-2 text-right">Écart</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            stripes.map((s) => (
+              <tr class="border-t border-line">
+                <th scope="row" class="px-3 py-1.5 font-medium">{s.annee}</th>
+                <td class="px-3 py-1.5 text-right">{formatNumber(s.temperature, 1)} °C</td>
+                <td class="px-3 py-1.5 text-right">{signe(s.ecart)}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+
+<style>
+  .stripe:hover {
+    filter: brightness(0.85);
+  }
+  .stripe-gap {
+    background: repeating-linear-gradient(45deg, var(--line) 0 2px, transparent 2px 6px);
+  }
+</style>
