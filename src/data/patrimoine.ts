@@ -60,8 +60,11 @@ export interface ResumePatrimoineRisques {
   catnat_inondation: number;
   catnat_premiere_annee: number;
   catnat_derniere_annee: number;
+  /** Arrêtés distincts (un arrêté peut reconnaître plusieurs événements : « catnat » compte les reconnaissances) */
+  catnat_arretes: number;
   mouvements: number;
   mouvement_plus_ancien: number;
+  mouvement_plus_recent: number;
   risques_recenses: string;
 }
 

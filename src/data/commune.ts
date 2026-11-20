@@ -53,3 +53,12 @@ export const commune: Commune = firstRow(communeRows as Commune[], 'commune');
 export const rang: RangDepartement = firstRow(rangRows as RangDepartement[], 'rang_departement');
 export const communesDepartement: readonly CommuneDepartement[] = territoireRows as CommuneDepartement[];
 export const generatedAt: Date = new Date(meta.generatedAt);
+
+/** Source qui n'a pas répondu lors de la dernière construction : sa version précédente a été réutilisée. */
+export interface SourceEnRetard {
+  id: string;
+  description: string;
+  /** AAAA-MM-JJ du dernier téléchargement réussi */
+  depuis: string;
+}
+export const sourcesEnRetard: readonly SourceEnRetard[] = (meta as { sourcesEnRetard?: SourceEnRetard[] }).sourcesEnRetard ?? [];

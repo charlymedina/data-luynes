@@ -11,11 +11,18 @@
  *  3. sinon, les 4 fichiers sont téléchargés dans data/raw/baac/, convertis en UTF-8 (les anciens sont en Windows-1252),
  *     puis harmonisés par les requêtes data/sql/baac/*.sql et enregistrés en Parquet.
  * Si data.gouv.fr est injoignable, la construction continue avec l'archive existante.
+ *
+ * Garde-fous :
+ *  - au plus 3 années retéléchargées par construction (si data.gouv change toutes les adresses d'un coup,
+ *    l'archive se met à jour en quelques semaines au lieu de faire échouer chaque construction) ;
+ *  - une modification des requêtes data/sql/baac/*.sql refait l'archive (empreinte « sql » du manifest).
  */
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
+import { empreinteSql, lireManifest } from './manifest.ts';
 
 const DATASET = 'https://www.data.gouv.fr/api/1/datasets/53698f4ca3a729239d2036df/';
 const RAW_DIR = 'data/raw/baac';
@@ -25,8 +32,12 @@ const MANIFEST = path.join(ARCHIVE_DIR, 'manifest.json');
 const TABLES = ['caract', 'usagers', 'vehicules', 'lieux'] as const;
 type Table = (typeof TABLES)[number];
 type Annee = Record<Table, string>;
-type Manifest = Record<string, Annee>;
+/** Ce qui est noté pour chaque année archivée : les adresses des 4 fichiers + l'empreinte des requêtes utilisées. */
+type AnneeArchivee = Annee & { sql?: string };
+type Manifest = Record<string, AnneeArchivee>;
 const TIMEOUT_MS = 120_000;
+const MAX_ANNEES_PAR_CONSTRUCTION = 3;
+const PAUSE_ENTRE_ESSAIS_MS = 5_000;
 
 /** « caracteristiques_2016.csv », « carcteristiques-2022.csv », « Caract_2024.csv » → { table, année }. */
 function classer(url: string): { table: Table; annee: string } | null {
@@ -72,6 +83,7 @@ async function telecharger(url: string, destination: string): Promise<string> {
       return [';', '\t', ','].reduce((a, b) => (compte(b) > compte(a) ? b : a));
     } catch (error: unknown) {
       if (essai === 3) throw new Error(`${url} : ${error instanceof Error ? error.message : String(error)}`);
+      await sleep(PAUSE_ENTRE_ESSAIS_MS * essai);
     }
   }
 }
@@ -101,24 +113,19 @@ async function archiverAnnee(connection: DuckDBConnection, annee: string, urls: 
   console.log(`↻ Accidents ${annee} : archivés`);
 }
 
-function aJour(ancien: Annee | undefined, nouveau: Annee, annee: string): boolean {
+function aJour(ancien: AnneeArchivee | undefined, nouveau: Annee, annee: string, sql: string): boolean {
   if (!ancien) return false;
   const fichiersPresents = TABLES.every((t) => existsSync(path.join(ARCHIVE_DIR, `${annee}-${t}.parquet`)));
-  return fichiersPresents && TABLES.every((t) => ancien[t] === nouveau[t]);
-}
-
-async function lireManifest(): Promise<Manifest> {
-  try {
-    return JSON.parse(await readFile(MANIFEST, 'utf8')) as Manifest;
-  } catch {
-    return {};
-  }
+  return fichiersPresents && ancien.sql === sql && TABLES.every((t) => ancien[t] === nouveau[t]);
 }
 
 export async function archiverBaac(connection: DuckDBConnection): Promise<void> {
   await mkdir(ARCHIVE_DIR, { recursive: true });
-  const manifest = await lireManifest();
-  let publiees: Manifest;
+  const manifest = await lireManifest<Manifest>(MANIFEST, {});
+  const sql = await empreinteSql(SQL_DIR);
+  // Archives faites avant l'ajout de l'empreinte : elles ont été produites par les requêtes actuelles.
+  for (const archivee of Object.values(manifest)) archivee.sql ??= sql;
+  let publiees: Record<string, Annee>;
   try {
     publiees = await anneesPubliees();
   } catch (error: unknown) {
@@ -126,11 +133,17 @@ export async function archiverBaac(connection: DuckDBConnection): Promise<void> 
     console.warn(`… accidents : data.gouv.fr injoignable, archive existante utilisée (${error instanceof Error ? error.message : error})`);
     return;
   }
-  for (const [annee, urls] of Object.entries(publiees).sort(([a], [b]) => a.localeCompare(b))) {
-    if (aJour(manifest[annee], urls, annee)) continue;
+  const aRefaire = Object.entries(publiees)
+    .sort(([a], [b]) => b.localeCompare(a)) // les années récentes d'abord
+    .filter(([annee, urls]) => !aJour(manifest[annee], urls, annee, sql));
+  for (const [annee, urls] of aRefaire.slice(0, MAX_ANNEES_PAR_CONSTRUCTION)) {
     await archiverAnnee(connection, annee, urls);
-    manifest[annee] = urls;
+    manifest[annee] = { ...urls, sql };
     await writeFile(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
   }
+  if (aRefaire.length > MAX_ANNEES_PAR_CONSTRUCTION) {
+    console.warn(`… accidents : ${aRefaire.length - MAX_ANNEES_PAR_CONSTRUCTION} années restent à mettre à jour (prochaines constructions)`);
+  }
+  await writeFile(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(`= Accidents : ${Object.keys(manifest).length} années dans l'archive`);
 }

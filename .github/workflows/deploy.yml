@@ -1,6 +1,7 @@
-# Construit le site (données + pages) et le publie sur Cloudflare Pages.
+# Construit le site (données + pages), vérifie sa cohérence et le publie sur Cloudflare Pages.
 # Se lance : à chaque push sur main, chaque lundi à 6 h (heure de Paris, hiver) et à la demande.
-# Si une source de données est en panne, la construction échoue et le site déjà en ligne reste inchangé.
+# Si une source de données est en panne, sa version précédente (cache data/raw) est réutilisée et signalée sur le site ;
+# si les tests de cohérence échouent, rien n'est publié et le site déjà en ligne reste inchangé.
 name: Construire et publier
 
 on:
@@ -11,7 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  # « write » uniquement pour enregistrer l'archive des ventes DVF (dernière étape) ; rien d'autre n'est modifié.
+  # « write » uniquement pour enregistrer les archives de données (dernière étape) ; rien d'autre n'est modifié.
   contents: write
 
 concurrency:
@@ -21,7 +22,7 @@ concurrency:
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
 
@@ -32,8 +33,22 @@ jobs:
 
       - run: npm ci
 
+      # Dernières données téléchargées (data/raw) et extensions DuckDB, gardées d'une construction à l'autre :
+      # si une source ne répond pas, sa version précédente est réutilisée au lieu de bloquer la mise à jour.
+      - name: Restaurer les données de la construction précédente
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/raw
+            ~/.duckdb/extensions
+          key: donnees-${{ github.run_id }}
+          restore-keys: donnees-
+
       - name: Préparer les données (SQL) et construire le site
         run: npm run build
+
+      - name: Vérifier la cohérence des données et des pages
+        run: npm test
 
       - name: Publier sur Cloudflare Pages
         # Le projet Pages « luynes » a été créé une fois pour toutes (mode Pages classique).
@@ -42,18 +57,20 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      # Les ventes DVF ne restent publiées que ~5 ans : la construction verse les années les plus anciennes dans
-      # data/archive/dvf/ (scripts/archive-dvf.ts). S'il y a du nouveau (2 fois par an environ), on l'enregistre
-      # dans le dépôt pour ne jamais le perdre. Un push fait par GitHub Actions ne relance pas ce workflow.
-      - name: Enregistrer l'archive des ventes DVF (si elle a changé)
+      # Les archives (ventes DVF, accidents BAAC, élections) gardent les données que les producteurs ne publient plus
+      # ou qui sont trop lourdes à retélécharger. S'il y a du nouveau, on l'enregistre dans le dépôt pour ne jamais le
+      # perdre — même si une étape précédente a échoué, pour ne pas refaire le travail. Un push fait par GitHub Actions
+      # ne relance pas ce workflow.
+      - name: Enregistrer les archives de données (si elles ont changé)
+        if: ${{ !cancelled() }}
         run: |
           if [ -z "$(git status --porcelain data/archive)" ]; then
-            echo "Archive DVF inchangée."
+            echo "Archives inchangées."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/archive
-          git commit -m "chore: archive des ventes DVF mise à jour automatiquement"
+          git commit -m "chore: archives de données mises à jour automatiquement"
           git pull --rebase origin main
           git push origin HEAD:main

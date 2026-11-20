@@ -12,8 +12,13 @@
  *
  * Règle simple : un fichier .sql = un fichier .json. Chaque requête doit renvoyer au moins une ligne,
  * sinon la construction s'arrête (et le site déjà en ligne reste inchangé).
+ *
+ * Source en panne : après 3 essais, si une version précédente existe dans data/raw/ (en CI, data/raw/ est gardé
+ * d'une construction à l'autre par le cache GitHub Actions), elle est réutilisée et signalée sur le site
+ * (« données non mises à jour depuis le … »). La construction n'échoue que si aucune version n'existe.
  */
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
@@ -27,7 +32,17 @@ const SQL_DIR = 'data/sql';
 const OUTPUT_DIR = 'src/data/generated';
 const FETCH_TIMEOUT_MS = 60_000;
 const MAX_ATTEMPTS = 3;
-const RETRY_DELAY_MS = 2_000;
+const RETRY_DELAY_MS = 5_000;
+/** Date du dernier téléchargement réussi de chaque source (pour dater les données réutilisées après une panne). */
+const JOURNAL = path.join(RAW_DIR, '_telechargements.json');
+
+/** Source réutilisée telle quelle parce qu'elle n'a pas répondu (écrit dans meta.json, affiché sur le site). */
+interface SourceEnRetard {
+  id: string;
+  description: string;
+  /** Date (AAAA-MM-JJ) du dernier téléchargement réussi */
+  depuis: string;
+}
 
 /** Une source peut demander une seule adresse ou plusieurs (résultats fusionnés). */
 async function resolveUrls(source: Source): Promise<string[]> {
@@ -120,22 +135,48 @@ async function download(source: Source): Promise<void> {
   await writeFile(path.join(RAW_DIR, `${source.id}.json`), await fetchJson(source));
 }
 
-/** Télécharge une source, avec jusqu'à 3 tentatives espacées (2 s, puis 4 s) en cas de panne passagère. */
-async function downloadSource(source: Source): Promise<void> {
+/** Chemin de la version locale d'une source (fichier JSON ou dossier de fichiers). */
+function cheminLocal(source: Source): string {
+  return source.format === 'fichiers' ? path.join(RAW_DIR, source.id) : path.join(RAW_DIR, `${source.id}.json`);
+}
+
+async function lireJournal(): Promise<Record<string, string>> {
+  try {
+    return JSON.parse(await readFile(JOURNAL, 'utf8')) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+const aujourdhui = (): string => new Date().toISOString().slice(0, 10);
+
+/**
+ * Télécharge une source, avec jusqu'à 3 tentatives espacées (5 s, puis 10 s) en cas de panne passagère.
+ * Renvoie la source si elle a dû être réutilisée telle quelle (panne), sinon null.
+ */
+async function downloadSource(source: Source, journal: Record<string, string>): Promise<SourceEnRetard | null> {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       await download(source);
+      journal[source.id] = aujourdhui();
       console.log(`↓ ${source.id} — ${source.description}`);
-      return;
+      return null;
     } catch (error: unknown) {
       const reason = error instanceof Error ? error.message : String(error);
       if (attempt === MAX_ATTEMPTS) {
-        throw new Error(`Source « ${source.id} » indisponible après ${MAX_ATTEMPTS} essais (${reason})`);
+        const local = cheminLocal(source);
+        if (!existsSync(local)) {
+          throw new Error(`Source « ${source.id} » indisponible après ${MAX_ATTEMPTS} essais (${reason}) et aucune version précédente`);
+        }
+        const depuis = journal[source.id] ?? (await stat(local)).mtime.toISOString().slice(0, 10);
+        console.warn(`⚠ ${source.id} indisponible (${reason}) : version du ${depuis} réutilisée`);
+        return { id: source.id, description: source.description, depuis };
       }
       console.warn(`… ${source.id} : essai ${attempt} raté (${reason}), nouvel essai`);
       await sleep(RETRY_DELAY_MS * attempt);
     }
   }
+  return null;
 }
 
 async function exportQuery(connection: DuckDBConnection, file: string): Promise<void> {
@@ -179,13 +220,18 @@ async function main(): Promise<void> {
   // En développement, `npm run data -- --sources=id1,id2` ne retélécharge que ces sources (les autres
   // fichiers de data/raw/ sont réutilisés tels quels) ; la construction officielle télécharge tout.
   const only = process.argv.find((arg) => arg.startsWith('--sources='))?.slice('--sources='.length).split(',');
+  const journal = await lireJournal();
+  const enRetard: SourceEnRetard[] = [];
   for (const source of SOURCES) {
-    if (!only || only.includes(source.id)) await downloadSource(source);
+    if (only && !only.includes(source.id)) continue;
+    const retard = await downloadSource(source, journal);
+    if (retard) enRetard.push(retard);
   }
+  await writeFile(JOURNAL, `${JSON.stringify(journal, null, 2)}\n`);
   await runQueries();
   await writeFile(
     path.join(OUTPUT_DIR, 'meta.json'),
-    `${JSON.stringify({ generatedAt: new Date().toISOString() }, null, 2)}\n`,
+    `${JSON.stringify({ generatedAt: new Date().toISOString(), sourcesEnRetard: enRetard }, null, 2)}\n`,
   );
 }
 

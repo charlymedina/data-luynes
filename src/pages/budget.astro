@@ -11,6 +11,9 @@ import { ANNEE_REFORME_FONCIER, anneesBudget, resumeBudget as r } from '../data/
 import { CREDITS_BUDGET } from '../data/credits';
 import { formatCommunes, formatNumber } from '../lib/format';
 import { faitsBudget } from '../lib/faits-budget';
+import { commune } from '../data/commune';
+import { methode } from '../data/methodes';
+import SourcesMethode from '../components/SourcesMethode.astro';
 
 const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
 const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
@@ -21,6 +24,8 @@ const derniere = xs.at(-1) ?? r.annee;
 const ticks = xs.filter((annee) => annee % 5 === 0 || annee === derniere);
 const euros = (v: number): string => `${formatNumber(v)} €`;
 const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
+/** Moyenne annuelle des dépenses d'équipement sur 10 ans, par habitant (une seule année est très variable). */
+const equipementMoyen10Ans = r.equipement_10_ans / 10 / r.population;
 const strateCourte = r.strate.replace(/^communes de /, '').replace(/ hab$/, ' habitants');
 
 /** Luynes, communes de même taille (strate), médiane du département : trois barres fines. */
@@ -46,7 +51,7 @@ const depenses: WaffleItem[] = [
 ];
 
 const rangs: { label: string; rank: number; icon: IconName; trio: MiniItem[] }[] = [
-  { label: 'Dépenses courantes par habitant', rank: r.rang_depenses, icon: 'pieces', trio: trio(r.depenses_hab, r.depenses_hab_strate, r.depenses_hab_37, euros) },
+  { label: 'Charges de fonctionnement par habitant', rank: r.rang_depenses, icon: 'pieces', trio: trio(r.depenses_hab, r.depenses_hab_strate, r.depenses_hab_37, euros) },
   { label: 'Dette par habitant', rank: r.rang_dette, icon: 'banque', trio: trio(r.dette_hab, r.dette_hab_strate, r.dette_hab_37, euros) },
   { label: 'Taux de taxe foncière', rank: r.rang_taux_foncier, icon: 'maison', trio: trio(r.taux_foncier, r.taux_foncier_strate, r.taux_foncier_37, pourcent) },
   { label: 'Équipements par habitant', rank: r.rang_equipement, icon: 'outils', trio: trio(r.equipement_hab, r.equipement_hab_strate, r.equipement_hab_37, euros) },
@@ -73,20 +78,31 @@ const lexique: { terme: string; icon: IconName; definition: string }[] = [
     <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
       Les comptes de la commune publiés par les Finances publiques, de {premiere} à {derniere}, comparés aux communes de même taille.
     </p>
+    <p class="mt-4 max-w-2xl rounded-2xl bg-loire-soft p-4 text-sm leading-relaxed text-ink">
+      Les montants « par habitant » sont divisés par la population retenue par les Finances publiques
+      ({formatNumber(r.population)} habitants : population légale « totale », qui ajoute à la population municipale les personnes
+      « comptées à part », par exemple des étudiants ou des résidents d'établissements). Elle est un peu plus élevée que les
+      {formatNumber(commune.population)} habitants affichés ailleurs sur le site, mais c'est elle qui sert à calculer la moyenne
+      des communes de même taille : la comparaison reste exacte.
+    </p>
   </section>
 
   <section aria-label="Chiffres clés du budget" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-    <KeyFigure tone="loire" icon="pieces" label={`Dépenses courantes ${r.annee}`} value={r.depenses / 1_000_000} decimals={1} unit="M€">
+    <KeyFigure tone="loire" icon="pieces" label={`Charges de fonctionnement ${r.annee}`} value={r.depenses / 1_000_000} decimals={1} unit="M€" info={methode('depenses')}>
       <MiniCompare onDark items={trio(r.depenses_hab, r.depenses_hab_strate, null, (v) => `${formatNumber(v)} €/hab.`)} />
     </KeyFigure>
-    <KeyFigure tone="accent" icon="banque" label="Dette par habitant" value={r.dette_hab} unit="€">
+    <KeyFigure tone="accent" icon="banque" label={`Dette par habitant (fin ${r.annee})`} value={r.dette_hab} unit="€" info={methode('dette')}>
       <MiniCompare items={trio(r.dette_hab, r.dette_hab_strate, null, euros)} />
     </KeyFigure>
-    <KeyFigure icon="maison" label="Taxe foncière" value={r.taux_foncier} decimals={1} unit="%">
+    <KeyFigure icon="maison" label={`Taux de taxe foncière ${r.annee}`} value={r.taux_foncier} decimals={1} unit="%" info={methode('taxe_fonciere')}>
       <MiniCompare items={trio(r.taux_foncier, r.taux_foncier_strate, null, pourcent)} />
     </KeyFigure>
-    <KeyFigure icon="outils" label="Équipements par habitant" value={r.equipement_hab} unit="€">
+    <KeyFigure icon="outils" label={`Équipements par habitant ${r.annee}`} value={r.equipement_hab} unit="€" info={methode('equipement')}>
       <MiniCompare items={trio(r.equipement_hab, r.equipement_hab_strate, null, euros)} />
+      <p class="mt-2 text-xs text-ink-2">
+        Une seule année, très variable selon les chantiers : en moyenne {euros(Math.round(equipementMoyen10Ans))} par habitant et par an sur
+        {r.annee - 9}-{r.annee}.
+      </p>
     </KeyFigure>
   </section>
 
@@ -112,6 +128,8 @@ const lexique: { terme: string; icon: IconName; definition: string }[] = [
       </div>
     </div>
     <p class="mt-4 max-w-2xl text-sm text-ink-2">
+      Les charges de fonctionnement suivent la comptabilité des Finances publiques : elles incluent des écritures sans
+      sortie d'argent (amortissements), d'où un total un peu supérieur aux seules dépenses payées.
       « Autres recettes » : autres taxes, reversements et dotations d'autres collectivités, ventes de services (cantine, périscolaire…).
     </p>
   </section>
@@ -143,7 +161,7 @@ const lexique: { terme: string; icon: IconName; definition: string }[] = [
       <div class="flex flex-col justify-between rounded-[1.5rem] bg-loire p-6 text-bg sm:p-8">
         <Icon name="outils" class="h-9 w-9 opacity-85" />
         <p class="mt-6 font-display text-5xl font-extrabold tracking-tight sm:text-6xl">{formatNumber(r.equipement_10_ans / 1_000_000, 1)} M€</p>
-        <p class="mt-3 opacity-85">consacrés aux équipements en 10 ans : travaux, bâtiments, voirie, matériel.</p>
+        <p class="mt-3 opacity-85">consacrés aux équipements de {r.annee - 9} à {r.annee} : travaux, bâtiments, voirie, matériel.</p>
       </div>
       <div class={carte}>
         <p class="mb-4 text-sm text-ink-2">Par habitant et par an : les montants suivent le rythme des chantiers.</p>
@@ -221,4 +239,5 @@ const lexique: { terme: string; icon: IconName; definition: string }[] = [
   </section>
 
   <FunFacts facts={faitsBudget()} id="saviez-vous-budget" />
+  <SourcesMethode page="budget" />
 </Base>

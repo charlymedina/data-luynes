@@ -21,10 +21,15 @@ import {
 import { CREDITS_EQUIPEMENTS } from '../data/credits';
 import { formatNumber } from '../lib/format';
 import { faitsEquipements } from '../lib/faits-equipements';
+import { methode } from '../data/methodes';
+import SourcesMethode from '../components/SourcesMethode.astro';
 
 const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
 const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
 const unDecimal = (v: number): string => formatNumber(v, 1);
+/** L'IPS n'est pas publié chaque année pour chaque établissement : on signale les années différentes. */
+const rentreesIps = [...new Set(ipsEtablissements.map((e) => e.rentree))].sort();
+const ipsAnciens = ipsEtablissements.filter((e) => e.rentree !== rentreesIps.at(-1));
 const versus = (luynes: number, dep: number, display: (v: number) => string = unDecimal): MiniItem[] => [
   { label: 'Luynes', value: luynes, display: display(luynes), highlight: true },
   { label: 'Indre-et-Loire', value: dep, display: display(dep) },
@@ -121,17 +126,17 @@ const niveauxCollege = college
   </section>
 
   <section aria-label="Chiffres clés des écoles, de la santé et des services" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <KeyFigure tone="loire" icon="boutique" label="Commerces, services, équipements" value={r.equipements}>
+    <KeyFigure tone="loire" icon="boutique" label={`Commerces, services, équipements (${r.annee_bpe})`} value={r.equipements} info={methode('equipements')}>
       <MiniRank onDark rank={r.rang_equipements} total={r.nb_communes} what="le mieux équipé par habitant" />
     </KeyFigure>
-    <KeyFigure tone="accent" icon="sante" label="Médecins généralistes" value={r.medecins}>
+    <KeyFigure tone="accent" icon="sante" label={`Médecins généralistes (${r.annee_bpe})`} value={r.medecins} info={methode('medecins')}>
       <MiniCompare items={versus(r.medecins_pour_10000, r.medecins_pour_10000_37)} />
       <p class="mt-2 text-xs text-ink-2">pour 10 000 habitants</p>
     </KeyFigure>
-    <KeyFigure icon="ecole" label={`Élèves, rentrée ${r.derniere_rentree}`} value={r.eleves}>
+    <KeyFigure icon="ecole" label={`Élèves, rentrée ${r.derniere_rentree}`} value={r.eleves} info={methode('eleves')}>
       <MiniColumns values={effectifsEcoles.map((e) => ({ label: String(e.rentree), value: e.eleves }))} ariaLabel={`Élèves des écoles de Luynes, rentrées ${r.premiere_rentree} à ${r.derniere_rentree}`} />
     </KeyFigure>
-    <KeyFigure icon="livre" label="Écoles et collège" value={r.etablissements_scolaires}>
+    <KeyFigure icon="livre" label="Écoles et collège" value={r.etablissements_scolaires} info={methode('etablissements')}>
       <MiniCompare items={versus(r.eleves_par_classe, r.eleves_par_classe_37)} />
       <p class="mt-2 text-xs text-ink-2">élèves par classe en école</p>
     </KeyFigure>
@@ -285,6 +290,7 @@ const niveauxCollege = college
           social des familles d'après la profession des parents : plus il est élevé, plus les familles sont favorisées.
           Chaque établissement est comparé aux moyennes de son secteur (public ou privé). Il n'est pas publié pour les écoles
           maternelles seules.
+          {ipsAnciens.length > 0 && ` Attention aux années : l'IPS n'est pas publié chaque année pour chaque établissement ; celui de ${ipsAnciens.map((e) => `« ${e.nom} » date de ${e.rentree}`).join(', ')}, les autres de ${rentreesIps.at(-1) ?? ''}.`}
         </p>
         <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {ipsEtablissements.map((e) => (
@@ -308,4 +314,5 @@ const niveauxCollege = college
   }
 
   <FunFacts facts={faitsEquipements()} id="saviez-vous-equipements" />
+  <SourcesMethode page="equipements" />
 </Base>

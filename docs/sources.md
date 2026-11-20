@@ -1,5 +1,10 @@
 # Sources de données
 
+Pour chaque chiffre clé du site, la source, le calcul et l'année affichés dans la bulle ⓘ et la section
+« Sources et méthode » viennent de `src/data/methodes.ts` (années lues dans les données, jamais écrites à la main).
+
+## Commune et classements (accueil, Territoire, Population)
+
 | Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
 |---|---|---|---|---|---|
 | [API Géo — commune 37139](https://geo.api.gouv.fr/communes/37139) | Nom, codes, population, surface, centre, département, région | Etalab / DINUM (population : INSEE, populations légales ; géométries : IGN) | [Licence Ouverte 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/) | Population : chaque année (millésime INSEE en vigueur au 1er janvier) | `data/raw/commune.json` |
@@ -12,7 +17,7 @@ Requêtes : `data/sql/_departement.sql` (vues partagées), `rang_departement.sql
 
 | Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
 |---|---|---|---|---|---|
-| [Tours Métropole — Population 1876-2023](https://data.tours-metropole.fr/explore/dataset/population-1876-2023-tours-metropole-val-de-loire/) | Population de Luynes à chaque recensement depuis 1876 (filtre `code_geographique = 37139`) | INSEE, publié par Tours Métropole Val de Loire (portail Opendatasoft) | Licence Ouverte 2.0 (données INSEE) | Annuelle (dernière mise à jour du jeu : 19/12/2025) | `data/raw/population_historique.json` |
+| [Tours Métropole — Population depuis 1876](https://data.tours-metropole.fr/explore/?q=population+1876) (jeu « population-1876-<année>-… », le plus récent est retrouvé dans le catalogue à chaque construction) | Population de Luynes à chaque recensement depuis 1876 (filtre `code_geographique = 37139`) | INSEE, publié par Tours Métropole Val de Loire (portail Opendatasoft) | Licence Ouverte 2.0 (données INSEE) | Annuelle (dernière mise à jour du jeu : 19/12/2025) | `data/raw/population_historique.json` |
 | [INSEE Melodi — `DS_RP_TD_POPULATION_AGESEX_PRINC`](https://api.insee.fr/melodi/data/DS_RP_TD_POPULATION_AGESEX_PRINC?GEO=COM-37139) | Population par âge détaillé (0 à 100 ans et +) et sexe, dernier recensement — Luynes, Indre-et-Loire (`DEP-37`), France (`FRANCE`, on garde « France » hors seule métropole) | INSEE, recensement de la population | Licence Ouverte 2.0 | Annuelle (millésime 2023 au 19/11/2026) | `data/raw/age_sexe_luynes.json`, `age_sexe_37.json`, `age_sexe_france.json` |
 | [INSEE Melodi — `DS_RP_POPULATION_PRINC`](https://api.insee.fr/melodi/data/DS_RP_POPULATION_PRINC?GEO=COM-37139) | Grandes tranches d'âge (moins de 20 ans, 65 ans et +) en 2012, 2017, 2023 | INSEE, recensement | Licence Ouverte 2.0 | Annuelle | `data/raw/grandes_tranches_luynes.json` |
 | [INSEE Melodi — `DS_ETAT_CIVIL_NAIS_COMMUNES`](https://api.insee.fr/melodi/data/DS_ETAT_CIVIL_NAIS_COMMUNES?GEO=COM-37139) | Naissances domiciliées à Luynes (lieu de résidence de la mère), 2008-2025 | INSEE, état civil | Licence Ouverte 2.0 | Annuelle | `data/raw/naissances_luynes.json` |
@@ -30,7 +35,7 @@ Notes :
 | [Base Mérimée — monuments historiques](https://www.data.gouv.fr/datasets/5af120e5b595087cfabcde81/) via l'[API tabulaire data.gouv](https://tabular-api.data.gouv.fr/api/resources/3a52af4a-f9da-4dcc-8110-b07774dfb3bc/data/?COG_Insee_lors_de_la_protection__exact=37139) | Les 8 monuments de Luynes (nom, époque, protection, propriétaire, coordonnées) ; nombre de monuments par commune du 37 (`__groupby` sur le code INSEE) | Ministère de la Culture | Licence Ouverte 2.0 | Hebdomadaire | `data/raw/monuments_luynes.json`, `monuments_37.json` |
 | [Géorisques — cavités souterraines](https://georisques.gouv.fr/api/v1/cavites?code_insee=37139) | Position et type des 193 cavités de Luynes ; toutes les cavités du 37 (par paquets de 20 communes, limite de l'API) | BRGM / ministère de la Transition écologique | Licence Ouverte 2.0 | Continue | `data/raw/cavites_luynes.json`, `cavites_37.json` |
 | [Géorisques — mouvements de terrain](https://georisques.gouv.fr/api/v1/mvt?code_insee=37139) | Type et année des mouvements de terrain (adresses non reprises) | BRGM | Licence Ouverte 2.0 | Continue | `data/raw/mouvements_terrain_luynes.json` |
-| [Géorisques — arrêtés CatNat (GASPAR)](https://georisques.gouv.fr/api/v1/gaspar/catnat?code_insee=37139) | Arrêtés de catastrophe naturelle de Luynes et de toutes les communes du 37 | Ministère de l'Intérieur / DGPR | Licence Ouverte 2.0 | Continue | `data/raw/catnat_luynes.json`, `catnat_37.json` |
+| [Géorisques — arrêtés CatNat (GASPAR)](https://georisques.gouv.fr/api/v1/gaspar/catnat?code_insee=37139) | Reconnaissances de catastrophe naturelle de Luynes et de toutes les communes du 37 (une ligne par événement reconnu ; un même arrêté peut en couvrir plusieurs : le site affiche les deux nombres, le classement porte sur les reconnaissances) | Ministère de l'Intérieur / DGPR | Licence Ouverte 2.0 | Continue | `data/raw/catnat_luynes.json`, `catnat_37.json` |
 | [Géorisques — risques recensés (GASPAR)](https://georisques.gouv.fr/api/v1/gaspar/risques?code_insee=37139) | Liste des risques naturels officiellement recensés pour la commune | DGPR | Licence Ouverte 2.0 | Continue | `data/raw/risques_luynes.json` |
 | [API Géo — contour](https://geo.api.gouv.fr/communes/37139?format=geojson&geometry=contour) | Limite de la commune sur la carte | IGN / Etalab | Licence Ouverte 2.0 | Annuelle | `data/raw/commune_contour.json` |
 | [Géorisques — zones inondables (directive inondation, WFS)](https://www.georisques.gouv.fr/services?service=WFS&version=2.0.0&request=GetCapabilities) | Couche `ALEA_SYNT_01_02MOY_FXX` : surfaces inondables par débordement de cours d'eau, scénario « probabilité moyenne » (période de retour 100 à 300 ans) du TRI de Tours, dans un rectangle autour de Luynes ; découpée à la limite communale en SQL | DGPR / DDT, directive inondation | Licence Ouverte 2.0 | Révision tous les 6 ans (cycle directive inondation) | `data/raw/zones_inondables.json` |
@@ -48,14 +53,16 @@ Notes :
 |---|---|---|---|---|---|
 | [Géo-DVF — demandes de valeurs foncières géolocalisées](https://www.data.gouv.fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/) (`https://files.data.gouv.fr/geo-dvf/latest/csv/<année>/departements/37.csv.gz`) | Toutes les ventes d'Indre-et-Loire des années publiées (2021 → 2025 au 19/11/2026) : prix, date, surfaces, pièces, type de local, position de la parcelle, rue. Luynes = `code_commune = '37139'` | DGFiP, géolocalisé par Etalab | Licence Ouverte 2.0 | Semestrielle (avril, octobre) | `data/raw/dvf_37/*.csv.gz` |
 | [ADEME — DPE logements existants](https://data.ademe.fr/datasets/dpe03existant) (API data-fair, agrégat `values_agg?field=etiquette_dpe`) | Nombre de DPE par étiquette A → G à Luynes (`code_insee_ban:37139`), en Indre-et-Loire et en France, depuis juillet 2021 | ADEME | Licence Ouverte 2.0 | Quotidienne | `data/raw/dpe_luynes.json`, `dpe_37.json`, `dpe_france.json` |
-| [Carte des loyers 2025](https://www.data.gouv.fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/) via l'API tabulaire data.gouv (fichiers « maison » et « appartement ») | Loyer d'annonce prédit au m² charges comprises, fourchette, nombre d'annonces, pour les 272 communes du 37 | Ministère de la Transition écologique (DHUP), annonces SeLoger / Leboncoin / PAP | Licence Ouverte 2.0 | Annuelle (un nouveau jeu chaque décembre) | `data/raw/loyers_maisons_37.json`, `loyers_appartements_37.json` |
+| [Carte des loyers](https://www.data.gouv.fr/datasets/?q=carte+des+loyers+indicateurs+de+loyers+d%27annonce+par+commune) — le jeu le plus récent (« … par commune en <année> ») est retrouvé via l'API data.gouv à chaque construction, puis lu via l'API tabulaire (fichiers « Indicateurs de loyer maison » et « … appartement ») ; l'année est lue dans son titre (`loyers_millesime`) | Loyer d'annonce prédit au m² charges comprises, fourchette, nombre d'annonces, pour les 272 communes du 37 | Ministère de la Transition écologique (DHUP), annonces SeLoger / Leboncoin / PAP | Licence Ouverte 2.0 | Annuelle (un nouveau jeu chaque décembre) | `data/raw/loyers_maisons_37.json`, `loyers_appartements_37.json` |
 
 Notes :
 - **DVF ne garde que ~5 ans glissants** : à chaque mise à jour, l'année la plus ancienne disparaît (2021 partira en 2027). La liste des années est recalculée à chaque construction (`data/sources.ts`, fonction `dvfDepartement37`).
 - **Archive DVF** (`data/archive/dvf/`, versionnée dans le dépôt) : à chaque construction, les **2 années publiées les plus anciennes** (celles qui vont disparaître, et que DVF ne révise plus guère) sont copiées en Parquet compressé (colonnes utiles, ventes classiques et sur plan d'Indre-et-Loire, ~0,8 Mo par année). Un fichier n'est réécrit que si son contenu a changé (empreinte dans `manifest.json`). Une année qui n'est plus publiée reste dans l'archive pour toujours. `data/sql/_dvf.sql` lit les fichiers publiés **+** les années archivées qui ne sont plus publiées (aucun doublon). La construction automatique (GitHub Actions) enregistre elle-même l'archive dans le dépôt quand elle change (environ deux fois par an). Code : `scripts/archive-dvf.ts`. Taille : 1,9 Mo aujourd'hui (2021-2022), +0,8 Mo par an environ.
 - Une vente DVF occupe plusieurs lignes (parcelles, locaux, natures de terrain) : `data/sql/_dvf.sql` regroupe tout par `id_mutation` et définit le type de bien (maison seule, appartement seul, terrain, autre). Prix au m² seulement pour une maison ou un appartement vendu seul, surface ≥ 15 m², entre 300 et 15 000 €/m² ; ventes < 1 000 € écartées. Échanges, adjudications et expropriations exclus.
 - Le classement des prix au m² ne retient que les communes avec au moins 30 ventes de maisons sur la période.
-- Carte des loyers : identifiants des fichiers 2025 codés dans `data/sources.ts` ; à mettre à jour quand le jeu 2026 sortira.
+- Carte des loyers : le jeu le plus récent est retrouvé automatiquement ; le test `data/tests/04_fraicheur.sql` signale si l'année affichée devient trop ancienne.
+- **Fenêtre des prix** : les prix (médianes, prix au m², classement, département) portent sur les **5 dernières années disponibles** (vue `dvf_ventes_prix_recentes` de `_dvf.sql`) ; le nombre de ventes, la carte et les courbes utilisent toutes les années (fichiers publiés + archive).
+- **Ventes** : une vente = une mutation (`id_mutation`) ; « autres » = plusieurs logements, locaux d'activité, dépendances seules ; quelques ventes n'ont pas de coordonnées et n'apparaissent pas sur la carte (le site l'indique).
 - Les DPE ne concernent que les logements vendus, loués ou rénovés depuis juillet 2021 : ce n'est pas un portrait de tout le parc.
 - Les ventes de Luynes sont aussi publiées en `/donnees/ventes-immobilieres.json` (fichier lu par la carte).
 - Requêtes : `data/sql/_dvf.sql` et `data/sql/immobilier_*.sql`.
@@ -98,7 +105,7 @@ Notes :
 | [Bases annuelles des accidents corporels de la circulation (BAAC)](https://www.data.gouv.fr/datasets/53698f4ca3a729239d2036df/) | Accidents corporels 2005 → dernière année : date (mois, jour de la semaine, heure), lumière, météo, commune, coordonnées ; gravité et catégorie des usagers (ni âge ni sexe) ; catégorie des véhicules ; type et numéro de route | ONISR (Observatoire national interministériel de la sécurité routière), d'après les forces de l'ordre | Licence Ouverte 2.0 | Annuelle (automne, année N-1) | Archive `data/archive/baac/<année>-<table>.parquet` |
 
 Notes :
-- **Archive** : les 4 fichiers nationaux de chaque année (~25 Mo) ne sont pas retéléchargés à chaque construction. `scripts/archive-baac.ts` lit la liste des fichiers dans l'API data.gouv, et ne télécharge une année que si sa publication a changé (adresses notées dans `data/archive/baac/manifest.json`). Seule l'Indre-et-Loire est gardée (~0,6 Mo pour 2005-2025). Si data.gouv.fr ne répond pas, l'archive existante est utilisée.
+- **Archive** : les 4 fichiers nationaux de chaque année (~25 Mo) ne sont pas retéléchargés à chaque construction. `scripts/archive-baac.ts` lit la liste des fichiers dans l'API data.gouv, et ne télécharge une année que si sa publication a changé (adresses notées dans `data/archive/baac/manifest.json`). Seule l'Indre-et-Loire est gardée (~0,6 Mo pour 2005-2025). Si data.gouv.fr ne répond pas pour la **liste** des fichiers, l'archive existante est utilisée ; au plus 3 années sont retéléchargées par construction (l'archive se complète sur plusieurs semaines si toutes les adresses changent). Une modification des requêtes `data/sql/baac/*.sql` refait l'archive (empreinte « sql » de `manifest.json`).
 - **Harmonisation** (`data/sql/baac/*.sql`) : avant 2019, département « 370 » + commune « 139 », heures « 1930 », coordonnées sans virgule (souvent à 0 avant 2010) et fichiers en Windows-1252 ; le fichier 2022 nomme `Accident_Id` la colonne `Num_Acc`.
 - **Rupture 2018** : la définition du « blessé hospitalisé » a changé (plus de 24 h à l'hôpital) ; les années antérieures ne sont pas strictement comparables sur la gravité.
 - 12 des 35 accidents de Luynes (surtout avant 2010) n'ont pas de coordonnées : absents de la carte, comptés partout ailleurs.
@@ -120,7 +127,6 @@ Notes :
 Notes :
 - ⚠️ Dans les effectifs, la colonne `code_commune_insee` contient le code postal (37230, partagé avec Fondettes) : filtre sur `commune = "LUYNES"` et le département.
 - Collège et IPS : filtrés par les identifiants (UAI) des établissements ouverts de l'annuaire, en plus du code commune. L'IPS n'est pas publié pour les écoles maternelles seules ; chaque établissement est affiché à sa dernière rentrée publiée (pour l'école Pasteur, 2022-2023). Le nombre de classes du collège n'est pas publié dans ce jeu.
-- Requêtes : `data/sql/ecoles_ips.sql`, `data/sql/ecoles_college.sql`.
 - Les moyennes « pour 1 000 habitants » du département incluent Tours et les villes, où se concentrent commerces et services.
 - Si l'INSEE change la nomenclature des équipements, régénérer `data/reference/bpe_libelles.csv` (codes inconnus affichés tels quels en attendant).
 - Requêtes : `data/sql/_equipements.sql`, `data/sql/equipements_*.sql`, `data/sql/ecoles_*.sql`.
@@ -150,8 +156,9 @@ Notes :
 | [Municipales 2026 — résultats du 1er tour](https://www.data.gouv.fr/datasets/elections-municipales-2026-resultats-du-premier-tour/) et [du second tour](https://www.data.gouv.fr/datasets/elections-municipales-2026-resultats-du-second-tour/) (fichiers « Résultats - Communes », via l'API tabulaire) | Listes, têtes de liste, voix, sièges au conseil municipal et communautaire à Luynes | Ministère de l'Intérieur | Licence Ouverte 2.0 | Ponctuelle | `data/raw/municipales_2026_t1.json`, `municipales_2026_t2.json` |
 
 Notes :
-- **Archive** : DuckDB lit les fichiers nationaux à distance (seulement les colonnes utiles) et n'en garde que de petits extraits (≈ 60 Ko) : participation de Luynes / du 37 / de la France à chaque scrutin, participation des communes du 37 (classements), voix des candidats (Luynes partout ; 37 et France pour la présidentielle et les européennes). L'archive n'est refaite que si la source change (empreinte dans `manifest.json`) ; si la source est injoignable, l'archive existante sert. Requêtes d'extraction : `data/sql/elections/*.sql`, script `scripts/archive-elections.ts`.
+- **Archive** : DuckDB lit les fichiers nationaux à distance (seulement les colonnes utiles) et n'en garde que de petits extraits (≈ 60 Ko) : participation de Luynes / du 37 / de la France à chaque scrutin, participation des communes du 37 (classements), voix des candidats (Luynes partout ; 37 et France pour la présidentielle et les européennes). L'archive n'est refaite que si la source change (date ou « etag » des fichiers distants dans `manifest.json`) ou si les requêtes d'extraction changent (empreinte « sql ») ; si la source est injoignable, l'archive existante sert. Requêtes d'extraction : `data/sql/elections/*.sql`, script `scripts/archive-elections.ts`.
 - **Neutralité** : candidats ou listes dans l'ordre des voix obtenues à Luynes, une seule couleur pour tous, aucune nuance politique reprise ; les « Le saviez-vous ? » ne portent que sur la participation. Les candidats sous 3 % partout sont regroupés dans « Autres ».
+- **Référence « France »** : somme des bureaux du fichier national (avant 2012, sans les Français de l'étranger : écart possible d'environ un point avec le taux officiel). Quand le fichier ne couvre qu'une partie du territoire (municipales 2008 : communes de 3 500 habitants et plus), les références « Indre-et-Loire » et « France » sont laissées vides (`_elections.sql`) et ce scrutin n'est pas compté dans « Luynes a voté plus que la France ».
 - Participation = votants / inscrits. Les comparaisons utilisent les 1ers tours (au 2nd tour, seules certaines communes ou circonscriptions votent). Les cantonales (jusqu'en 2011) sont rangées avec les départementales.
 - Les fichiers officiels des municipales sont « larges » (une série de colonnes par liste) : dépliés en SQL (`elections_municipales.sql`).
 - Requêtes : `data/sql/_elections.sql`, `data/sql/elections_*.sql`.
@@ -164,11 +171,17 @@ Notes :
 
 Notes :
 - Les adresses des fichiers changent à chaque publication : elles sont retrouvées via l'API data.gouv (`data/sources-delinquance.ts`).
-- **Secret statistique** : une valeur communale n'est pas publiée quand il y a moins de 5 faits sur 3 ans (`est_diffuse = 'ndiff'`) ; elle reste vide, jamais estimée (la colonne `complement_info_nombre` n'est pas utilisée).
+- **Secret statistique** : quand trop peu de faits sont enregistrés, le SSMSI ne publie pas la valeur communale de l'année (`est_diffuse = 'ndiff'`) ; elle reste vide, jamais estimée (la colonne `complement_info_nombre` n'est pas utilisée). La page indique précisément les années manquantes et les faits publiés.
 - Taux = moyenne des 3 dernières années (faits / population ou logements × 1 000) ; le taux de Luynes n'est calculé que si les 3 années sont publiées. Les cambriolages se rapportent aux logements, le reste aux habitants.
 - Indicateurs « stupéfiants » non repris (ils mesurent l'activité des services, pas des victimes). Pas de classement départemental (trop instable avec si peu de faits).
 - Requêtes : `data/sql/_delinquance.sql`, `data/sql/delinquance_*.sql`.
 
-Les données sont téléchargées à nouveau à chaque construction du site (au moins une fois par semaine),
-avec 3 tentatives par source en cas de panne passagère.
-La liste technique des sources est dans `data/sources.ts`.
+## Mise à jour et pannes
+
+Les données sont téléchargées à nouveau à chaque construction du site (au moins une fois par semaine), avec 3 tentatives
+par source. Si une source ne répond toujours pas, sa version précédente (gardée d'une construction à l'autre par le cache
+GitHub Actions de `data/raw/`) est réutilisée et signalée en pied de page (« données du … ») ; la construction n'échoue
+que si aucune version n'existe. Les tests `data/tests/*.sql` (dont la fraîcheur des millésimes) sont lancés avant chaque
+publication.
+
+La liste technique des sources est dans `data/sources.ts` et `data/sources-<thème>.ts`.

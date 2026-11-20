@@ -9,7 +9,9 @@ import CompareBars, { type CompareItem } from '../components/charts/CompareBars.
 import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
 import { commune, communesDepartement, rang } from '../data/commune';
 import { CREDITS_TERRITOIRE } from '../data/credits';
-import { formatCommunes, formatNumber, formatRank } from '../lib/format';
+import { formatCommunes, formatNumber, formatRankOf } from '../lib/format';
+import { methode } from '../data/methodes';
+import SourcesMethode from '../components/SourcesMethode.astro';
 import { faitsCommune } from '../lib/faits';
 
 const plusDense = communesDepartement[0];
@@ -21,8 +23,8 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
 
 const superficies: CompareItem[] = [
   { label: 'Luynes', value: commune.surface_km2, display: enKm2(commune.surface_km2), highlight: true },
-  { label: 'Moyenne 37', value: rang.surface_moyenne_km2, display: enKm2(rang.surface_moyenne_km2), highlight: false },
-  { label: 'Médiane 37', value: rang.surface_mediane_km2, display: enKm2(rang.surface_mediane_km2), highlight: false },
+  { label: 'Moyenne des communes du 37', value: rang.surface_moyenne_km2, display: enKm2(rang.surface_moyenne_km2), highlight: false },
+  { label: 'Médiane des communes du 37', value: rang.surface_mediane_km2, display: enKm2(rang.surface_mediane_km2), highlight: false },
 ];
 const densites: CompareItem[] = [
   { label: 'Luynes', value: commune.densite_hab_km2, display: enDensite(commune.densite_hab_km2), highlight: true },
@@ -34,7 +36,7 @@ const mini = (items: CompareItem[], display: (v: number) => string): MiniItem[] 
 
 <Base
   title="Territoire de Luynes — Luynes en chiffres"
-  description={`${formatNumber(commune.surface_km2, 1)} km², ${formatNumber(commune.densite_hab_km2)} habitants au km² : la place de Luynes parmi les ${rang.nb_communes} communes d'Indre-et-Loire.`}
+  description={`${formatNumber(commune.surface_km2, 1)} km², ${formatNumber(commune.densite_hab_km2)} habitants au km² : la place de Luynes parmi les ${formatCommunes(rang.nb_communes)}.`}
   sources={CREDITS_TERRITOIRE}
 >
   <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
@@ -46,10 +48,10 @@ const mini = (items: CompareItem[], display: (v: number) => string): MiniItem[] 
   </section>
 
   <section aria-label="Chiffres clés du territoire" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-    <KeyFigure tone="loire" icon="regle" label="Superficie" value={commune.surface_km2} decimals={1} unit="km²">
+    <KeyFigure tone="loire" icon="regle" label="Superficie" value={commune.surface_km2} decimals={1} unit="km²" info={methode('superficie')}>
       <MiniCompare onDark items={mini(superficies.slice(0, 2), enKm2)} />
     </KeyFigure>
-    <KeyFigure tone="accent" icon="immeuble" label="Densité" value={commune.densite_hab_km2} unit="hab./km²">
+    <KeyFigure tone="accent" icon="immeuble" label="Densité" value={commune.densite_hab_km2} unit="hab./km²" info={methode('densite')}>
       <MiniCompare items={mini(densites, (v) => formatNumber(v))} />
     </KeyFigure>
     <RankGauge label="Rang en densité" rank={rang.rang_densite} total={rang.nb_communes} icon="immeuble" ends={['la plus dense', 'la moins dense']} />
@@ -61,14 +63,14 @@ const mini = (items: CompareItem[], display: (v: number) => string): MiniItem[] 
     {
       plusDense && moinsDense && (
         <p class="mt-4 max-w-2xl text-ink-2">
-          Chaque colonne est une commune : de {plusDense.nom}, tout en haut, à {moinsDense.nom}, tout au bout. Luynes arrive {formatRank(rang.rang_densite)}.
+          Chaque colonne est une commune : de {plusDense.nom}, tout en haut, à {moinsDense.nom}, tout au bout. Luynes arrive {formatRankOf(rang.rang_densite, rang.nb_communes)}.
         </p>
       )
     }
     <div class:list={['mt-8', carte]}>
       <RankSkyline
         communes={communesDepartement}
-        ariaLabel={`Densité des ${rang.nb_communes} communes d'Indre-et-Loire, de la plus dense à la moins dense. Luynes est ${formatRank(rang.rang_densite)} avec ${formatNumber(commune.densite_hab_km2)} habitants au km².`}
+        ariaLabel={`Densité des ${rang.nb_communes} communes d'Indre-et-Loire, de la plus dense à la moins dense. Luynes est ${formatRankOf(rang.rang_densite, rang.nb_communes)} avec ${formatNumber(commune.densite_hab_km2)} habitants au km².`}
       />
     </div>
   </section>
@@ -88,4 +90,5 @@ const mini = (items: CompareItem[], display: (v: number) => string): MiniItem[] 
   </section>
 
   <FunFacts facts={faitsCommune()} id="saviez-vous-territoire" />
+  <SourcesMethode page="territoire" />
 </Base>

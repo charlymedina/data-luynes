@@ -1,0 +1,17 @@
+# Dépendances et fichiers construits
+node_modules/
+dist/
+.astro/
+.wrangler/
+
+# Secrets et fichiers locaux
+.env
+*.duckdb
+.DS_Store
+
+# Données téléchargées / générées à chaque construction (seules les archives data/archive/ sont versionnées)
+data/raw/
+src/data/generated/
+
+# Captures d’écran et outils de test locaux
+.playwright-mcp/

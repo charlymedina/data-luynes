@@ -259,20 +259,24 @@ Comptage d'enregistrements contenant « luynes » (19/11/2026) : arrêts Fil Ble
 
 ---
 
-## 4. Ordre de priorité proposé (intérêt / effort)
+## 4. Statut des thèmes (mis à jour le 20/11/2026)
 
-| # | Thème | Pourquoi | Effort |
-|---|---|---|---|
-| 1 | **Population 1876→2023 + pyramide des âges** (Melodi + TM) | Le socle du site, très parlant, API simple | faible |
-| 2 | **Patrimoine (Mérimée)** + **risques Géorisques** (cavités, CatNat, mouvements de terrain) | Identité de Luynes (aqueduc, coteau troglodytique, Loire) ; cartes spectaculaires ; API JSON directes | faible |
-| 3 | **Immobilier DVF + loyers + DPE** | Thème le plus consulté par le grand public | moyen (agrégation des mutations) |
-| 4 | **Finances communales (DGFiP)** | Comparaison « strate » déjà calculée par la DGFiP ; intérêt citoyen fort | faible |
-| 5 | **Revenus (Filosofi + IRCOM) & emploi (BTS, Flores, SIDE)** | Chiffres clés + comparaisons métropole/France | faible |
-| 6 | **Accidents (BAAC)** | Carte des accidents, records ; formats hétérogènes | moyen |
-| 7 | ~~Climat à Tours (Météo-France)~~ | Écarté : pas de station à Luynes | — |
-| 8 | **Équipements, écoles, santé** (BPE, annuaire éducation, IPS/brevet, FINESS) | Utile au quotidien ; « Luynes a un hôpital » | faible/moyen |
-| 9 | **Énergie & mobilité** (ORE, ODRÉ solaire, parc auto Crit'Air, IRVE, GTFS) | Transition écologique ; bon potentiel de comparaisons | moyen |
-| 10 | **Élections, délinquance, eau potable, construction (Sitadel)** | Intéressant mais sensible (élections, délinquance) ou plus technique (Hub'eau) | moyen |
+| Thème | Statut | Page |
+|---|---|---|
+| Population (recensement 1876 →, pyramide des âges, état civil) | ✅ en ligne | `/population` |
+| Territoire (superficie, densité, classements) | ✅ en ligne | `/territoire` |
+| Patrimoine (Mérimée) + risques (cavités, CatNat, mouvements de terrain, zone inondable) | ✅ en ligne | `/patrimoine-risques` |
+| Immobilier (DVF + archive, loyers, DPE) | ✅ en ligne | `/immobilier` |
+| Finances communales (DGFiP) | ✅ en ligne | `/budget` |
+| Revenus (Filosofi) & emploi (recensement, BTS, SIDE) | ✅ en ligne | `/revenus-emploi` |
+| Accidents (BAAC + archive) | ✅ en ligne | `/accidents` |
+| Équipements, écoles (effectifs, IPS, collège), santé (BPE) | ✅ en ligne | `/equipements` |
+| Énergie & mobilité (ORE, ODRÉ, parc auto, IRVE) | ✅ en ligne | `/energie-mobilite` |
+| Élections (participation, résultats) | ✅ en ligne | `/elections` |
+| Délinquance (SSMSI) | ✅ en ligne | `/delinquance` |
+| Climat (Météo-France) | ❌ écarté : pas de station à Luynes (choix éditorial) | — |
+| Bus Fil Bleu (GTFS) | ❌ écarté (choix éditorial) | — |
+| Eau potable (Hub'eau), construction (Sitadel), qualité de l'air, logements sociaux (RPLS), santé détaillée (FINESS, APL), IRCOM | ⏳ à faire | — |
 
 ## 5. Points de vigilance généraux
 - **Code postal 37230 partagé avec Fondettes** : ne jamais filtrer par code postal ; toujours par code INSEE 37139 (ou `dep=037/icom=139`, `dep=370/com=139` selon les formats).

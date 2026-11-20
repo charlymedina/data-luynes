@@ -16,6 +16,8 @@ import { contourCommune } from '../data/patrimoine';
 import { CREDITS_IMMOBILIER } from '../data/credits';
 import { COMMUNES_37_COMPARABLES, formatNumber } from '../lib/format';
 import { faitsImmobilier } from '../lib/faits';
+import { methode } from '../data/methodes';
+import SourcesMethode from '../components/SourcesMethode.astro';
 
 const enEuros = (v: number): string => `${formatNumber(v)} €`;
 const enM2 = (v: number): string => `${formatNumber(v)} €/m²`;
@@ -50,7 +52,9 @@ const parType: MiniItem[] = [
   { label: 'Maisons', value: r.ventes_maisons, display: formatNumber(r.ventes_maisons), highlight: true },
   { label: 'Terrains', value: r.ventes_terrains, display: formatNumber(r.ventes_terrains) },
   { label: 'Appart.', value: r.ventes_appartements, display: formatNumber(r.ventes_appartements) },
+  { label: 'Autres', value: r.ventes_autres, display: formatNumber(r.ventes_autres) },
 ];
+const periodePrix = `${r.annee_debut_prix}-${r.annee_fin}`;
 
 interface Classement {
   titre: string;
@@ -95,18 +99,19 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
   </section>
 
   <section aria-label="Chiffres clés de l'immobilier" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-    <KeyFigure tone="loire" icon="maison" label="Prix au m² d'une maison" value={r.prix_m2_maison} unit="€/m²">
+    <KeyFigure tone="loire" icon="maison" label={`Prix au m² d'une maison (${periodePrix})`} value={r.prix_m2_maison} unit="€/m²" info={methode('prix_m2_maison')}>
       <MiniRank onDark rank={r.rang_prix_m2_maison} total={r.nb_communes_classees} ensemble={COMMUNES_37_COMPARABLES} what="la plus chère" />
     </KeyFigure>
-    <KeyFigure tone="accent" icon="tirelire" label="Prix d'une maison" value={Math.round(r.prix_maison / 1000)} unit="k€">
+    <KeyFigure tone="accent" icon="tirelire" label={`Prix d'une maison (${periodePrix})`} value={Math.round(r.prix_maison / 1000)} unit="k€" info={methode('prix_maison')}>
       <MiniCompare items={comparerA37(r.prix_maison, r.prix_maison_37, enK, 'Indre-et-L.')} />
     </KeyFigure>
-    <KeyFigure icon="cle" label={`Ventes ${r.annee_debut}-${r.annee_fin}`} value={r.ventes}>
+    <KeyFigure icon="cle" label={`Ventes ${r.annee_debut}-${r.annee_fin}`} value={r.ventes} info={methode('ventes')}>
       <MiniCompare items={parType} />
+      <p class="mt-2 text-xs text-ink-2">dont {formatNumber(r.ventes_geolocalisees)} localisées sur la carte · « autres » : lots, locaux, dépendances</p>
     </KeyFigure>
     {
       loyerMaison && (
-        <KeyFigure icon="calendrier" label="Loyer d'une maison" value={loyerMaison.loyer_m2} decimals={1} unit="€/m²/mois">
+        <KeyFigure icon="calendrier" label={`Loyer d'une maison (${loyerMaison.annee})`} value={loyerMaison.loyer_m2} decimals={1} unit="€/m²/mois" info={methode('loyer_maison')}>
           <MiniCompare items={comparerA37(loyerMaison.loyer_m2, loyerMaison.loyer_m2_mediane_37, enLoyer, 'Médiane 37')} />
         </KeyFigure>
       )
@@ -118,6 +123,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
     <p class="mt-4 max-w-2xl text-ink-2">
       Chaque point est une vente. Plus il est foncé, plus le m² était cher. Filtrer par type de bien ou par année,
       cliquer sur un point pour voir le prix, la surface et la date.
+      {r.ventes > r.ventes_geolocalisees && ` ${formatNumber(r.ventes_geolocalisees)} ventes sur ${formatNumber(r.ventes)} sont localisées : les autres n'ont pas de coordonnées dans le fichier.`}
     </p>
     <div class="mt-8">
       <CarteVentes ventes={ventes} contour={contourCommune} seuils={SEUILS_PRIX_M2} />
@@ -181,7 +187,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
     <h2 id="departement-titre" class={titreH2}>Luynes face au département</h2>
     <p class="mt-4 max-w-2xl text-ink-2">
       Le point orange situe Luynes, de la commune la plus chère à la moins chère. Prix : communes avec au moins 30 maisons vendues
-      depuis {r.annee_debut} ; loyers : prix au m² par mois, charges comprises, d'après les annonces.
+      sur {periodePrix} ; loyers : prix au m² par mois, charges comprises, d'après les annonces.
     </p>
     <div class="mt-8 grid gap-4 md:grid-cols-3">
       {
@@ -228,4 +234,5 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
   </section>
 
   <FunFacts facts={faitsImmobilier()} id="saviez-vous-immobilier" />
+  <SourcesMethode page="immobilier" />
 </Base>

@@ -1,5 +1,5 @@
 ---
-import { generatedAt } from '../data/commune';
+import { generatedAt, sourcesEnRetard } from '../data/commune';
 
 export interface FooterSource {
   nom: string;
@@ -14,21 +14,38 @@ interface Props {
 
 const { sources } = Astro.props;
 const dateMaj = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(generatedAt);
+const dateCourte = (iso: string): string => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }).format(new Date(iso));
 const linkClass = 'underline decoration-accent underline-offset-4 hover:text-ink';
 ---
 
 <footer class="mx-auto mt-24 max-w-6xl border-t border-line px-4 py-10 text-sm text-ink-2 sm:px-6">
-  <p class="font-semibold text-ink">Sources</p>
-  <ul class="mt-2 space-y-1">
-    {
-      sources.map((source) => (
-        <li>
-          <a class={linkClass} href={source.url}>{source.nom}</a> — {source.detail}
-        </li>
-      ))
-    }
-  </ul>
-  <p class="mt-4">Données mises à jour le {dateMaj}. Site indépendant, non officiel, fait avec ❤️ à Luynes.</p>
+  {
+    sources.length > 0 && (
+      <>
+        <p class="font-semibold text-ink">Sources</p>
+        <ul class="mt-2 mb-4 space-y-1">
+          {sources.map((source) => (
+            <li>
+              <a class={linkClass} href={source.url}>{source.nom}</a> — {source.detail}
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+  {
+    sourcesEnRetard.length > 0 && (
+      <p class="mb-4 rounded-xl border border-dashed border-accent p-3">
+        ⚠️ Lors de la dernière mise à jour, {sourcesEnRetard.length > 1 ? 'certaines sources n’ont' : 'une source n’a'} pas répondu :
+        leurs données précédentes sont affichées.{' '}
+        {sourcesEnRetard.map((s) => `${s.description} (données du ${dateCourte(s.depuis)})`).join(' ; ')}.
+      </p>
+    )
+  }
+  <p>
+    Site reconstruit le {dateMaj} à partir des dernières données publiées (l'année de chaque chiffre est indiquée sous le symbole ⓘ).
+    Site indépendant, non officiel, fait avec ❤️ à Luynes.
+  </p>
   <p class="mt-2">
     <a class={linkClass} href="https://github.com/charlymedina/data-luynes">Code source et requêtes SQL sur GitHub</a>
   </p>

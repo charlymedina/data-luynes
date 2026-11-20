@@ -1,18 +1,16 @@
 ---
 /**
- * Barre de navigation fixe (reste visible en défilant) : logo, menu des thèmes, bouton clair/sombre.
- * Grand écran : liens visibles (s'il y en a peu) ; sinon et sur mobile : bouton « menu » qui ouvre un panneau.
+ * Barre de navigation fixe (reste visible en défilant) : logo, bouton « Thèmes » qui ouvre le menu, bouton clair/sombre.
+ * Avec 11 thèmes, les liens ne tiennent pas sur une ligne : le menu est un panneau sur toutes les tailles d'écran.
  * Comportement du panneau (ouverture, Échap, clic extérieur, focus) : lib/nav.ts.
  */
 import LogoAqueduc from './LogoAqueduc.astro';
 import Icon from './Icon.astro';
 import ThemeToggle from './ThemeToggle.astro';
-import { themesDisponibles } from '../data/themes';
+import { THEMES } from '../data/themes';
+import { pagePath, themeHref } from '../lib/urls';
 
-/** Au-delà de ce nombre de thèmes, les liens ne tiennent plus sur une ligne : menu seul. */
-const MAX_INLINE_LINKS = 7;
-const inline = themesDisponibles.length <= MAX_INLINE_LINKS;
-const current = Astro.url.pathname.replace(/\/$/, '') || '/';
+const current = pagePath(Astro.url.pathname);
 const isCurrent = (slug: string): boolean => current === `/${slug}`;
 ---
 
@@ -27,26 +25,6 @@ const isCurrent = (slug: string): boolean => current === `/${slug}`;
       <span>Luynes <span class="text-accent">en chiffres</span></span>
     </a>
 
-    {
-      inline && (
-        <nav aria-label="Thèmes" class="hidden lg:block">
-          <ul class="flex items-center gap-1">
-            {themesDisponibles.map((theme) => (
-              <li>
-                <a
-                  href={`/${theme.slug}`}
-                  aria-current={isCurrent(theme.slug) ? 'page' : undefined}
-                  class="nav-link rounded-full px-3 py-2 text-sm font-medium text-ink-2 transition hover:bg-surface hover:text-ink focus-visible:ring-4 focus-visible:ring-loire/40 focus-visible:outline-none"
-                >
-                  {theme.court}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )
-    }
-
     <div class="flex shrink-0 items-center gap-2">
       <ThemeToggle />
       <button
@@ -54,13 +32,10 @@ const isCurrent = (slug: string): boolean => current === `/${slug}`;
         data-nav-toggle
         aria-expanded="false"
         aria-controls="menu-themes"
-        class:list={[
-          'nav-toggle flex h-10 min-w-10 items-center justify-center gap-2 rounded-full border border-line bg-surface text-ink transition hover:border-accent hover:text-accent focus-visible:ring-4 focus-visible:ring-loire/40 focus-visible:outline-none active:scale-95',
-          inline ? 'lg:hidden' : 'sm:px-4',
-        ]}
+        class="nav-toggle flex h-10 min-w-10 items-center justify-center gap-2 rounded-full border border-line bg-surface text-ink transition hover:border-accent hover:text-accent focus-visible:ring-4 focus-visible:ring-loire/40 focus-visible:outline-none active:scale-95 sm:px-4"
       >
         <span class="sr-only" data-nav-label>Ouvrir le menu</span>
-        {!inline && <span class="hidden text-sm font-medium sm:inline" aria-hidden="true">Thèmes</span>}
+        <span class="hidden text-sm font-medium sm:inline" aria-hidden="true">Thèmes</span>
         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <path class="bar bar-1" d="M4 7h16" />
           <path class="bar bar-2" d="M4 12h16" />
@@ -72,12 +47,9 @@ const isCurrent = (slug: string): boolean => current === `/${slug}`;
     <div id="menu-themes" data-nav-panel hidden class="nav-panel absolute inset-x-0 top-full px-4 pt-2 sm:px-6">
       <nav
         aria-label="Menu des thèmes"
-        class:list={[
-          'ml-auto max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain rounded-[1.5rem] border border-line bg-surface p-3 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)]',
-          inline ? 'max-w-md' : 'max-w-md md:max-w-2xl',
-        ]}
+        class="ml-auto max-h-[calc(100dvh-5rem)] max-w-md overflow-y-auto overscroll-contain rounded-[1.5rem] border border-line bg-surface p-3 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)] md:max-w-2xl"
       >
-        <ul class:list={['grid grid-cols-[minmax(0,1fr)] gap-1', !inline && 'md:grid-cols-2']}>
+        <ul class="grid grid-cols-[minmax(0,1fr)] gap-1 md:grid-cols-2">
           <li>
             <a
               href="/"
@@ -89,10 +61,10 @@ const isCurrent = (slug: string): boolean => current === `/${slug}`;
             </a>
           </li>
           {
-            themesDisponibles.map((theme) => (
+            THEMES.map((theme) => (
               <li>
                 <a
-                  href={`/${theme.slug}`}
+                  href={themeHref(theme.slug)}
                   aria-current={isCurrent(theme.slug) ? 'page' : undefined}
                   class="nav-item flex items-center gap-3 rounded-2xl px-3 py-2.5 transition hover:bg-loire-soft focus-visible:ring-4 focus-visible:ring-loire/40 focus-visible:outline-none"
                 >
@@ -127,11 +99,6 @@ const isCurrent = (slug: string): boolean => current === `/${slug}`;
   .site-header[data-scrolled] {
     border-bottom-color: var(--line);
     box-shadow: 0 10px 30px -22px rgb(0 0 0 / 0.45);
-  }
-  .nav-link[aria-current='page'] {
-    background: var(--loire-soft);
-    color: var(--loire);
-    font-weight: 600;
   }
   .nav-item[aria-current='page'] {
     background: var(--loire-soft);

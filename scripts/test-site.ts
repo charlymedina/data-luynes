@@ -1,0 +1,66 @@
+/**
+ * Tests du site construit (npm run test:site), à lancer après « npm run build » :
+ *  - chaque lien interne mène à une page ou un fichier qui existe ;
+ *  - aucun « NaN », « undefined » ou « null » n'apparaît dans le texte des pages ;
+ *  - chaque thème du registre a sa page, figure dans le menu de l'accueil, et chaque page cite ses sources ;
+ *  - chaque chiffre clé a sa bulle « Source · Calcul · Année ».
+ */
+import { existsSync } from 'node:fs';
+import { readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { THEMES } from '../src/data/themes.ts';
+
+const DIST = 'dist';
+
+/** Texte visible d'une page : sans les scripts (données JSON des graphiques) ni les balises. */
+function texteVisible(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/g, ' ')
+    .replace(/<style[\s\S]*?<\/style>/g, ' ')
+    .replace(/<[^>]+>/g, ' ');
+}
+
+/** « /population#ages » → dist/population.html ; « /donnees/x.json » → dist/donnees/x.json ; « / » → dist/index.html. */
+function cible(href: string): string {
+  const chemin = href.split('#')[0]?.split('?')[0] ?? '';
+  if (chemin === '' || chemin === '/') return path.join(DIST, 'index.html');
+  if (path.extname(chemin)) return path.join(DIST, chemin);
+  return path.join(DIST, `${chemin}.html`);
+}
+
+async function main(): Promise<void> {
+  const pages = (await readdir(DIST)).filter((f) => f.endsWith('.html'));
+  if (pages.length === 0) throw new Error('aucune page dans dist/ : lancer « npm run build » d\'abord');
+  const erreurs: string[] = [];
+
+  for (const page of pages) {
+    const html = await readFile(path.join(DIST, page), 'utf8');
+    for (const [, href] of html.matchAll(/href="(\/[^"]*)"/g)) {
+      if (href && !href.startsWith('//') && !existsSync(cible(href))) erreurs.push(`${page} : lien cassé ${href}`);
+    }
+    const mots = texteVisible(html).match(/\b(NaN|undefined|null)\b/g);
+    if (mots) erreurs.push(`${page} : texte suspect (${[...new Set(mots)].join(', ')})`);
+    if (page !== '404.html' && !html.includes('>Sources<')) erreurs.push(`${page} : pas de sources en pied de page`);
+    const chiffres = (html.match(/class="figure-value[\s"]/g) ?? []).length;
+    const bulles = (html.match(/data-info-btn/g) ?? []).length;
+    if (bulles < chiffres) erreurs.push(`${page} : ${chiffres - bulles} chiffre(s) clé(s) sans bulle « Source · Calcul · Année »`);
+  }
+
+  const accueil = await readFile(path.join(DIST, 'index.html'), 'utf8');
+  for (const theme of THEMES) {
+    if (!existsSync(path.join(DIST, `${theme.slug}.html`))) erreurs.push(`thème ${theme.slug} : page absente`);
+    if (!accueil.includes(`href="/${theme.slug}"`)) erreurs.push(`thème ${theme.slug} : absent du menu de l'accueil`);
+  }
+
+  if (erreurs.length > 0) {
+    console.error(`✗ ${erreurs.length} problème(s) dans le site :`);
+    for (const erreur of erreurs) console.error(`  - ${erreur}`);
+    process.exit(1);
+  }
+  console.log(`✓ ${pages.length} pages vérifiées (liens, textes, sources, bulles)`);
+}
+
+main().catch((error: unknown) => {
+  console.error('✗ Tests du site impossibles :', error instanceof Error ? error.message : error);
+  process.exit(1);
+});

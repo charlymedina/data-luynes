@@ -12,11 +12,13 @@
  *  3. sinon, chaque requête data/sql/elections/<extrait>.sql est exécutée sur les fichiers distants et son résultat
  *     enregistré en Parquet.
  * Si la source est injoignable, la construction continue avec l'archive existante.
+ * Une modification des requêtes data/sql/elections/*.sql refait aussi l'archive (empreinte « sql » du manifest).
  */
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
+import { empreinteSql, lireManifest } from './manifest.ts';
 
 const SOURCE = 'https://data-pipeline-open.s3.sbg.io.cloud.ovh.net/elections';
 const FICHIERS = {
@@ -24,7 +26,7 @@ const FICHIERS = {
   candidats: `${SOURCE}/candidats_results.parquet`,
 } as const;
 type Fichier = keyof typeof FICHIERS;
-type Manifest = Partial<Record<Fichier, string>>;
+type Manifest = Partial<Record<Fichier | 'sql', string>>;
 
 const ARCHIVE_DIR = 'data/archive/elections';
 const SQL_DIR = 'data/sql/elections';
@@ -36,14 +38,6 @@ async function version(url: string): Promise<string> {
   const response = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(TIMEOUT_MS) });
   if (!response.ok) throw new Error(`HTTP ${response.status} pour ${url}`);
   return response.headers.get('etag') ?? response.headers.get('last-modified') ?? '';
-}
-
-async function lireManifest(): Promise<Manifest> {
-  try {
-    return JSON.parse(await readFile(MANIFEST, 'utf8')) as Manifest;
-  } catch {
-    return {};
-  }
 }
 
 async function extraits(): Promise<string[]> {
@@ -62,20 +56,24 @@ async function extraire(connection: DuckDBConnection, nom: string): Promise<void
 
 export async function archiverElections(connection: DuckDBConnection): Promise<void> {
   await mkdir(ARCHIVE_DIR, { recursive: true });
-  const manifest = await lireManifest();
+  const manifest = await lireManifest<Manifest>(MANIFEST, {});
+  const sql = await empreinteSql(SQL_DIR);
+  // Archive faite avant l'ajout de l'empreinte : elle a été produite par les requêtes actuelles.
+  manifest.sql ??= sql;
   const noms = await extraits();
   const complet = noms.every((nom) => existsSync(path.join(ARCHIVE_DIR, `${nom}.parquet`)));
 
   let actuel: Manifest;
   try {
-    actuel = { general: await version(FICHIERS.general), candidats: await version(FICHIERS.candidats) };
+    actuel = { general: await version(FICHIERS.general), candidats: await version(FICHIERS.candidats), sql };
   } catch (error: unknown) {
     if (!complet) throw error;
     console.warn(`… élections : source injoignable, archive existante utilisée (${error instanceof Error ? error.message : error})`);
     return;
   }
 
-  if (complet && actuel.general === manifest.general && actuel.candidats === manifest.candidats) {
+  if (complet && actuel.general === manifest.general && actuel.candidats === manifest.candidats && manifest.sql === sql) {
+    await writeFile(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`); // enregistre l'empreinte si elle manquait
     console.log('= Élections : archive à jour');
     return;
   }

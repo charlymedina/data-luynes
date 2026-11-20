@@ -10,7 +10,7 @@
   --surface: #fffcf5;
   --ink: #1b2a2e;
   --ink-2: #46585d;
-  --muted: #6f7f82;
+  --muted: #5d6c6f; /* contraste ≥ 4,5:1 sur le fond clair, même pour les petites légendes */
   --line: #e4d9c0;
   --loire: #0b6b72;
   --loire-soft: #d6ebe9;
@@ -164,6 +164,86 @@ body {
 }
 .chart-tip[hidden] {
   display: none;
+}
+
+/* Bouton ⓘ « Source et méthode » des chiffres clés (InfoTip.astro, lib/info-tip.ts) */
+.info-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: help;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+.info-btn:hover,
+.info-btn[aria-expanded='true'] {
+  color: var(--loire);
+  background: var(--loire-soft);
+}
+.info-btn:focus-visible {
+  outline: 2px solid var(--loire);
+  outline-offset: 1px;
+}
+.info-btn-dark {
+  color: var(--bg);
+  opacity: 0.8;
+}
+.info-btn-dark:hover,
+.info-btn-dark[aria-expanded='true'] {
+  color: var(--loire);
+  background: var(--bg);
+  opacity: 1;
+}
+.info-btn-dark:focus-visible {
+  outline-color: var(--bg);
+}
+
+/* La bulle : dans la couche du dessus (popover), positionnée en JS près du bouton */
+.info-pop {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(20rem, calc(100vw - 1.5rem));
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.45);
+  z-index: 60;
+}
+.info-pop:not(:popover-open):not(.info-pop-open) {
+  display: none;
+}
+.info-pop-title {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--ink);
+  font-weight: 700;
+}
+.info-pop-row {
+  display: block;
+  margin-top: 0.25rem;
+}
+.info-pop-row strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.info-pop-row strong::after {
+  content: ' · ';
+  color: var(--muted);
+  font-weight: 400;
 }
 
 /* Infobulles des cartes (MapLibre) aux couleurs du site, communes à toutes les cartes. */

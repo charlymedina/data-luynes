@@ -11,9 +11,10 @@
  *  - data/sql/_dvf.sql lit les fichiers publiés + les années archivées qui ne sont plus publiées : aucun doublon.
  * Seules les colonnes utiles et les ventes (y compris sur plan) sont gardées, compressées : ~0,8 Mo par année.
  */
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
+import { lireManifest } from './manifest.ts';
 
 const RAW_DIR = 'data/raw/dvf_37';
 const ARCHIVE_DIR = 'data/archive/dvf';
@@ -46,14 +47,6 @@ interface EntreeManifest {
   mis_a_jour: string;
 }
 type Manifest = Record<string, EntreeManifest>;
-
-async function lireManifest(): Promise<Manifest> {
-  try {
-    return JSON.parse(await readFile(MANIFEST, 'utf8')) as Manifest;
-  } catch {
-    return {}; // première archive
-  }
-}
 
 /** Requête des lignes à archiver pour un fichier annuel (ventes classiques et sur plan uniquement). */
 function selectionAnnee(fichier: string): string {
@@ -89,7 +82,7 @@ async function archiverAnnee(connection: DuckDBConnection, manifest: Manifest, f
 
 export async function archiverDvf(connection: DuckDBConnection): Promise<void> {
   await mkdir(ARCHIVE_DIR, { recursive: true });
-  const manifest = await lireManifest();
+  const manifest = await lireManifest<Manifest>(MANIFEST, {});
   const fichiers = (await readdir(RAW_DIR).catch(() => [])).filter((f) => /^\d{4}-.*\.csv\.gz$/.test(f)).sort();
   if (fichiers.length === 0) throw new Error(`aucun fichier DVF dans ${RAW_DIR}`);
 

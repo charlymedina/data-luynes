@@ -1,7 +1,7 @@
 /**
- * Cartes « couches » (page Patrimoine & risques) : contour de la commune, zones (polygones semi-transparents,
+ * Cartes « couches » (pages Patrimoine & risques et Accidents) : contour de la commune, zones (polygones semi-transparents,
  * ex. zone inondable) et couches de points, chacune affichable / masquable depuis la légende.
- * La librairie MapLibre (~250 Ko) n'est chargée que sur les pages qui ont une carte, quand elle approche de l'écran.
+ * La librairie MapLibre (~1 Mo, ~280 Ko compressée) n'est chargée que sur les pages qui ont une carte, quand elle approche de l'écran.
  *
  * Chaque carte lit ses données dans un <script type="application/json" class="map-data"> (voir MapView.astro).
  * Les couleurs viennent des variables CSS du site, donc suivent le thème clair / sombre.

@@ -9,7 +9,8 @@ type Theme = 'light' | 'dark';
 const STORAGE_KEY = 'theme';
 const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-function currentTheme(): Theme {
+/** Thème affiché : celui choisi avec le bouton, sinon celui du navigateur (utilisé aussi par les cartes). */
+export function siteTheme(): Theme {
   const forced = document.documentElement.dataset.theme;
   if (forced === 'light' || forced === 'dark') return forced;
   return darkQuery.matches ? 'dark' : 'light';
@@ -24,8 +25,8 @@ function saveTheme(theme: Theme): void {
 }
 
 function updateButton(button: HTMLButtonElement): void {
-  const isDark = currentTheme() === 'dark';
-  button.setAttribute('aria-pressed', String(isDark));
+  // Le libellé change avec l'état (pas d'aria-pressed en plus : les lecteurs d'écran annonceraient un état contradictoire).
+  const isDark = siteTheme() === 'dark';
   button.setAttribute('aria-label', isDark ? 'Passer en thème clair' : 'Passer en thème sombre');
   button.title = isDark ? 'Thème clair' : 'Thème sombre';
 }
@@ -37,7 +38,7 @@ export function initThemeToggle(): void {
   updateButton(button);
   darkQuery.addEventListener('change', () => updateButton(button));
   button.addEventListener('click', () => {
-    const next: Theme = currentTheme() === 'dark' ? 'light' : 'dark';
+    const next: Theme = siteTheme() === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
     saveTheme(next);
     updateButton(button);

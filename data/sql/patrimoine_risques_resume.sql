@@ -56,9 +56,13 @@ luynes_catnat AS (
     count(*) FILTER (risque = 'Mouvement de terrain')        AS catnat_mouvement,
     count(*) FILTER (risque = 'Inondation / coulée de boue') AS catnat_inondation,
     min(annee) AS catnat_premiere_annee,
-    max(annee) AS catnat_derniere_annee
+    max(annee) AS catnat_derniere_annee,
+    -- Un même arrêté peut reconnaître plusieurs événements (ex. 2002 : 3 mouvements de terrain de 2001) :
+    -- « catnat » compte les reconnaissances, « catnat_arretes » les arrêtés distincts.
+    count(DISTINCT code_arrete) AS catnat_arretes
   FROM (
     SELECT
+      a.code_national_catnat AS code_arrete,
       year(strptime(a.date_debut_evt, '%d/%m/%Y')) AS annee,
       CASE
         WHEN a.libelle_risque_jo ILIKE 'Sécheresse%' THEN 'Sécheresse'
@@ -75,7 +79,10 @@ luynes_monuments AS (
   FROM (SELECT unnest(data) AS m FROM read_json('data/raw/monuments_luynes.json'))
 ),
 luynes_mouvements AS (
-  SELECT count(*) AS mouvements, min(year(m.date_debut::DATE)) AS mouvement_plus_ancien
+  SELECT
+    count(*)                       AS mouvements,
+    min(year(m.date_debut::DATE))  AS mouvement_plus_ancien,
+    max(year(m.date_debut::DATE))  AS mouvement_plus_recent
   FROM (SELECT unnest(data) AS m FROM read_json('data/raw/mouvements_terrain_luynes.json'))
 ),
 -- Risques naturels officiellement recensés pour la commune (ex. « Inondation, Mouvement de terrain, Séisme »)
@@ -106,8 +113,10 @@ SELECT
   c.catnat_inondation::INTEGER              AS catnat_inondation,
   c.catnat_premiere_annee::INTEGER          AS catnat_premiere_annee,
   c.catnat_derniere_annee::INTEGER          AS catnat_derniere_annee,
+  c.catnat_arretes::INTEGER                 AS catnat_arretes,
   mv.mouvements::INTEGER                    AS mouvements,
   mv.mouvement_plus_ancien::INTEGER         AS mouvement_plus_ancien,
+  mv.mouvement_plus_recent::INTEGER         AS mouvement_plus_recent,
   r.risques_recenses                        AS risques_recenses
 FROM classement k, luynes_catnat c, luynes_monuments m, luynes_mouvements mv, luynes_risques r
 WHERE k.code = '37139';

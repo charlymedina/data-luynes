@@ -23,8 +23,9 @@ export interface Participation {
   votants: number;
   bureaux: number;
   participation_luynes: number;
-  participation_37: number;
-  participation_france: number;
+  /** null quand le fichier source ne couvre qu'une partie du territoire (ex. municipales 2008) : pas de comparaison */
+  participation_37: number | null;
+  participation_france: number | null;
 }
 
 export interface DernierScrutin {

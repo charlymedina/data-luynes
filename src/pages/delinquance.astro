@@ -6,10 +6,23 @@ import Icon from '../components/Icon.astro';
 import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
 import CompareBars from '../components/charts/CompareBars.astro';
 import AnnualStrip from '../components/charts/AnnualStrip.astro';
-import { indicateursDelinquance, indicateursPublies, periodeDelinquance as periode, serieDe, type IndicateurDelinquance } from '../data/delinquance';
+import {
+  detailNonPublie,
+  indicateursDelinquance,
+  indicateursDessus37,
+  indicateursPublies,
+  indicateursSansFait,
+  indicateursSous37,
+  periodeDelinquance as periode,
+  positionVs37,
+  serieDe,
+  type IndicateurDelinquance,
+} from '../data/delinquance';
 import { CREDITS_DELINQUANCE } from '../data/credits';
 import { formatNumber } from '../lib/format';
-import { faitsDelinquance } from '../lib/faits-delinquance';
+import { faitsDelinquance, phraseHausses, syntheseDelinquance } from '../lib/faits-delinquance';
+import { methode } from '../data/methodes';
+import SourcesMethode from '../components/SourcesMethode.astro';
 import type { IconName } from '../lib/icons';
 
 const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
@@ -32,13 +45,31 @@ const ICONES: Record<string, IconName> = {
 const icone = (i: IndicateurDelinquance): IconName => ICONES[i.indicateur] ?? 'bouclier';
 const pour1000 = (i: IndicateurDelinquance): string => `pour 1 000 ${i.rapporte_a} par an`;
 
-const sous37 = indicateursPublies.filter((i) => i.taux_luynes < i.taux_37);
+const POSITION_TEXTE = { sous: 'sous', egal: 'égal à', dessus: 'au-dessus de' } as const;
+const positionTexte = (i: IndicateurDelinquance & { taux_luynes: number }): string =>
+  `${i.libelle} : ${POSITION_TEXTE[positionVs37(i)]} la moyenne de l'Indre-et-Loire`;
+const VIOLENCES_SEXUELLES = 'Violences sexuelles';
+const PRUDENCE_PETITS_NOMBRES =
+  "Ce taux repose sur un petit nombre de faits enregistrés ; il peut varier fortement d'une année à l'autre et reflète aussi l'évolution des dépôts de plainte.";
+const hausses = phraseHausses();
+
+/** Texte quand le taux de Luynes n'est pas calculable : on dit exactement ce qui manque et ce qui est publié. */
+const texteNonPublie = (i: IndicateurDelinquance): string => {
+  const { manquantes, publiees } = detailNonPublie(i);
+  const repere = `Pour repère : ${taux(i.taux_37)} en Indre-et-Loire, ${taux(i.taux_france)} en France entière (${pour1000(i)}).`;
+  if (publiees.length === 0) {
+    return `Aucune année de ${periodeTexte} n'est publiée pour Luynes par le ministère (secret statistique : trop peu de faits). ${repere}`;
+  }
+  const faitsPublies = publiees.map((a) => `${formatNumber(a.nombre)} en ${a.annee}`).join(', ');
+  const annees = manquantes.length > 1 ? `Les années ${manquantes.join(' et ')} n'ont pas été publiées` : `L'année ${manquantes[0] ?? ''} n'a pas été publiée`;
+  return `${annees} pour Luynes (secret statistique) : le taux sur ${periodeTexte} ne peut pas être calculé. Faits publiés : ${faitsPublies}. ${repere}`;
+};
 const cambriolages = indicateursPublies.find((i) => i.indicateur === 'Cambriolages de logement');
 const degradations = indicateursPublies.find((i) => i.indicateur === 'Destructions et dégradations volontaires');
 const trio = (i: IndicateurDelinquance & { taux_luynes: number }): MiniItem[] => [
   { label: 'Luynes', value: i.taux_luynes, display: taux(i.taux_luynes), highlight: true },
   { label: 'Indre-et-Loire', value: i.taux_37, display: taux(i.taux_37) },
-  { label: 'France', value: i.taux_france, display: taux(i.taux_france) },
+  { label: 'France entière', value: i.taux_france, display: taux(i.taux_france) },
 ];
 const periodeTexte = `${periode.debut}-${periode.fin}`;
 ---
@@ -62,34 +93,49 @@ const periodeTexte = `${periode.debut}-${periode.fin}`;
       Dans une commune de cette taille, quelques faits de plus ou de moins suffisent à faire bouger un taux :
       les comparaisons entre petites communes sont fragiles.
     </p>
+    <p class="mt-4 max-w-2xl leading-relaxed text-ink-2">
+      {syntheseDelinquance()}
+      {hausses && ` ${hausses}`}
+    </p>
   </section>
 
   <section aria-label="Chiffres clés de la délinquance" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-    <KeyFigure tone="loire" icon="bouclier" label={`Indicateurs sous la moyenne de l'Indre-et-Loire (${periodeTexte})`} value={sous37.length} unit={`sur ${formatNumber(indicateursPublies.length)}`}>
+    <KeyFigure
+      tone="loire"
+      icon="bouclier"
+      label={`Indicateurs sous la moyenne de l'Indre-et-Loire (${periodeTexte})`}
+      value={indicateursSous37.length}
+      unit={`sur ${formatNumber(indicateursPublies.length)}`}
+      info={methode('delinquance_bilan')}
+    >
       <ul class="mt-5 flex flex-wrap gap-1.5" aria-label="Indicateurs publiés pour Luynes">
         {
           indicateursPublies.map((i) => (
             <li
-              class:list={['grid h-8 w-8 place-items-center rounded-full', i.taux_luynes < i.taux_37 ? 'bg-bg text-loire' : 'bg-bg/30 text-bg']}
-              title={`${i.libelle} : ${i.taux_luynes < i.taux_37 ? 'sous' : 'au-dessus de'} la moyenne de l'Indre-et-Loire`}
+              class:list={['grid h-8 w-8 place-items-center rounded-full', positionVs37(i) === 'sous' ? 'bg-bg text-loire' : 'bg-bg/30 text-bg']}
+              title={positionTexte(i)}
             >
               <Icon name={icone(i)} class="h-4.5 w-4.5" />
-              <span class="sr-only">{i.libelle} : {i.taux_luynes < i.taux_37 ? 'sous' : 'au-dessus de'} la moyenne de l'Indre-et-Loire</span>
+              <span class="sr-only">{positionTexte(i)}</span>
             </li>
           ))
         }
       </ul>
+      <p class="mt-3 text-xs opacity-85">
+        {indicateursSansFait.length > 0 && `Dont ${formatNumber(indicateursSansFait.length)} sans aucun fait. `}
+        {indicateursDessus37.length > 0 && `Au-dessus : ${indicateursDessus37.map((i) => i.libelle.toLowerCase()).join(', ')}.`}
+      </p>
     </KeyFigure>
     {
       cambriolages && (
-        <KeyFigure tone="accent" icon="maison" label="Cambriolages pour 1 000 logements" value={cambriolages.taux_luynes} decimals={1}>
+        <KeyFigure tone="accent" icon="maison" label="Cambriolages pour 1 000 logements" value={cambriolages.taux_luynes} decimals={1} info={methode('delinquance_cambriolages')}>
           <MiniCompare items={trio(cambriolages)} />
         </KeyFigure>
       )
     }
     {
       degradations && (
-        <KeyFigure icon="vitre" label="Dégradations pour 1 000 habitants" value={degradations.taux_luynes} decimals={1}>
+        <KeyFigure icon="vitre" label="Dégradations pour 1 000 habitants" value={degradations.taux_luynes} decimals={1} info={methode('delinquance_degradations')}>
           <MiniCompare items={trio(degradations)} />
         </KeyFigure>
       )
@@ -116,15 +162,13 @@ const periodeTexte = `${periode.debut}-${periode.fin}`;
                   items={[
                     { label: 'Luynes', value: i.taux_luynes, display: taux(i.taux_luynes), highlight: true },
                     { label: 'Indre-et-Loire', value: i.taux_37, display: taux(i.taux_37), highlight: false },
-                    { label: 'France', value: i.taux_france, display: taux(i.taux_france), highlight: false },
+                    { label: 'France entière', value: i.taux_france, display: taux(i.taux_france), highlight: false },
                   ]}
                 />
               ) : (
-                <p class="rounded-xl border border-dashed border-line p-3 text-sm text-ink-2">
-                  Non publié pour Luynes sur {periodeTexte} : moins de 5 faits sur 3 ans, une valeur couverte par le secret
-                  statistique. Pour repère : {taux(i.taux_37)} en Indre-et-Loire, {taux(i.taux_france)} en France ({pour1000(i)}).
-                </p>
+                <p class="rounded-xl border border-dashed border-line p-3 text-sm text-ink-2">{texteNonPublie(i)}</p>
               )}
+              {i.indicateur === VIOLENCES_SEXUELLES && <p class="mt-3 text-xs leading-relaxed text-ink-2">{PRUDENCE_PETITS_NOMBRES}</p>}
             </div>
             <AnnualStrip values={serieDe(i.indicateur).map((a) => ({ annee: a.annee, nombre: a.nombre }))} label={i.libelle} />
           </li>
@@ -153,8 +197,9 @@ const periodeTexte = `${periode.debut}-${periode.fin}`;
       <li class={carte}>
         <h3 class="font-display text-lg font-bold">Le secret statistique</h3>
         <p class="mt-2 text-sm text-ink-2">
-          Quand un indicateur compte moins de 5 faits sur 3 ans, le ministère ne publie pas la valeur. Elle apparaît
-          ici en pointillé et n'est jamais estimée.
+          Quand trop peu de faits sont enregistrés une année, le ministère ne publie pas la valeur de la commune.
+          Elle apparaît ici en pointillé et n'est jamais estimée ; le taux sur 3 ans n'est alors pas calculé.
+          « France entière » inclut l'outre-mer.
         </p>
       </li>
       <li class={carte}>
@@ -168,4 +213,5 @@ const periodeTexte = `${periode.debut}-${periode.fin}`;
   </section>
 
   <FunFacts facts={faitsDelinquance()} id="saviez-vous-delinquance" />
+  <SourcesMethode page="delinquance" />
 </Base>

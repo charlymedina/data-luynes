@@ -2,16 +2,15 @@
 import Base from '../layouts/Base.astro';
 import KeyFigure from '../components/KeyFigure.astro';
 import FunFacts from '../components/FunFacts.astro';
-import ComingSoon from '../components/ComingSoon.astro';
 import HeroAqueduc from '../components/HeroAqueduc.astro';
+import SourcesMethode from '../components/SourcesMethode.astro';
 import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
 import MiniRank from '../components/charts/MiniRank.astro';
 import MiniColumns from '../components/charts/MiniColumns.astro';
 import { commune, rang } from '../data/commune';
 import { agesDe, derniereAnneeEtatCivil, historique } from '../data/population';
-import { themesBientot } from '../data/themes';
 import { CREDITS_ACCUEIL } from '../data/credits';
-import { formatNumber } from '../lib/format';
+import { formatNumber, formatOneDecimal } from '../lib/format';
 import { faitsCommune, faitsImmobilier, faitsPatrimoine, faitsPopulation } from '../lib/faits';
 import { resumeRisques } from '../data/patrimoine';
 import { annees as anneesImmobilier, resumeImmobilier } from '../data/immobilier';
@@ -28,8 +27,9 @@ import { effectifsEcoles, resumeEquipements } from '../data/equipements';
 import { faitsEquipements } from '../lib/faits-equipements';
 import { dernierDe } from '../data/elections';
 import { faitsElections } from '../lib/faits-elections';
-import { indicateursPublies, periodeDelinquance } from '../data/delinquance';
+import { indicateursDessus37, indicateursPublies, indicateursSansFait, indicateursSous37, periodeDelinquance, positionVs37 } from '../data/delinquance';
 import { faitsDelinquance } from '../lib/faits-delinquance';
+import { methode } from '../data/methodes';
 
 const luynes = agesDe('Luynes');
 const france = agesDe('France');
@@ -55,7 +55,6 @@ const duo = (luynesValue: number, refs: readonly [string, number][], display: (v
 const euros = (v: number): string => `${formatNumber(v)} €`;
 const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
 const presidentielle = dernierDe('pres');
-const delinquanceSous37 = indicateursPublies.filter((i) => i.taux_luynes < i.taux_37).length;
 const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
 ---
 
@@ -99,6 +98,7 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
         label="Habitants"
         value={commune.population}
         unit="Luynois·es"
+        info={methode('population')}
       >
         <figure class="mt-6" aria-hidden="true">
           <svg class="h-14 w-full overflow-visible sm:h-20" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -110,7 +110,7 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
         </figure>
         <MiniRank onDark rank={rang.rang_population} total={rang.nb_communes} what="la plus peuplée" />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-2" tone="accent" href="/population#ages" icon="sablier" label="Âge médian" value={luynes.age_median} decimals={1} unit="ans">
+      <KeyFigure class="sm:col-span-2" tone="accent" href="/population#ages" icon="sablier" label={`Âge médian (${luynes.annee})`} value={luynes.age_median} decimals={1} unit="ans" info={methode('age_median')}>
         <MiniCompare items={duo(luynes.age_median, [['France', france.age_median]], (v) => `${formatNumber(v, 1)} ans`)} />
       </KeyFigure>
       <KeyFigure
@@ -120,6 +120,7 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
         label={`Naissances ${derniereAnneeEtatCivil.annee}`}
         value={derniereAnneeEtatCivil.naissances}
         unit="bébés"
+        info={methode('naissances')}
       >
         <MiniCompare
           items={[
@@ -128,35 +129,36 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
           ]}
         />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-3" href="/territoire" icon="regle" label="Superficie" value={commune.surface_km2} decimals={1} unit="km²">
+      <KeyFigure class="sm:col-span-3" href="/territoire" icon="regle" label="Superficie" value={commune.surface_km2} decimals={1} unit="km²" info={methode('superficie')}>
         <MiniRank rank={rang.rang_surface} total={rang.nb_communes} what="la plus grande" />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-3" tone="accent" href="/territoire#densite" icon="immeuble" label="Densité" value={commune.densite_hab_km2} unit="hab./km²">
-        <MiniCompare items={duo(commune.densite_hab_km2, [['Moyenne 37', rang.densite_departement]], (v) => formatNumber(v))} />
+      <KeyFigure class="sm:col-span-3" tone="accent" href="/territoire#densite" icon="immeuble" label="Densité" value={commune.densite_hab_km2} unit="hab./km²" info={methode('densite')}>
+        <MiniCompare items={duo(commune.densite_hab_km2, [['Indre-et-Loire', rang.densite_departement]], (v) => formatNumber(v))} />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-3" tone="loire" href="/patrimoine-risques#monuments" icon="aqueduc" label="Monuments historiques" value={resumeRisques.monuments}>
+      <KeyFigure class="sm:col-span-3" tone="loire" href="/patrimoine-risques#monuments" icon="aqueduc" label="Monuments historiques" value={resumeRisques.monuments} info={methode('monuments')}>
         <MiniRank onDark rank={resumeRisques.rang_monuments} total={resumeRisques.nb_communes} what="pour les monuments" />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-3" href="/patrimoine-risques#carte" icon="cave" label="Cavités souterraines" value={resumeRisques.cavites}>
+      <KeyFigure class="sm:col-span-3" href="/patrimoine-risques#carte" icon="cave" label="Cavités souterraines" value={resumeRisques.cavites} info={methode('cavites')}>
         <MiniRank rank={resumeRisques.rang_cavites} total={resumeRisques.nb_communes} what="pour les cavités" />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-4" tone="accent" href="/immobilier" icon="maison" label="Prix au m² d'une maison" value={resumeImmobilier.prix_m2_maison} unit="€/m²">
+      <KeyFigure class="sm:col-span-4" tone="accent" href="/immobilier" icon="maison" label={`Prix au m² d'une maison (${resumeImmobilier.annee_debut_prix}-${resumeImmobilier.annee_fin})`} value={resumeImmobilier.prix_m2_maison} unit="€/m²" info={methode('prix_m2_maison')}>
         <MiniCompare items={duo(resumeImmobilier.prix_m2_maison, [['Indre-et-Loire', resumeImmobilier.prix_m2_maison_37]], euros)} />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-2" href="/immobilier#carte" icon="cle" label="Ventes immobilières" value={resumeImmobilier.ventes}>
+      <KeyFigure class="sm:col-span-2" href="/immobilier#carte" icon="cle" label={`Ventes immobilières (${resumeImmobilier.annee_debut}-${resumeImmobilier.annee_fin})`} value={resumeImmobilier.ventes} info={methode('ventes')}>
         <MiniColumns
           values={anneesImmobilier.map((a) => ({ label: String(a.annee), value: a.ventes }))}
           ariaLabel={`Ventes par année, de ${resumeImmobilier.annee_debut} à ${resumeImmobilier.annee_fin}`}
         />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-3" tone="loire" href="/budget" icon="pieces" label="Dépenses de la commune" value={resumeBudget.depenses_hab} unit="€/hab.">
+      <KeyFigure class="sm:col-span-3" tone="loire" href="/budget" icon="pieces" label={`Charges de fonctionnement ${resumeBudget.annee}`} value={resumeBudget.depenses_hab} unit="€/hab." info={methode('depenses')}>
         <MiniCompare onDark items={duo(resumeBudget.depenses_hab, [['Même taille', resumeBudget.depenses_hab_strate]], euros)} />
       </KeyFigure>
       <KeyFigure
         class="sm:col-span-3"
         href="/revenus-emploi"
         icon="mallette"
-        label="Niveau de vie médian"
+        label={`Niveau de vie médian (${resumeRevenus.annee_revenus})`}
+        info={methode('niveau_vie')}
         value={niveauVieMois(resumeRevenus.niveau_vie)}
         unit="€/mois"
       >
@@ -165,14 +167,14 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
             niveauVieMois(resumeRevenus.niveau_vie),
             [
               ['Indre-et-Loire', niveauVieMois(resumeRevenus.niveau_vie_37)],
-              ['France', niveauVieMois(resumeRevenus.niveau_vie_france)],
+              ['France métro.', niveauVieMois(resumeRevenus.niveau_vie_france)],
             ],
             euros,
           )}
         />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-3" tone="accent" href="/accidents" icon="voiture" label="Accidents par an pour 1 000 hab." value={resumeAccidents.taux_luynes} decimals={1}>
-        <MiniCompare items={duo(resumeAccidents.taux_luynes, [['Indre-et-Loire', resumeAccidents.taux_37]], (v) => formatNumber(v, 1))} />
+      <KeyFigure class="sm:col-span-3" tone="accent" href="/accidents" icon="voiture" label={`Accidents par an pour 1 000 hab. (${resumeAccidents.annee_debut}-${resumeAccidents.annee_fin})`} value={resumeAccidents.taux_luynes} decimals={1} info={methode('accidents_taux')}>
+        <MiniCompare items={duo(resumeAccidents.taux_luynes, [['Indre-et-Loire', resumeAccidents.taux_37]], formatOneDecimal)} />
       </KeyFigure>
       <KeyFigure
         class="sm:col-span-3"
@@ -183,13 +185,14 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
         value={resumeEnergie.part_electrique_pct}
         decimals={1}
         unit="%"
+        info={methode('voitures_electriques')}
       >
         <MiniCompare onDark items={duo(resumeEnergie.part_electrique_pct, [['Indre-et-Loire', resumeEnergie.part_electrique_37_pct]], (v) => `${formatNumber(v, 1)} %`)} />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-3" href="/equipements" icon="boutique" label="Commerces, services, équipements" value={resumeEquipements.equipements}>
+      <KeyFigure class="sm:col-span-3" href="/equipements" icon="boutique" label={`Commerces, services, équipements (${resumeEquipements.annee_bpe})`} value={resumeEquipements.equipements} info={methode('equipements')}>
         <MiniRank rank={resumeEquipements.rang_equipements} total={resumeEquipements.nb_communes} what="le mieux équipé par habitant" />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-3" tone="accent" href="/equipements#ecoles" icon="ecole" label={`Élèves dans les écoles (${resumeEquipements.derniere_rentree})`} value={resumeEquipements.eleves}>
+      <KeyFigure class="sm:col-span-3" tone="accent" href="/equipements#ecoles" icon="ecole" label={`Élèves dans les écoles (${resumeEquipements.derniere_rentree})`} value={resumeEquipements.eleves} info={methode('eleves')}>
         <MiniColumns values={effectifsEcoles.map((e) => ({ label: String(e.rentree), value: e.eleves }))} ariaLabel={`Élèves des écoles de Luynes, rentrées ${resumeEquipements.premiere_rentree} à ${resumeEquipements.derniere_rentree}`} />
       </KeyFigure>
       {
@@ -203,6 +206,7 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
             value={presidentielle.participation_luynes}
             decimals={1}
             unit="%"
+            info={methode('participation_pres')}
           >
             <MiniCompare
               onDark
@@ -215,21 +219,25 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
         class="sm:col-span-3"
         href="/delinquance"
         icon="bouclier"
-        label={`Indicateurs de délinquance sous la moyenne du 37 (${periodeDelinquance.debut}-${periodeDelinquance.fin})`}
-        value={delinquanceSous37}
+        label={`Indicateurs de délinquance sous la moyenne de l'Indre-et-Loire (${periodeDelinquance.debut}-${periodeDelinquance.fin})`}
+        value={indicateursSous37.length}
         unit={`sur ${formatNumber(indicateursPublies.length)}`}
+        info={methode('delinquance_bilan')}
       >
         <ul class="mt-5 flex gap-1" aria-hidden="true">
           {indicateursPublies.map((i) => (
-            <li class:list={['h-3 flex-1 rounded-full', i.taux_luynes < i.taux_37 ? 'bg-loire' : 'bg-bar']} />
+            <li class:list={['h-3 flex-1 rounded-full', positionVs37(i) === 'sous' ? 'bg-loire' : 'bg-accent']} />
           ))}
         </ul>
-        <p class="mt-2 text-xs text-ink-2">taux sur 3 ans, faits enregistrés par la police et la gendarmerie</p>
+        <p class="mt-2 text-xs text-ink-2">
+          {indicateursSansFait.length > 0 && `Dont ${formatNumber(indicateursSansFait.length)} sans aucun fait. `}
+          {indicateursDessus37.length > 0 && `Au-dessus : ${indicateursDessus37.map((i) => i.libelle.toLowerCase()).join(', ')}. `}
+          Taux sur 3 ans, faits enregistrés par la police et la gendarmerie.
+        </p>
       </KeyFigure>
     </div>
   </section>
 
   <FunFacts facts={faits} />
-
-  <ComingSoon themes={themesBientot} />
+  <SourcesMethode page="accueil" />
 </Base>

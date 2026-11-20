@@ -43,10 +43,16 @@ export interface ResumeImmobilier {
   derniere_vente: string;
   annee_debut: number;
   annee_fin: number;
+  /** Première année de la fenêtre des prix (5 dernières années disponibles) */
+  annee_debut_prix: number;
   ventes: number;
   ventes_maisons: number;
   ventes_appartements: number;
   ventes_terrains: number;
+  /** Lots, plusieurs logements, locaux d'activité, dépendances seules */
+  ventes_autres: number;
+  /** Ventes avec coordonnées (affichées sur la carte) */
+  ventes_geolocalisees: number;
   prix_m2_maison: number;
   prix_m2_appartement: number;
   prix_maison: number;

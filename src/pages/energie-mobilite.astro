@@ -13,6 +13,8 @@ import { anneesEnergie, anneesParc, bornesRecharge, resumeEnergie as r, secteurs
 import { CREDITS_ENERGIE } from '../data/credits';
 import { formatNumber } from '../lib/format';
 import { faitsEnergie } from '../lib/faits-energie';
+import { methode } from '../data/methodes';
+import SourcesMethode from '../components/SourcesMethode.astro';
 
 const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
 const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
@@ -29,8 +31,8 @@ const secteurs: WaffleItem[] = secteursEnergie.filter((s) => s.part_pct >= 0.5).
 // — Électricité et gaz par logement, chaque année —
 const xsEnergie = anneesEnergie.map((a) => a.annee);
 const seriesEnergie: LineSeries[] = [
-  { name: 'Électricité (MWh par logement)', color: 'var(--chart-1)', values: anneesEnergie.map((a) => a.elec_mwh_par_logement) },
-  { name: 'Gaz (MWh par logement raccordé)', color: 'var(--chart-2)', values: anneesEnergie.map((a) => a.gaz_mwh_par_logement) },
+  { name: 'Électricité (kWh par logement)', color: 'var(--chart-1)', values: anneesEnergie.map((a) => Math.round(a.elec_mwh_par_logement * 1000)) },
+  { name: 'Gaz (kWh par logement raccordé)', color: 'var(--chart-2)', values: anneesEnergie.map((a) => Math.round(a.gaz_mwh_par_logement * 1000)) },
 ];
 const ticksEnergie = xsEnergie.filter((_annee, i) => i % 2 === 0 || i === xsEnergie.length - 1);
 
@@ -75,17 +77,17 @@ const borne = bornesRecharge[0];
   </section>
 
   <section aria-label="Chiffres clés de l'énergie et de la mobilité" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <KeyFigure tone="loire" icon="voiture" label={`Voitures électriques (${r.annee_parc})`} value={r.part_electrique_pct} decimals={1} unit="%">
+    <KeyFigure tone="loire" icon="voiture" label={`Voitures électriques (${r.annee_parc})`} value={r.part_electrique_pct} decimals={1} unit="%" info={methode('voitures_electriques')}>
       <MiniRank onDark rank={r.rang_electrique} total={r.nb_communes_parc} what="part la plus forte" />
     </KeyFigure>
-    <KeyFigure tone="accent" icon="soleil" label="Puissance solaire raccordée" value={r.solaire_kw} unit="kW">
+    <KeyFigure tone="accent" icon="soleil" label="Puissance solaire raccordée" value={r.solaire_kw} unit="kW" info={methode('solaire')}>
       <MiniCompare items={versus(r.solaire_kw_pour_1000, r.solaire_kw_pour_1000_37, (v) => `${formatNumber(v)} kW`)} />
       <p class="mt-2 text-xs text-ink-2">pour 1 000 habitants</p>
     </KeyFigure>
-    <KeyFigure icon="eclair" label={`Électricité par logement (${r.annee_energie})`} value={Math.round(r.elec_mwh_par_logement * 1000)} unit="kWh">
+    <KeyFigure icon="eclair" label={`Électricité par logement (${r.annee_energie})`} value={Math.round(r.elec_mwh_par_logement * 1000)} unit="kWh" info={methode('electricite')}>
       <MiniCompare items={versus(r.elec_mwh_par_logement, r.elec_mwh_par_logement_37, kwh)} />
     </KeyFigure>
-    <KeyFigure icon="borne" label="Bornes de recharge publiques" value={r.bornes_stations}>
+    <KeyFigure icon="borne" label="Bornes de recharge publiques" value={r.bornes_stations} info={methode('bornes')}>
       <p class="mt-5 text-sm text-ink-2">
         {r.bornes_stations > 0 ? `${formatNumber(r.bornes_points)} points de charge dans la commune` : 'Aucune station recensée dans la commune'}
       </p>
@@ -131,9 +133,9 @@ const borne = bornesRecharge[0];
           xs={xsEnergie}
           series={seriesEnergie}
           xTicks={ticksEnergie}
-          unit="MWh"
-          ariaLabel={`Consommation moyenne par logement à Luynes de ${xsEnergie[0]} à ${xsEnergie.at(-1)} : électricité et gaz, en MWh par an.`}
-          tableCaption="Consommation moyenne par logement à Luynes (MWh par an)"
+          unit="kWh"
+          ariaLabel={`Consommation moyenne par logement à Luynes de ${xsEnergie[0]} à ${xsEnergie.at(-1)} : électricité et gaz, en kWh par an.`}
+          tableCaption="Consommation moyenne par logement à Luynes (kWh par an)"
         />
       </div>
     </div>
@@ -232,7 +234,17 @@ const borne = bornesRecharge[0];
       <RankGauge label="Solaire par habitant" rank={r.rang_solaire} total={r.nb_communes} icon="soleil" ends={['le plus', 'le moins']} />
       <RankGauge label="Électricité par logement" rank={r.rang_elec} total={r.nb_communes_elec} icon="eclair" ends={['la plus forte', 'la plus faible']} />
     </div>
+    {
+      r.elec_mwh_par_logement > r.elec_mwh_par_logement_37 && r.rang_elec > r.nb_communes_elec / 2 && (
+        <p class="mt-4 max-w-2xl text-sm text-ink-2">
+          Électricité : Luynes consomme plus que la moyenne du département par logement, mais se classe dans la seconde moitié
+          des communes. Ce n'est pas contradictoire : la moyenne du département est tirée vers le bas par les nombreux
+          appartements de Tours, alors que la plupart des communes, faites surtout de maisons, consomment davantage que Luynes.
+        </p>
+      )
+    }
   </section>
 
   <FunFacts facts={faitsEnergie()} id="saviez-vous-energie" />
+  <SourcesMethode page="energie-mobilite" />
 </Base>

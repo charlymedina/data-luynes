@@ -98,6 +98,21 @@ const ZONES_INONDABLES =
   '&typeNames=ms:ALEA_SYNT_01_02MOY_FXX&srsName=EPSG:4326&outputFormat=geojson' +
   '&bbox=47.36,0.47,47.46,0.61,urn:ogc:def:crs:EPSG::4326';
 
+/** Requête HEAD avec 3 essais : une erreur passagère ne doit pas faire « disparaître » une année. */
+async function existe(url: string): Promise<boolean> {
+  for (let essai = 1; essai <= 3; essai++) {
+    try {
+      const response = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(30_000) });
+      if (response.ok) return true;
+      if (response.status === 404) return false;
+    } catch {
+      // panne réseau passagère : nouvel essai
+    }
+    await new Promise((resolve) => setTimeout(resolve, 3_000 * essai));
+  }
+  throw new Error(`${url} : pas de réponse claire après 3 essais`);
+}
+
 /** Géo-DVF (Etalab) : ventes immobilières géolocalisées, un fichier par année et par département. */
 const GEO_DVF = 'https://files.data.gouv.fr/geo-dvf/latest/csv';
 /** Nombre d'années à tester en remontant depuis l'année en cours (DVF ne garde que ~5 ans glissants). */
@@ -110,27 +125,73 @@ const DVF_ANNEES_TESTEES = 7;
  */
 async function dvfDepartement37(): Promise<string[]> {
   const anneeEnCours = new Date().getFullYear();
-  const urls: string[] = [];
+  const annees: number[] = [];
   for (let annee = anneeEnCours - DVF_ANNEES_TESTEES; annee <= anneeEnCours; annee++) {
-    const url = `${GEO_DVF}/${annee}/departements/37.csv.gz`;
-    const response = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(30_000) });
-    if (response.ok) urls.push(url);
+    if (await existe(`${GEO_DVF}/${annee}/departements/37.csv.gz`)) annees.push(annee);
   }
-  return urls;
+  // Garde-fou : les années publiées doivent se suivre (un trou = fichier manquant ou panne, pas une vraie absence).
+  const premiere = annees[0];
+  const derniere = annees.at(-1);
+  if (premiere === undefined || derniere === undefined || derniere - premiere + 1 !== annees.length || annees.length < 4) {
+    throw new Error(`années DVF publiées incohérentes : ${annees.join(', ') || 'aucune'}`);
+  }
+  return annees.map((annee) => `${GEO_DVF}/${annee}/departements/37.csv.gz`);
 }
 
 /** API « data-fair » de l'ADEME : diagnostics de performance énergétique (DPE) des logements existants. */
 const DPE_AGREGATS = 'https://data.ademe.fr/data-fair/api/v1/datasets/dpe03existant/values_agg?field=etiquette_dpe';
 
+const DATAGOUV = 'https://www.data.gouv.fr/api/1';
+
+interface JeuDataGouv {
+  id: string;
+  title: string;
+  resources: { id: string; title: string }[];
+}
+
 /**
- * Carte des loyers 2025 (ministère de la Transition écologique), via l'API tabulaire de data.gouv
- * (évite l'encodage Latin-1 du CSV). Identifiants des fichiers « maison » et « appartement » du jeu
- * « Carte des loyers – indicateurs de loyers d'annonce par commune en 2025 » (un nouveau jeu chaque année).
+ * Carte des loyers (ministère de la Transition écologique) : un nouveau jeu chaque année
+ * (« … indicateurs de loyers d'annonce par commune en 2025 »). On cherche le plus récent sur data.gouv.fr
+ * à chaque construction, puis on lit ses fichiers via l'API tabulaire (évite l'encodage Latin-1 du CSV).
  */
-const LOYERS_2025 = {
-  maison: 'https://tabular-api.data.gouv.fr/api/resources/129f764d-b613-44e4-952c-5ff50a8c9b73/data/',
-  appartement: 'https://tabular-api.data.gouv.fr/api/resources/55b34088-0964-415f-9df7-d87dd98a09be/data/',
-} as const;
+let jeuLoyers: Promise<JeuDataGouv> | undefined;
+function jeuLoyersRecent(): Promise<JeuDataGouv> {
+  jeuLoyers ??= (async () => {
+    const q = encodeURIComponent('carte des loyers indicateurs de loyers d\'annonce par commune');
+    const response = await fetch(`${DATAGOUV}/datasets/?q=${q}&page_size=20`, { signal: AbortSignal.timeout(60_000) });
+    if (!response.ok) throw new Error(`recherche data.gouv : HTTP ${response.status}`);
+    const { data } = (await response.json()) as { data: JeuDataGouv[] };
+    const annee = (jeu: JeuDataGouv): number => Number(/par commune en (\d{4})/.exec(jeu.title)?.[1] ?? 0);
+    const recent = [...data].sort((a, b) => annee(b) - annee(a))[0];
+    if (!recent || annee(recent) === 0) throw new Error('jeu « Carte des loyers » introuvable sur data.gouv.fr');
+    return recent;
+  })();
+  return jeuLoyers;
+}
+
+/** Adresse tabulaire du fichier « Indicateurs de loyer maison » (ou appartement) du jeu le plus récent. */
+function loyersRecents(type: 'maison' | 'appartement'): () => Promise<string> {
+  return async () => {
+    const jeu = await jeuLoyersRecent();
+    const fichier = jeu.resources.find((r) => r.title.trim().toLowerCase() === `indicateurs de loyer ${type}`);
+    if (!fichier) throw new Error(`fichier « Indicateurs de loyer ${type} » absent du jeu ${jeu.id}`);
+    return `https://tabular-api.data.gouv.fr/api/resources/${fichier.id}/data/?DEP__exact=37&page_size=50`;
+  };
+}
+
+/**
+ * Population historique de Tours Métropole : l'identifiant du jeu contient sa dernière année
+ * (« population-1876-2023-… ») ; on cherche le plus récent dans le catalogue à chaque construction.
+ */
+async function populationHistorique(): Promise<string> {
+  const response = await fetch(`${TOURS_METROPOLE}?select=dataset_id&where=search(%22population%201876%22)&limit=20`, { signal: AbortSignal.timeout(60_000) });
+  if (!response.ok) throw new Error(`catalogue Tours Métropole : HTTP ${response.status}`);
+  const { results } = (await response.json()) as { results: { dataset_id: string }[] };
+  const jeux = results.map((r) => r.dataset_id).filter((id) => /^population-1876-\d{4}-tours-metropole/.test(id)).sort();
+  const recent = jeux.at(-1);
+  if (!recent) throw new Error('jeu « population 1876-… » introuvable sur le portail de Tours Métropole');
+  return `${TOURS_METROPOLE}/${recent}/exports/json?select=annee,population&where=code_geographique%3D%2237139%22&order_by=annee`;
+}
 
 export const SOURCES: readonly Source[] = [
   // — Commune et classement dans le département (accueil, Territoire, Population) —
@@ -155,7 +216,7 @@ export const SOURCES: readonly Source[] = [
   {
     id: 'population_historique',
     description: 'Population de Luynes à chaque recensement depuis 1876 (INSEE via Tours Métropole)',
-    url: `${TOURS_METROPOLE}/population-1876-2023-tours-metropole-val-de-loire/exports/json?select=annee,population&where=code_geographique%3D%2237139%22&order_by=annee`,
+    url: populationHistorique,
   },
   {
     id: 'age_sexe_luynes',
@@ -272,15 +333,20 @@ export const SOURCES: readonly Source[] = [
   },
   {
     id: 'loyers_maisons_37',
-    description: "Loyers d'annonce des maisons par commune d'Indre-et-Loire, 2025 (Carte des loyers)",
-    url: `${LOYERS_2025.maison}?DEP__exact=37&page_size=50`,
+    description: "Loyers d'annonce des maisons par commune d'Indre-et-Loire, dernier millésime (Carte des loyers)",
+    url: loyersRecents('maison'),
     pagination: 'tabular',
   },
   {
     id: 'loyers_appartements_37',
-    description: "Loyers d'annonce des appartements par commune d'Indre-et-Loire, 2025 (Carte des loyers)",
-    url: `${LOYERS_2025.appartement}?DEP__exact=37&page_size=50`,
+    description: "Loyers d'annonce des appartements par commune d'Indre-et-Loire, dernier millésime (Carte des loyers)",
+    url: loyersRecents('appartement'),
     pagination: 'tabular',
+  },
+  {
+    id: 'loyers_millesime',
+    description: 'Fiche du jeu « Carte des loyers » le plus récent (pour lire son année)',
+    url: async () => `${DATAGOUV}/datasets/${(await jeuLoyersRecent()).id}/`,
   },
 
   // — Budget de la commune (voir data/sources-budget.ts) —

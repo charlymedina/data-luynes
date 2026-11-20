@@ -1,0 +1,35 @@
+---
+/** Page « introuvable » : Cloudflare Pages la sert (avec le code 404) pour toute adresse inconnue. */
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { THEMES } from '../data/themes';
+import { themeHref } from '../lib/urls';
+---
+
+<Base title="Page introuvable — Luynes en chiffres" description="Cette page n'existe pas (ou plus). Retour à l'accueil et aux thèmes." sources={[]}>
+  <section class="pt-16 pb-8 sm:pt-24">
+    <p class="font-medium text-loire">Erreur 404</p>
+    <h1 class="mt-3 font-display text-5xl leading-[0.95] font-extrabold tracking-tight sm:text-7xl">Cette page s'est perdue<br />dans les cavités.</h1>
+    <p class="mt-6 max-w-xl text-lg text-ink-2">
+      L'adresse demandée n'existe pas, ou plus. Les données de Luynes sont toujours là :
+      <a href="/" class="font-semibold text-loire underline decoration-accent underline-offset-4">retour à l'accueil</a>, ou un thème ci-dessous.
+    </p>
+  </section>
+  <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      THEMES.map((theme) => (
+        <li>
+          <a
+            href={themeHref(theme.slug)}
+            class="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 transition hover:-translate-y-0.5 hover:border-loire focus-visible:ring-4 focus-visible:ring-loire/40 focus-visible:outline-none"
+          >
+            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-loire-soft text-loire">
+              <Icon name={theme.icon} class="h-5 w-5" />
+            </span>
+            <span class="font-medium">{theme.titre}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</Base>

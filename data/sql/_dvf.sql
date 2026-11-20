@@ -116,3 +116,11 @@ SELECT
   END AS prix_m2
 FROM dvf_ventes
 WHERE prix >= 1000;   -- ventes symboliques (1 €, quelques centaines d'euros) écartées
+
+-- 5. Fenêtre des prix : les 5 dernières années disponibles seulement.
+--    L'archive garde les années anciennes (pour la carte et les courbes), mais un prix médian calculé sur
+--    10 ou 15 ans ne dirait plus rien du marché actuel : les prix « du moment » portent sur 5 ans glissants.
+CREATE OR REPLACE VIEW dvf_ventes_prix_recentes AS
+SELECT *
+FROM dvf_ventes_prix
+WHERE year(date_vente) > (SELECT max(year(date_vente)) FROM dvf_ventes_prix) - 5;

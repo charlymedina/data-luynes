@@ -12,6 +12,8 @@ import { activiteDe, creations, resumeRevenus as r, trajets } from '../data/reve
 import { CREDITS_REVENUS } from '../data/credits';
 import { formatNumber } from '../lib/format';
 import { faitsRevenus, surDix } from '../lib/faits-revenus';
+import { methode } from '../data/methodes';
+import SourcesMethode from '../components/SourcesMethode.astro';
 
 const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
 const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
@@ -73,16 +75,17 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
   </section>
 
   <section aria-label="Chiffres clés revenus et emploi" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <KeyFigure tone="loire" icon="pieces" label={`Niveau de vie annuel ${r.annee_revenus}`} value={r.niveau_vie} unit="€">
+    <KeyFigure tone="loire" icon="pieces" label={`Niveau de vie annuel ${r.annee_revenus}`} value={r.niveau_vie} unit="€" info={methode('niveau_vie')}>
       <MiniCompare onDark items={trio(r.niveau_vie, r.niveau_vie_37, r.niveau_vie_france, euros, 'France métro.')} />
     </KeyFigure>
-    <KeyFigure tone="accent" icon="personnes" label="Taux de pauvreté" value={r.pauvrete} decimals={1} unit="%">
+    <KeyFigure tone="accent" icon="personnes" label={`Taux de pauvreté ${r.annee_revenus}`} value={r.pauvrete} decimals={1} unit="%" info={methode('pauvrete')}>
       <MiniCompare items={trio(r.pauvrete, r.pauvrete_37, r.pauvrete_france, pourcent, 'France métro.')} />
     </KeyFigure>
-    <KeyFigure icon="mallette" label={`Chômage ${r.annee_recensement}`} value={r.chomage} decimals={1} unit="%">
+    <KeyFigure icon="mallette" label={`Chômage déclaré au recensement ${r.annee_recensement}`} value={r.chomage} decimals={1} unit="%" info={methode('chomage')}>
       <MiniCompare items={trio(r.chomage, r.chomage_37, r.chomage_france, pourcent)} />
+      <p class="mt-2 text-xs text-ink-2">15-64 ans · différent du taux de chômage officiel (au sens du BIT), plus bas</p>
     </KeyFigure>
-    <KeyFigure icon="graphique" label={`Salaire net ${r.annee_salaires}`} value={r.salaire} unit="€/mois">
+    <KeyFigure icon="graphique" label={`Salaire net ${r.annee_salaires}`} value={r.salaire} unit="€/mois" info={methode('salaire')}>
       <MiniCompare items={trio(r.salaire, r.salaire_37, r.salaire_france, euros)} />
     </KeyFigure>
   </section>
@@ -132,7 +135,7 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
       </div>
     </div>
     <div class="mt-6 max-w-md">
-      <RankGauge label="Taux de chômage des 15-64 ans" rank={r.rang_chomage} total={r.nb_communes_chomage} icon="mallette" />
+      <RankGauge label="Chômage déclaré au recensement (15-64 ans)" rank={r.rang_chomage} total={r.nb_communes_chomage} icon="mallette" />
     </div>
   </section>
 
@@ -197,4 +200,5 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
   </section>
 
   <FunFacts facts={faitsRevenus()} id="saviez-vous-revenus" />
+  <SourcesMethode page="revenus-emploi" />
 </Base>

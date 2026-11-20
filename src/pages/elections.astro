@@ -11,6 +11,8 @@ import ResultBars from '../components/charts/ResultBars.astro';
 import { dernierDe, derniersScrutins, municipales, premiersTours, resultats, resumeElections as r, type FamilleScrutin } from '../data/elections';
 import { CREDITS_ELECTIONS } from '../data/credits';
 import { formatNumber } from '../lib/format';
+import { methode } from '../data/methodes';
+import SourcesMethode from '../components/SourcesMethode.astro';
 import { faitsElections } from '../lib/faits-elections';
 import type { IconName } from '../lib/icons';
 
@@ -83,7 +85,7 @@ const tourDecisif = municipales.some((l) => l.voix_t2 !== null) ? 2 : 1;
 
 <Base
   title="Élections à Luynes — Luynes en chiffres"
-  description="Participation à chaque élection depuis 1999 et résultats des derniers scrutins à Luynes, comparés à l'Indre-et-Loire et à la France, présentés de façon neutre."
+  description={`Participation à chaque élection depuis ${r.premiere_annee} et résultats des derniers scrutins à Luynes, comparés à l'Indre-et-Loire et à la France, présentés de façon neutre.`}
   sources={CREDITS_ELECTIONS}
 >
   <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
@@ -99,25 +101,25 @@ const tourDecisif = municipales.some((l) => l.voix_t2 !== null) ? 2 : 1;
   </section>
 
   <section aria-label="Chiffres clés des élections" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <KeyFigure tone="loire" icon="urne" label={`Électeurs inscrits (${r.derniere_annee})`} value={r.inscrits}>
+    <KeyFigure tone="loire" icon="urne" label={`Électeurs inscrits (${r.derniere_annee})`} value={r.inscrits} info={methode('inscrits')}>
       <p class="mt-5 text-sm opacity-85">répartis dans {formatNumber(r.bureaux)} bureaux de vote</p>
     </KeyFigure>
     {
       pres && (
-        <KeyFigure tone="accent" icon="banque" label={`Présidentielle ${pres.annee}, 1er tour`} value={pres.participation_luynes} decimals={1} unit="% de votants">
+        <KeyFigure tone="accent" icon="banque" label={`Présidentielle ${pres.annee}, 1er tour`} value={pres.participation_luynes} decimals={1} unit="% de votants" info={methode('participation_pres')}>
           <MiniCompare items={trio(pres.participation_luynes, pres.participation_37, pres.participation_france)} />
         </KeyFigure>
       )
     }
     {
       muni && (
-        <KeyFigure icon="mairie" label={`Municipales ${muni.annee}, 1er tour`} value={muni.participation_luynes} decimals={1} unit="% de votants">
+        <KeyFigure icon="mairie" label={`Municipales ${muni.annee}, 1er tour`} value={muni.participation_luynes} decimals={1} unit="% de votants" info={methode('participation_muni')}>
           <MiniRank rank={muni.rang} total={muni.nb_communes} what="la participation la plus forte" />
         </KeyFigure>
       )
     }
-    <KeyFigure icon="graphique" label="1ers tours où Luynes a voté plus que la France" value={r.fois_au_dessus_france} unit={`sur ${formatNumber(r.nb_premiers_tours)}`}>
-      <p class="mt-5 text-sm text-ink-2">depuis {r.premiere_annee}, tous scrutins confondus</p>
+    <KeyFigure icon="graphique" label="1ers tours où Luynes a voté plus que la France" value={r.fois_au_dessus_france} unit={`sur ${formatNumber(r.nb_premiers_tours)}`} info={methode('au_dessus_france')}>
+      <p class="mt-5 text-sm text-ink-2">depuis {r.premiere_annee}, tous scrutins avec une référence nationale comparable</p>
     </KeyFigure>
   </section>
 
@@ -167,6 +169,11 @@ const tourDecisif = municipales.some((l) => l.voix_t2 !== null) ? 2 : 1;
     <h2 id="historique-titre" class={titreH2}>Depuis {r.premiere_annee}</h2>
     <p class="mt-4 max-w-2xl text-ink-2">
       {`Participation au 1er tour, à Luynes et en France. Record à Luynes : ${pourcent(r.record_haut_participation)} (${r.record_haut_type.toLowerCase()} ${r.record_haut_annee}).`}
+      <span class="mt-2 block text-sm">
+        « France » : bureaux de vote présents dans le fichier national (avant 2012, sans les Français de l'étranger, d'où
+        un écart possible d'environ un point avec le taux officiel). Quand ce fichier ne couvre qu'une partie du pays
+        (municipales 2008 : grandes communes seulement), la courbe « France » est interrompue.
+      </span>
     </p>
     <div class="mt-8 grid gap-6 lg:grid-cols-2">
       {
@@ -202,7 +209,7 @@ const tourDecisif = municipales.some((l) => l.voix_t2 !== null) ? 2 : 1;
 
     <details class:list={['group mt-8', carte]} open>
       <summary class="flex cursor-pointer items-center justify-between gap-4 font-display text-2xl font-bold">
-        <span class="flex items-center gap-2"><Icon name="mairie" class="h-6 w-6 text-loire" /> Municipales 2026</span>
+        <span class="flex items-center gap-2"><Icon name="mairie" class="h-6 w-6 text-loire" /> Municipales {muni?.annee}</span>
         <span class="text-base text-muted transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
       </summary>
       <p class="mt-3 text-sm text-ink-2">
@@ -272,6 +279,7 @@ const tourDecisif = municipales.some((l) => l.voix_t2 !== null) ? 2 : 1;
   </section>
 
   <FunFacts facts={faitsElections()} id="saviez-vous-elections" />
+  <SourcesMethode page="elections" />
 </Base>
 
 <style>

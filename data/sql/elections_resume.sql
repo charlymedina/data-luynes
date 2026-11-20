@@ -17,11 +17,12 @@ record_bas AS (
   SELECT type, annee, participation_luynes FROM premiers_tours ORDER BY participation_luynes ASC LIMIT 1
 ),
 
--- Scrutins (1ers tours) où Luynes a voté plus que la moyenne nationale
+-- Scrutins (1ers tours) où Luynes a voté plus que la moyenne nationale.
+-- Seuls les scrutins avec une référence nationale comparable sont comptés (voir _elections.sql).
 au_dessus AS (
   SELECT
     count(*) FILTER (participation_luynes > participation_france) AS fois_au_dessus,
-    count(*)                                                       AS fois
+    count(participation_france)                                    AS fois
   FROM premiers_tours
 )
 

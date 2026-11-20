@@ -15,8 +15,8 @@ const INSEE_RECENSEMENT: FooterSource = {
 
 const TOURS_METROPOLE: FooterSource = {
   nom: 'Tours Métropole Val de Loire — open data',
-  url: 'https://data.tours-metropole.fr/explore/dataset/population-1876-2023-tours-metropole-val-de-loire/',
-  detail: 'population historique 1876-2023 (source INSEE) — Licence Ouverte 2.0',
+  url: 'https://data.tours-metropole.fr/explore/?q=population+1876',
+  detail: 'population historique depuis 1876 (source INSEE) — Licence Ouverte 2.0',
 };
 
 const MERIMEE: FooterSource = {
@@ -44,8 +44,8 @@ const ADEME_DPE: FooterSource = {
 };
 
 const CARTE_LOYERS: FooterSource = {
-  nom: 'Carte des loyers 2025 (ministère de la Transition écologique)',
-  url: 'https://www.data.gouv.fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/',
+  nom: 'Carte des loyers (ministère de la Transition écologique)',
+  url: 'https://www.data.gouv.fr/datasets/?q=carte+des+loyers+indicateurs+de+loyers+d%27annonce+par+commune',
   detail: 'loyers d’annonce charges comprises, par commune — Licence Ouverte 2.0',
 };
 
@@ -63,7 +63,7 @@ const INSEE_REVENUS_EMPLOI: FooterSource = {
 
 const ONISR_BAAC: FooterSource = {
   nom: 'ONISR — bases annuelles des accidents corporels de la circulation (BAAC)',
-  url: 'https://www.data.gouv.fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024/',
+  url: 'https://www.data.gouv.fr/datasets/53698f4ca3a729239d2036df/',
   detail: 'accidents 2005 → dernière année publiée, archive du site pour l’Indre-et-Loire — Licence Ouverte 2.0',
 };
 
@@ -127,7 +127,6 @@ const OPENFREEMAP: FooterSource = {
   detail: 'fond de carte, données © contributeurs OpenStreetMap (ODbL)',
 };
 
-export const CREDITS_ACCUEIL: readonly FooterSource[] = [API_GEO, INSEE_RECENSEMENT, TOURS_METROPOLE, MERIMEE, GEORISQUES, DVF, DGFIP_COMPTES, INSEE_REVENUS_EMPLOI, ONISR_BAAC, INSEE_BPE, EDUCATION_NATIONALE, AGENCE_ORE, ODRE_SOLAIRE, SDES_PARC, IRVE, ELECTIONS_AGREGEES, MUNICIPALES_2026, SSMSI];
 export const CREDITS_ELECTIONS: readonly FooterSource[] = [ELECTIONS_AGREGEES, MUNICIPALES_2026];
 export const CREDITS_DELINQUANCE: readonly FooterSource[] = [SSMSI];
 export const CREDITS_EQUIPEMENTS: readonly FooterSource[] = [INSEE_BPE, EDUCATION_NATIONALE, API_GEO];
@@ -139,3 +138,23 @@ export const CREDITS_IMMOBILIER: readonly FooterSource[] = [DVF, CARTE_LOYERS, A
 export const CREDITS_PATRIMOINE: readonly FooterSource[] = [MERIMEE, GEORISQUES, API_GEO, OPENFREEMAP];
 export const CREDITS_TERRITOIRE: readonly FooterSource[] = [API_GEO];
 export const CREDITS_POPULATION: readonly FooterSource[] = [TOURS_METROPOLE, INSEE_RECENSEMENT, API_GEO];
+
+/**
+ * Accueil : union automatique des sources de tous les thèmes (sans doublon, hors fond de carte),
+ * puisque les chiffres clés et les anecdotes de l'accueil viennent de tous les thèmes.
+ */
+export const CREDITS_ACCUEIL: readonly FooterSource[] = [
+  ...new Set([
+    CREDITS_POPULATION,
+    CREDITS_TERRITOIRE,
+    CREDITS_PATRIMOINE,
+    CREDITS_IMMOBILIER,
+    CREDITS_BUDGET,
+    CREDITS_REVENUS,
+    CREDITS_ACCIDENTS,
+    CREDITS_EQUIPEMENTS,
+    CREDITS_ENERGIE,
+    CREDITS_ELECTIONS,
+    CREDITS_DELINQUANCE,
+  ].flat()),
+].filter((source) => source !== OPENFREEMAP);

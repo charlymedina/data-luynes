@@ -1,0 +1,43 @@
+---
+/**
+ * Section repliable « Sources et méthode » en bas de chaque page : le détail de chaque chiffre clé
+ * (même contenu que les bulles ⓘ, toujours lisible sans JavaScript).
+ */
+import { methodesDePage } from '../data/methodes';
+
+interface Props {
+  /** Slug de la page (« population »…) ou « accueil » */
+  page: string;
+}
+
+const methodes = methodesDePage(Astro.props.page);
+---
+
+{
+  methodes.length > 0 && (
+    <section aria-labelledby="sources-methode-titre" class="mt-16">
+      <details class="group rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
+          <h2 id="sources-methode-titre" class="font-display text-2xl font-bold">Sources et méthode</h2>
+          <span class="text-muted transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
+        </summary>
+        <p class="mt-3 max-w-2xl text-sm text-ink-2">
+          D'où vient chaque chiffre clé de cette page, comment il est calculé et de quelle année il date.
+          Les requêtes SQL complètes sont publiées sur GitHub.
+        </p>
+        <dl class="mt-6 grid gap-x-8 gap-y-5 md:grid-cols-2">
+          {methodes.map((m) => (
+            <div>
+              <dt class="font-semibold text-ink">{m.titre}</dt>
+              <dd class="mt-1 text-sm leading-relaxed text-ink-2">
+                <span class="block"><strong class="font-medium text-ink">Source :</strong> {m.source}</span>
+                <span class="block"><strong class="font-medium text-ink">Calcul :</strong> {m.calcul}</span>
+                <span class="block"><strong class="font-medium text-ink">Année :</strong> {m.millesime}</span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </details>
+    </section>
+  )
+}

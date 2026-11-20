@@ -10,6 +10,13 @@ export function formatNumber(value: number, decimals: 0 | 1 = 0): string {
   return (decimals === 0 ? integerFormat : decimalFormat).format(value).replace(NARROW_NBSP, ' ');
 }
 
+const oneDecimalFormat = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/** Toujours une décimale, pour comparer des taux côte à côte : 1 → « 1,0 » ; 0.33 → « 0,3 ». */
+export function formatOneDecimal(value: number): string {
+  return oneDecimalFormat.format(value).replace(NARROW_NBSP, ' ');
+}
+
 /** 1 → « 1ʳᵉ », 19 → « 19ᵉ » */
 export function formatRank(rank: number): string {
   return rank === 1 ? '1ʳᵉ' : `${rank}ᵉ`;

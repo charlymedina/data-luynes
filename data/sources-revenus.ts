@@ -9,6 +9,18 @@ import type { Source } from './sources.ts';
 const MELODI = 'https://api.insee.fr/melodi/data';
 const TROIS_TERRITOIRES = 'GEO=COM-37139&GEO=DEP-37&GEO=FRANCE';
 
+/**
+ * Dernier recensement disponible, lu dans la source « activite » déjà téléchargée (liste plus haut) :
+ * le classement du chômage suit automatiquement les nouveaux millésimes de l'INSEE.
+ */
+async function dernierRecensement(): Promise<string> {
+  const activite = JSON.parse(await readFile('data/raw/activite.json', 'utf8')) as { observations: { dimensions: { TIME_PERIOD: string } }[] };
+  const annees = activite.observations.map((o) => o.dimensions.TIME_PERIOD).sort();
+  const derniere = annees.at(-1);
+  if (!derniere) throw new Error('aucune année dans data/raw/activite.json');
+  return derniere;
+}
+
 /** Paramètres GEO=COM-xxxxx des 272 communes du département (liste API Géo déjà téléchargée). */
 async function geoCommunes37(): Promise<string> {
   const communes = JSON.parse(await readFile('data/raw/communes_37.json', 'utf8')) as { code: string }[];
@@ -35,7 +47,7 @@ export const SOURCES_REVENUS: readonly Source[] = [
     id: 'chomage_communes_37',
     description: "Actifs et chômeurs de 15-64 ans des communes d'Indre-et-Loire, dernier recensement (INSEE)",
     url: async () =>
-      `${MELODI}/DS_RP_EMPLOI_LR_PRINC?${await geoCommunes37()}&AGE=Y15T64&SEX=_T&EDUC=_T&EMPSTA_ENQ=1T2&EMPSTA_ENQ=2&TIME_PERIOD=2023&maxResult=10000`,
+      `${MELODI}/DS_RP_EMPLOI_LR_PRINC?${await geoCommunes37()}&AGE=Y15T64&SEX=_T&EDUC=_T&EMPSTA_ENQ=1T2&EMPSTA_ENQ=2&TIME_PERIOD=${await dernierRecensement()}&maxResult=10000`,
   },
   {
     id: 'navettes',

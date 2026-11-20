@@ -1,9 +1,10 @@
 /**
  * Socle commun des cartes interactives (MapLibre GL) : chargement à la demande de la librairie,
  * fond de carte clair ou sombre qui suit le thème du site, cadrage sur la commune, création paresseuse
- * (seulement quand la carte approche de l'écran). Utilisé par map.ts (patrimoine) et map-ventes.ts (immobilier).
+ * (seulement quand la carte approche de l'écran). Utilisé par map.ts (patrimoine, accidents) et map-ventes.ts (immobilier).
  */
 import type { Map as MapLibreMap } from 'maplibre-gl';
+import { siteTheme } from './theme';
 
 export type MapLibre = typeof import('maplibre-gl');
 
@@ -20,12 +21,6 @@ const STYLES = {
 } as const;
 export const MAP_FONT = ['Noto Sans Regular'];
 const CONTOUR_PADDING_PX = 24;
-
-export function siteTheme(): 'light' | 'dark' {
-  const forced = document.documentElement.dataset.theme;
-  if (forced === 'light' || forced === 'dark') return forced;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
 
 /** Valeur d'une variable CSS du site (les couleurs changent avec le thème). */
 export function cssColor(variable: string): string {

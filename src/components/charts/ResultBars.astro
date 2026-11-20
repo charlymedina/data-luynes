@@ -29,10 +29,15 @@ const avecReperes = items.some((i) => i.part_37 !== null || i.part_france !== nu
 const max = Math.max(...items.flatMap((i) => [i.part_luynes, i.part_37 ?? 0, i.part_france ?? 0]), 1);
 const pos = (v: number): string => `${(v / max) * 100}%`;
 const pct = (v: number | null): string => (v === null ? '—' : `${formatNumber(v, 1)} %`);
-/** « LA FRANCE INSOUMISE - UNION POPULAIRE » → « La France insoumise - union populaire » : plus lisible, même texte. */
-const lisible = (texte: string): string =>
-  texte === texte.toUpperCase() && /[A-ZÉ]{4}/.test(texte) ? texte.charAt(0) + texte.slice(1).toLowerCase() : texte;
-const nom = (i: ResultItem): string => (i.autres ? `Autres (${formatNumber(i.nombre ?? 0)} candidats ou listes)` : lisible(i.libelle));
+/**
+ * Les intitulés sont affichés exactement tels que publiés par le ministère (souvent en majuscules) :
+ * une mise en minuscules automatique abîmait les noms propres (« … avec jordan bardella »).
+ */
+const nom = (i: ResultItem): string => {
+  if (!i.autres) return i.libelle;
+  const n = i.nombre ?? 0;
+  return `Autres (${formatNumber(n)} ${n > 1 ? 'candidats ou listes' : 'candidat ou liste'})`;
+};
 ---
 
 <figure>

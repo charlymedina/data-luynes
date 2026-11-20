@@ -13,7 +13,8 @@ export interface LineSeries {
   name: string;
   /** Couleur CSS, ex. « var(--chart-1) » */
   color: string;
-  values: readonly number[];
+  /** null = pas de valeur comparable cette année-là (la courbe est interrompue) */
+  values: readonly (number | null)[];
 }
 
 export interface LineAnnotation {
@@ -40,23 +41,33 @@ const { xs, series, xTicks, ariaLabel, tableCaption, unit = '', area = false, an
 
 const xMin = Math.min(...xs);
 const xMax = Math.max(...xs);
-const yTicks = niceTicks(Math.max(...series.flatMap((s) => s.values)));
+const yTicks = niceTicks(Math.max(...series.flatMap((s) => s.values.filter((v): v is number => v !== null))));
 const yTop = yTicks.at(-1) ?? 1;
 const px = (x: number): number => toPercent(x, xMin, xMax);
 const py = (y: number): number => 100 - toPercent(y, 0, yTop);
 const withUnit = (value: number): string => `${formatNumber(value)}${unit ? ` ${unit}` : ''}`;
 
-const lines = series.map((s) => ({
-  ...s,
-  points: s.values.map((v, i) => `${px(xs[i] ?? xMin)},${py(v)}`).join(' '),
-}));
+/** Découpe une série en tronçons continus (une valeur null interrompt la courbe). */
+function segments(values: readonly (number | null)[]): string[] {
+  const result: string[][] = [[]];
+  values.forEach((v, i) => {
+    if (v === null) result.push([]);
+    else result.at(-1)?.push(`${px(xs[i] ?? xMin)},${py(v)}`);
+  });
+  return result.filter((seg) => seg.length > 0).map((seg) => seg.join(' '));
+}
+
+const lines = series.map((s) => ({ ...s, segments: segments(s.values) }));
 const firstLine = lines[0];
-const areaPoints = area && firstLine ? `0,100 ${firstLine.points} 100,100` : '';
+const areaPoints = area && firstLine && firstLine.segments.length === 1 ? `0,100 ${firstLine.segments[0]} 100,100` : '';
 
 const tooltipPoints: LinePoint[] = xs.map((x, i) => ({
   x: px(x),
   title: String(x),
-  rows: series.map((s) => ({ label: s.name, value: withUnit(s.values[i] ?? 0), color: s.color, y: py(s.values[i] ?? 0) })),
+  rows: series.flatMap((s) => {
+    const v = s.values[i];
+    return v === null || v === undefined ? [] : [{ label: s.name, value: withUnit(v), color: s.color, y: py(v) }];
+  }),
 }));
 const tooltipJson = JSON.stringify(tooltipPoints).replaceAll('<', '\\u003c');
 ---
@@ -103,9 +114,9 @@ const tooltipJson = JSON.stringify(tooltipPoints).replaceAll('<', '\\u003c');
       <svg class="chart-draw absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         {areaPoints && <polygon points={areaPoints} fill={firstLine?.color} fill-opacity="0.1" />}
         {
-          lines.map((line) => (
+          lines.flatMap((line) => line.segments.map((points) => (
             <polyline
-              points={line.points}
+              points={points}
               fill="none"
               stroke={line.color}
               stroke-width="2"
@@ -113,7 +124,7 @@ const tooltipJson = JSON.stringify(tooltipPoints).replaceAll('<', '\\u003c');
               stroke-linecap="round"
               vector-effect="non-scaling-stroke"
             />
-          ))
+          )))
         }
       </svg>
 
@@ -163,7 +174,10 @@ const tooltipJson = JSON.stringify(tooltipPoints).replaceAll('<', '\\u003c');
             xs.map((x, i) => (
               <tr class="border-t border-line">
                 <th scope="row" class="px-3 py-1.5 font-medium">{x}</th>
-                {series.map((s) => <td class="px-3 py-1.5 text-right">{formatNumber(s.values[i] ?? 0)}</td>)}
+                {series.map((s) => {
+                  const v = s.values[i];
+                  return <td class="px-3 py-1.5 text-right">{v === null || v === undefined ? '—' : formatNumber(v)}</td>;
+                })}
               </tr>
             ))
           }

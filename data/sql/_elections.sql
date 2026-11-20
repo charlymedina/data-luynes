@@ -3,12 +3,34 @@
 
 -- Chaque scrutin et chaque tour, avec la participation à Luynes, en Indre-et-Loire et en France.
 -- « id_election » ressemble à « 2022_pres_t1 » : année, type de scrutin, tour.
+--
+-- Périmètre des références « Indre-et-Loire » et « France » : ce sont les bureaux de vote présents dans le fichier
+-- agrégé. Pour certains scrutins anciens, ce fichier est partiel (municipales 2008 : communes de 3 500 habitants et
+-- plus seulement). Quand le fichier couvre moins de 80 % des inscrits des autres scrutins des années voisines
+-- (± 2 ans), la référence n'est pas comparable à Luynes : elle est laissée vide plutôt qu'affichée fausse.
+-- (Exception : les cantonales, où seule la moitié des cantons vote par construction : la comparaison reste juste.)
 CREATE OR REPLACE VIEW scrutins AS
 WITH p AS (
   SELECT
     *,
-    split_part(id_election, '_', 2) AS code_type
+    split_part(id_election, '_', 2)               AS code_type,
+    split_part(id_election, '_', 1)::INTEGER      AS annee_scrutin
   FROM read_parquet('data/archive/elections/participation.parquet')
+),
+couverture AS (
+  SELECT
+    a.id_election,
+    a.inscrits_france / max(b.inscrits_france) AS part_inscrits
+  FROM p a
+  JOIN p b ON abs(b.annee_scrutin - a.annee_scrutin) <= 2 AND b.code_type <> 'cant'
+  GROUP BY a.id_election, a.inscrits_france
+),
+comparables AS (
+  SELECT
+    p.*,
+    p.code_type = 'cant' OR c.part_inscrits >= 0.8 AS reference_comparable
+  FROM p
+  JOIN couverture c USING (id_election)
 )
 SELECT
   id_election,
@@ -33,9 +55,9 @@ SELECT
   exprimes_luynes,
   bureaux_luynes,
   100.0 * votants_luynes / inscrits_luynes                    AS participation_luynes,
-  100.0 * votants_37 / inscrits_37                            AS participation_37,
-  100.0 * votants_france / inscrits_france                    AS participation_france
-FROM p;
+  CASE WHEN reference_comparable THEN 100.0 * votants_37 / inscrits_37 END         AS participation_37,
+  CASE WHEN reference_comparable THEN 100.0 * votants_france / inscrits_france END AS participation_france
+FROM comparables;
 
 -- Participation de chaque commune d'Indre-et-Loire à chaque scrutin (pour les classements).
 CREATE OR REPLACE VIEW participation_communes_37 AS

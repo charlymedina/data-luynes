@@ -26,13 +26,15 @@ import {
 } from '../data/accidents';
 import { contourCommune } from '../data/patrimoine';
 import { CREDITS_ACCIDENTS } from '../data/credits';
-import { formatMonthYear, formatNumber } from '../lib/format';
+import { formatMonthYear, formatNumber, formatOneDecimal } from '../lib/format';
+import { methode } from '../data/methodes';
+import SourcesMethode from '../components/SourcesMethode.astro';
 import { faitsAccidents } from '../lib/faits-accidents';
 
 const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
 const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
 const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
-const parMille = (v: number): string => formatNumber(v, 1);
+const parMille = (v: number): string => formatOneDecimal(v);
 
 /** Texte de la fiche d'un accident sur la carte (aucune information sur les personnes). */
 function fiche(a: AccidentCarte): string {
@@ -106,18 +108,19 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
   </section>
 
   <section aria-label="Chiffres clés des accidents" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-    <KeyFigure tone="loire" icon="voiture" label={`Accidents ${r.annee_debut}-${r.annee_fin}`} value={r.accidents}>
+    <KeyFigure tone="loire" icon="voiture" label={`Accidents ${r.annee_debut}-${r.annee_fin}`} value={r.accidents} info={methode('accidents')}>
       <MiniColumns onDark values={anneesAccidents.map((a) => ({ label: String(a.annee), value: a.accidents }))} ariaLabel={`Accidents par année, de ${r.annee_debut} à ${r.annee_fin}`} />
     </KeyFigure>
-    <KeyFigure tone="accent" icon="personnes" label="Par an pour 1 000 habitants" value={r.taux_luynes} decimals={1}>
+    <KeyFigure tone="accent" icon="personnes" label="Par an pour 1 000 habitants" value={r.taux_luynes} decimals={1} info={methode('accidents_taux')}>
       <MiniCompare
         items={[
           { label: 'Luynes', value: r.taux_luynes, display: parMille(r.taux_luynes), highlight: true },
           { label: 'Indre-et-Loire', value: r.taux_37, display: parMille(r.taux_37) },
         ]}
       />
+      <p class="mt-2 text-xs text-ink-2">Les premières années du fichier national sont incomplètes pour le département : la moyenne départementale est sans doute un peu sous-estimée.</p>
     </KeyFigure>
-    <KeyFigure icon="calendrier" label="Années sans accident" value={r.annees_sans_accident} unit={`sur ${r.nb_annees}`}>
+    <KeyFigure icon="calendrier" label="Années sans accident" value={r.annees_sans_accident} unit={`sur ${r.nb_annees}`} info={methode('accidents_annees_sans')}>
       <ol class="mt-5 flex flex-wrap gap-1" aria-label={`Années sans accident corporel entre ${r.annee_debut} et ${r.annee_fin}`}>
         {
           anneesAccidents.map((a) => (
@@ -199,8 +202,8 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
           <li class="rounded-2xl border border-line p-3"><Icon name="personnes" class="mx-auto h-6 w-6 text-ink-2" /><p class="mt-2 font-display text-3xl font-extrabold">{formatNumber(r.blesses_legers)}</p><p class="text-xs text-ink-2">blessés légers</p></li>
         </ul>
         <p class="mt-6 text-xs text-ink-2">
-          Depuis 2018, « hospitalisé » veut dire plus de 24 heures à l'hôpital : les années antérieures ne sont pas
-          strictement comparables sur ce point.
+          « Blessé hospitalisé » : plus de 24 heures à l'hôpital (définition en vigueur depuis 2005). Depuis 2018, ce chiffre
+          n'est plus labellisé « statistique publique » par l'Observatoire national de la sécurité routière : à lire avec prudence.
         </p>
       </div>
     </div>
@@ -263,4 +266,5 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
   </section>
 
   <FunFacts facts={faitsAccidents()} id="saviez-vous-accidents" />
+  <SourcesMethode page="accidents" />
 </Base>

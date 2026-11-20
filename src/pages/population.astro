@@ -13,8 +13,10 @@ import RankGauge from '../components/charts/RankGauge.astro';
 import { rang } from '../data/commune';
 import { ages, agesDe, evolutionAges, faits, historique, naissancesDeces, pyramide } from '../data/population';
 import { CREDITS_POPULATION } from '../data/credits';
-import { formatNumber, formatPercent } from '../lib/format';
+import { formatCommunes, formatNumber, formatPercent } from '../lib/format';
 import { faitsPopulation, formatVariation } from '../lib/faits';
+import { methode } from '../data/methodes';
+import SourcesMethode from '../components/SourcesMethode.astro';
 
 const luynes = agesDe('Luynes');
 const departement = agesDe('Indre-et-Loire');
@@ -94,10 +96,10 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
   </section>
 
   <section aria-label="Chiffres clés de la population" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-    <KeyFigure tone="loire" icon="personnes" label={`Habitants en ${lastYear}`} value={faits.population_derniere}>
+    <KeyFigure tone="loire" icon="personnes" label={`Habitants en ${lastYear}`} value={faits.population_derniere} info={methode('population')}>
       <MiniRank onDark rank={rang.rang_population} total={rang.nb_communes} what="la plus peuplée" />
     </KeyFigure>
-    <KeyFigure icon="graphique" label="Depuis 1968" value={faits.multiplie_depuis_1968} decimals={1} unit="fois plus">
+    <KeyFigure icon="graphique" label="Depuis 1968" value={faits.multiplie_depuis_1968} decimals={1} unit="fois plus" info={methode('multiplie_1968')}>
       {
         population1968 !== undefined && (
           <MiniCompare
@@ -109,10 +111,10 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
         )
       }
     </KeyFigure>
-    <KeyFigure tone="accent" icon="sablier" label="Âge médian" value={luynes.age_median} decimals={1} unit="ans">
+    <KeyFigure tone="accent" icon="sablier" label={`Âge médian (${anneeRecensement})`} value={luynes.age_median} decimals={1} unit="ans" info={methode('age_median')}>
       <MiniCompare items={trio((r) => r.age_median, enAns)} />
     </KeyFigure>
-    <KeyFigure icon="calendrier" label="65 ans et plus" value={luynes.part_65_plus} decimals={1} unit="%">
+    <KeyFigure icon="calendrier" label={`65 ans et plus (${anneeRecensement})`} value={luynes.part_65_plus} decimals={1} unit="%" info={methode('part_65')}>
       <MiniCompare items={trio((r) => r.part_65_plus, formatPercent)} />
     </KeyFigure>
   </section>
@@ -156,7 +158,7 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
       <div class={carte}>
         <h3 class="mb-4 font-display text-xl font-bold">Pyramide des âges, {anneeRecensement}</h3>
         <AgePyramid tranches={pyramide} />
-        <p class="mt-3 text-xs text-muted">Le haut de la pyramide est gonflé par les résidents du centre hospitalier Jean-Pagès et de son EHPAD.</p>
+        <p class="mt-3 text-xs text-muted">Le haut de la pyramide est probablement gonflé par les résidents de l'EHPAD et des unités de long séjour du centre hospitalier Jean-Pagès, comptés comme habitants.</p>
       </div>
       <div class="flex flex-col gap-6">
         <div class={carte}>
@@ -191,6 +193,7 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
       <CompareBars title="Part des 65 ans et plus" items={compare((r) => r.part_65_plus, formatPercent)} />
       <CompareBars title="Part des moins de 20 ans" items={compare((r) => r.part_moins_20, formatPercent)} />
     </div>
+    <p class="mt-3 text-xs text-ink-2">« France » : France entière, outre-mer compris. Âge médian estimé à partir des tranches d'âge du recensement.</p>
   </section>
 
   <section id="naissances" aria-labelledby="naissances-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
@@ -201,9 +204,9 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
         <aside class="mt-6 flex max-w-3xl items-start gap-4 rounded-[1.25rem] border-l-4 border-loire bg-loire-soft/60 p-5 text-sm text-ink-2">
           <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface text-loire"><Icon name="alerte" class="h-5 w-5" /></span>
           <p>
-            <strong class="text-ink">Pourquoi autant de décès ?</strong> Luynes accueille le centre hospitalier Jean-Pagès et son EHPAD.
-            Leurs résidents, souvent très âgés, sont comptés comme habitants de la commune : c'est aussi ce qui explique le grand
-            nombre de personnes de 90 ans et plus dans la pyramide des âges.
+            <strong class="text-ink">Pourquoi autant de décès ?</strong> Probablement parce que Luynes accueille un EHPAD et des
+            unités de long séjour (centre hospitalier Jean-Pagès) : leurs résidents, souvent très âgés, sont comptés comme habitants
+            de la commune. Cela expliquerait aussi le grand nombre de personnes de 90 ans et plus dans la pyramide des âges.
           </p>
         </aside>
       )
@@ -224,7 +227,9 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
     {
       soldeNaturelPeriode < 0 && arriveesNettes > 0 && (
         <div class="mt-8">
-          <h3 class="font-display text-2xl font-bold">Ce sont les nouveaux arrivants qui compensent</h3>
+          <h3 class="font-display text-2xl font-bold">
+            {variationPopulation < 0 ? 'Les arrivées compensent presque les décès' : 'Les arrivées font plus que compenser les décès'}
+          </h3>
           <p class="mt-1 text-sm text-ink-2">Bilan entre les recensements de {faits.annee_precedente} et {faits.annee_derniere}, en habitants.</p>
           <ul class="mt-5 grid gap-4 sm:grid-cols-3">
             {bilan.map((b, i) => (
@@ -243,7 +248,7 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
   </section>
 
   <section id="departement" aria-labelledby="departement-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
-    <h2 id="departement-titre" class={titreH2}>Luynes parmi les {rang.nb_communes} communes d'Indre-et-Loire</h2>
+    <h2 id="departement-titre" class={titreH2}>Luynes parmi les {formatCommunes(rang.nb_communes)}</h2>
     <p class="mt-4 max-w-2xl text-ink-2">Le point orange situe Luynes, de la valeur la plus élevée à la plus faible.</p>
     <div class="mt-8 grid gap-4 md:grid-cols-3">
       <RankGauge label="Population" rank={rang.rang_population} total={rang.nb_communes} icon="personnes" ends={['la plus peuplée', 'la moins peuplée']} />
@@ -269,4 +274,5 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
   </section>
 
   <FunFacts facts={faitsPopulation()} id="saviez-vous-population" />
+  <SourcesMethode page="population" />
 </Base>

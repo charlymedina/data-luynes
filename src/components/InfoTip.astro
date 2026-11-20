@@ -1,0 +1,48 @@
+---
+/**
+ * Petit bouton ⓘ qui affiche « Source · Calcul · Année » d'un chiffre.
+ * Au survol, au focus clavier et au toucher (clic) ; Échap ou clic ailleurs pour fermer (lib/info-tip.ts).
+ * La bulle est dans la « couche du dessus » du navigateur (attribut popover) : elle n'est jamais coupée par une carte
+ * et ne déborde pas de l'écran. Les lecteurs d'écran lisent son texte comme description du bouton, sans l'ouvrir.
+ */
+import type { Methode } from '../data/methodes';
+
+interface Props {
+  methode: Methode;
+  /** Libellé du chiffre, pour le nom accessible du bouton */
+  label: string;
+  /** Bouton sur fond foncé (carte sarcelle) */
+  onDark?: boolean;
+}
+
+const { methode, label, onDark = false } = Astro.props;
+const slug = `${methode.titre}-${label}`
+  .normalize('NFD')
+  .replace(/[̀-ͯ]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-|-$/g, '');
+const id = `info-${slug}`;
+---
+
+<button
+  type="button"
+  class:list={['info-btn', onDark && 'info-btn-dark']}
+  aria-label={`Source et méthode : ${label}`}
+  aria-describedby={id}
+  aria-expanded="false"
+  aria-controls={id}
+  data-info-btn
+>
+  <svg viewBox="0 0 20 20" aria-hidden="true" class="h-4 w-4">
+    <circle cx="10" cy="10" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+    <circle cx="10" cy="6.4" r="1.1" fill="currentColor"></circle>
+    <path d="M10 9.2v5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+  </svg>
+</button>
+<span id={id} role="tooltip" popover="manual" class="info-pop" data-info-pop>
+  <span class="info-pop-title">{methode.titre}</span>
+  <span class="info-pop-row"><strong>Source</strong> {methode.source}</span>
+  <span class="info-pop-row"><strong>Calcul</strong> {methode.calcul}</span>
+  <span class="info-pop-row"><strong>Année</strong> {methode.millesime}</span>
+</span>
