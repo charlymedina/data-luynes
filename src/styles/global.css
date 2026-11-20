@@ -114,6 +114,9 @@
 /* La barre de navigation reste en haut : les ancres (#ages, #carte…) s'arrêtent juste en dessous. */
 html {
   scroll-padding-top: 5rem;
+  /* Réserve toujours la place de la barre de défilement : quand le menu bloque le défilement de la page,
+     la barre disparaît sans décaler tout le contenu vers la droite. */
+  scrollbar-gutter: stable;
 }
 
 body {
