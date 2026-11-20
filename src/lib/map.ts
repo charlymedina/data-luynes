@@ -104,7 +104,7 @@ async function createMap(root: HTMLElement, data: MapData): Promise<void> {
   });
 
   // Clic : infobulle de l'élément le plus haut (un point situé dans une zone l'emporte sur la zone).
-  const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: true, offset: 10 });
+  const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: true, offset: 10, maxWidth: 'min(22rem, 80vw)' });
   const clickable = [...data.layers.map((l) => l.id), ...data.areas.map((a) => a.id)];
   map.on('click', (event) => {
     const feature = map.queryRenderedFeatures(event.point, { layers: clickable.filter((id) => map.getLayer(id)) })[0];

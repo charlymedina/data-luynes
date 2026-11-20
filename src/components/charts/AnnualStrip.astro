@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * Petite frise de colonnes « un fait par année » : nombre de faits enregistrés chaque année à Luynes.
  * Une année non publiée (secret statistique) est dessinée en pointillé avec « n.p. » : elle n'est jamais estimée.
@@ -12,11 +14,13 @@ export interface AnneeCompte {
 }
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   values: readonly AnneeCompte[];
   label: string;
 }
 
-const { values, label } = Astro.props;
+const { values, label, info } = Astro.props;
 const max = Math.max(...values.map((v) => v.nombre ?? 0), 1);
 const premiere = values[0]?.annee;
 const derniere = values.at(-1)?.annee;
@@ -24,6 +28,7 @@ const texte = (v: AnneeCompte): string => (v.nombre === null ? `${v.annee} : non
 ---
 
 <figure class="mt-4">
+  <div class="mb-1 flex justify-end" data-indicateur={info ? 'ok' : 'sans-bulle'}>{info && <InfoTip methode={info} label={info.titre} />}</div>
   <ol class="flex h-12 items-end gap-[3px]" aria-label={`${label}, faits enregistrés par année à Luynes`}>
     {
       values.map((v) => (

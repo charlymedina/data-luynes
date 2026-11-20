@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * Étiquettes énergie (DPE) de A à G : pour chaque lettre, la part des logements à Luynes (barre d'accent)
  * et en Indre-et-Loire (barre de référence). La lettre est affichée dans sa couleur officielle (vert → rouge)
@@ -9,11 +11,13 @@ import type { TipContent } from '../../lib/chart-tooltip';
 import { formatNumber } from '../../lib/format';
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   etiquettes: readonly EtiquetteDpe[];
   ariaLabel: string;
 }
 
-const { etiquettes, ariaLabel } = Astro.props;
+const { etiquettes, ariaLabel, info } = Astro.props;
 
 /** Couleurs officielles de l'étiquette énergie, et couleur de la lettre posée dessus (lisibilité). */
 const COULEURS: Record<EtiquetteDpe['etiquette'], { fond: string; texte: string }> = {
@@ -40,6 +44,7 @@ const tip = (e: EtiquetteDpe): string =>
 ---
 
 <figure data-chart="rows" class="relative">
+  <div class="mb-1 flex justify-end" data-indicateur={info ? 'ok' : 'sans-bulle'}>{info && <InfoTip methode={info} label={info.titre} />}</div>
   <ul class="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2" aria-label="Légende">
     <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded-[3px] bg-chart-2" aria-hidden="true"></span>Luynes</li>
     <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded-[3px] bg-chart-1" aria-hidden="true"></span>Indre-et-Loire</li>

@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * Jauge de classement : une réglette de 1 à N (toutes les communes du département),
  * avec la position de Luynes marquée. Remplace une liste de rangs écrite en toutes lettres.
@@ -8,6 +10,8 @@ import Icon, { type IconName } from '../Icon.astro';
 import { COMMUNES_37, formatCommunes, formatRank } from '../../lib/format';
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   label: string;
   rank: number;
   total: number;
@@ -18,16 +22,16 @@ interface Props {
   ends?: readonly [string, string];
 }
 
-const { label, rank, total, icon, ensemble = COMMUNES_37, ends = ['le plus élevé', 'le plus faible'] } = Astro.props;
+const { label, rank, total, icon, ensemble = COMMUNES_37, ends = ['le plus élevé', 'le plus faible'], info } = Astro.props;
 const position = total > 1 ? ((rank - 1) / (total - 1)) * 100 : 0;
 const surQui = `sur ${formatCommunes(total, ensemble)}`;
 ---
 
-<figure class="rounded-[1.25rem] border border-line bg-surface p-5">
+<figure class="rounded-[1.25rem] border border-line bg-surface p-5" data-indicateur={info ? 'ok' : 'sans-bulle'}>
   <figcaption class="flex items-center gap-2.5 text-sm font-semibold text-ink">
     <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-loire-soft text-loire"><Icon name={icon} class="h-5 w-5" /></span>
     {label}
-  </figcaption>
+  {info && <InfoTip methode={info} label={info.titre} />}</figcaption>
   <p class="mt-4 font-display text-3xl font-extrabold tracking-tight">
     {formatRank(rank)} <span class="text-base font-semibold text-ink-2">{surQui}</span>
   </p>

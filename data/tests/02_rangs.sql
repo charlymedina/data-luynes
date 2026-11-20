@@ -10,6 +10,7 @@ WITH rangs AS (
   UNION ALL SELECT 'monuments', rang_monuments, nb_communes FROM patrimoine_risques_resume
   UNION ALL SELECT 'cavités', rang_cavites, nb_communes FROM patrimoine_risques_resume
   UNION ALL SELECT 'catastrophes naturelles', rang_catnat, nb_communes FROM patrimoine_risques_resume
+  UNION ALL SELECT 'eau : nitrates', rang_nitrates, nb_communes_nitrates FROM eau_resume
   UNION ALL SELECT 'prix au m²', rang_prix_m2_maison, nb_communes_classees FROM immobilier_resume
   UNION ALL SELECT 'loyer ' || type_logement, rang, nb_communes FROM immobilier_loyers
   UNION ALL SELECT 'charges de fonctionnement', rang_depenses, nb_communes FROM budget_resume

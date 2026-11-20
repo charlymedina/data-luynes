@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * « X personnes sur 100 » en pictogrammes : 100 silhouettes (10 × 10), dont `count` mises en avant.
  * La couleur n'est pas seule : le libellé et le nombre sont écrits à côté.
@@ -6,6 +8,8 @@
 import { formatNumber } from '../../lib/format';
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   /** Nombre de silhouettes mises en avant (sur 100), arrondi à l'unité */
   count: number;
   label: string;
@@ -14,7 +18,7 @@ interface Props {
   shape?: 'personne' | 'maison';
 }
 
-const { count, label, ariaLabel, shape = 'personne' } = Astro.props;
+const { count, label, ariaLabel, shape = 'personne', info } = Astro.props;
 const highlighted = Math.round(Math.min(Math.max(count, 0), 100));
 const STEP = 14;
 // Silhouette simple : tête + buste, ou maison : toit + murs (dans une case de 12 × 12)
@@ -25,6 +29,7 @@ const person = (x: number, y: number): string =>
 ---
 
 <figure class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+  <div class="mb-1 flex justify-end" data-indicateur={info ? 'ok' : 'sans-bulle'}>{info && <InfoTip methode={info} label={info.titre} />}</div>
   <svg viewBox={`0 0 ${10 * STEP} ${10 * STEP}`} class="w-full max-w-[12rem] shrink-0" role="img" aria-label={ariaLabel}>
     {
       Array.from({ length: 100 }, (_, n) => (

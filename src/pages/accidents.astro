@@ -13,14 +13,17 @@ import CompareBars from '../components/charts/CompareBars.astro';
 import {
   LIBELLE_GRAVITE,
   accidentsCarte,
+  accidentsListe,
+  agesAccidents,
   anneesAccidents,
+  conditionsAccident,
+  dateAccident,
   momentsAccidents,
-  nomMois,
   publicationDerniereAnnee,
   resumeAccidents as r,
   routesAccidents,
   usagersAccidents,
-  type AccidentCarte,
+  type Accident,
   type Gravite,
   type ModeAccident,
 } from '../data/accidents';
@@ -36,12 +39,16 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
 const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
 const parMille = (v: number): string => formatOneDecimal(v);
 
-/** Texte de la fiche d'un accident sur la carte (aucune information sur les personnes). */
-function fiche(a: AccidentCarte): string {
-  const quand = `${nomMois(a.mois)} ${a.annee}, ${a.moment.toLowerCase()}`;
-  const conditions = [a.lumiere, a.meteo].filter(Boolean).join(', ');
-  const ou = a.route ? ` · ${a.route}` : '';
-  return `${LIBELLE_GRAVITE[a.gravite]} — ${quand}${ou}. Impliqués : ${a.impliques || 'non précisé'}.${conditions ? ` ${conditions[0]?.toUpperCase()}${conditions.slice(1)}.` : ''}`;
+/** Texte de la fiche d'un accident sur la carte : informations publiées par l'ONISR (une ligne par rubrique). */
+function fiche(a: Accident): string {
+  return [
+    `${LIBELLE_GRAVITE[a.gravite]} — ${dateAccident(a)}`,
+    conditionsAccident(a),
+    a.vehicules ? `Véhicules : ${a.vehicules}` : '',
+    ...a.personnes.map((p) => `• ${p}`),
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 const couches: { gravite: Gravite; colorVar: string; radius: number }[] = [
@@ -139,18 +146,43 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
   <section id="carte" aria-labelledby="carte-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
     <h2 id="carte-titre" class={titreH2}>La carte</h2>
     <p class="mt-4 max-w-2xl text-ink-2">
-      Un point par accident, de la couleur de sa conséquence la plus grave. Cliquer sur un point pour la date (mois),
-      le moment de la journée, la route et les modes de déplacement impliqués.
-      {nonLocalises > 0 && <> {formatNumber(nonLocalises)} accidents anciens, sans coordonnées, n'apparaissent pas sur la carte.</>}
+      Un point par accident, de la couleur de sa conséquence la plus grave. Cliquer sur un point pour la fiche publiée
+      par l'Observatoire national de la sécurité routière : date et heure, route, conditions, véhicules et personnes impliqués.
+      {nonLocalises > 0 && <> {formatNumber(nonLocalises)} accidents anciens, sans coordonnées, n'apparaissent pas sur la carte mais figurent dans la liste ci-dessous.</>}
     </p>
     <div class="mt-8">
-      <MapView ariaLabel={`Carte des ${formatNumber(r.accidents_geolocalises)} accidents corporels localisés à Luynes depuis ${r.annee_debut}`} contour={contourCommune} legend={legende}>
-        <details class="text-sm text-ink-2">
-          <summary class="cursor-pointer font-medium hover:text-ink">Voir la liste des accidents localisés</summary>
-          <ul class="mt-3 space-y-1">{accidentsCarte.map((a) => <li>{fiche(a)}</li>)}</ul>
-        </details>
-      </MapView>
+      <MapView info={methode('accidents_detail')} ariaLabel={`Carte des ${formatNumber(r.accidents_geolocalises)} accidents corporels localisés à Luynes depuis ${r.annee_debut}`} contour={contourCommune} legend={legende} />
     </div>
+    <details class:list={['mt-6', carte]}>
+      <summary class="cursor-pointer font-display text-lg font-bold hover:text-loire">
+        La liste des {formatNumber(accidentsListe.length)} accidents, en détail
+      </summary>
+      <ol class="mt-6 divide-y divide-line">
+        {
+          [...accidentsListe].reverse().map((a) => (
+            <li class="py-4">
+              <p class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span class="font-semibold first-letter:uppercase">{dateAccident(a)}</span>
+                <span class="rounded-full border border-line px-2 py-0.5 text-xs text-ink-2">{LIBELLE_GRAVITE[a.gravite]}</span>
+              </p>
+              <p class="mt-1 text-sm text-ink-2">{conditionsAccident(a)}</p>
+              {a.vehicules && <p class="mt-1 text-sm text-ink-2">Véhicules : {a.vehicules}</p>}
+              {a.personnes.length > 0 && (
+                <ul class="mt-2 space-y-0.5 text-sm">
+                  {a.personnes.map((p) => (
+                    <li class="flex gap-2"><Icon name="personnes" class="mt-0.5 h-4 w-4 shrink-0 text-loire" />{p}</li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))
+        }
+      </ol>
+      <p class="mt-4 text-xs text-ink-2">
+        Informations telles que publiées dans les fichiers nationaux (BAAC), sans l'adresse. Âge = année de l'accident − année
+        de naissance. L'équipement de sécurité et la vitesse maximale autorisée ne sont pas renseignés pour toutes les années.
+      </p>
+    </details>
   </section>
 
   <section id="evolution" aria-labelledby="evolution-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
@@ -160,7 +192,7 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
       {publicationDerniereAnnee && <span class="text-sm">Données {r.annee_fin} d'après le fichier national publié en {formatMonthYear(publicationDerniereAnnee)}.</span>}
     </p>
     <div class:list={['mt-8', carte]}>
-      <ColumnChart
+      <ColumnChart info={methode('accidents')}
         columns={colonnes}
         unit="accidents"
         headers={['Année', 'Accidents corporels']}
@@ -171,14 +203,14 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
     <div class="mt-6 grid gap-6 md:grid-cols-2">
       <div class={carte}>
         <h3 class="font-display text-xl font-bold">5 premières et 5 dernières années</h3>
-        <MiniCompare
+        <MiniCompare info={methode('accidents')}
           items={[
             { label: `${r.annee_debut}-${r.annee_debut + 4}`, value: r.accidents_5_premieres_annees, display: formatNumber(r.accidents_5_premieres_annees) },
             { label: `${r.annee_fin - 4}-${r.annee_fin}`, value: r.accidents_5_ans, display: formatNumber(r.accidents_5_ans), highlight: true },
           ]}
         />
       </div>
-      <RankGauge label="Accidents par habitant (période entière)" rank={r.rang_taux} total={r.nb_communes} icon="voiture" ends={['le plus d’accidents', 'le moins d’accidents']} />
+      <RankGauge info={methode('accidents_taux')} label="Accidents par habitant (période entière)" rank={r.rang_taux} total={r.nb_communes} icon="voiture" ends={['le plus d’accidents', 'le moins d’accidents']} />
     </div>
   </section>
 
@@ -186,7 +218,7 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
     <h2 id="gravite-titre" class={titreH2}>Les conséquences</h2>
     <div class="mt-8 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
       <div class={carte}>
-        <Waffle
+        <Waffle info={methode('accidents_gravite')}
           title="Sur 100 accidents à Luynes"
           unit="accidents"
           colors={['var(--chart-2)', 'var(--chart-4)', 'var(--chart-1)']}
@@ -220,18 +252,38 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
               <Icon name={ICONES[u.mode]} class="h-7 w-7 text-loire" />
               {u.libelle}
             </p>
-            <MiniCompare items={versus(u.part_luynes, u.part_37)} />
+            <MiniCompare info={methode('accidents_detail')} items={versus(u.part_luynes, u.part_37)} />
           </li>
         ))
       }
     </ul>
   </section>
 
+  <section id="ages" aria-labelledby="ages-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="ages-titre" class={titreH2}>Quel âge ?</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Âge des {formatNumber(agesAccidents.reduce((s, a) => s + a.personnes_luynes, 0))} personnes impliquées dans un accident
+      à Luynes depuis {r.annee_debut} (conducteurs, passagers et piétons, blessés ou indemnes), comparé à l'ensemble de l'Indre-et-Loire.
+    </p>
+    <div class:list={['mt-8 max-w-3xl', carte]}>
+      <ul class="space-y-5">
+        {
+          agesAccidents.map((t) => (
+            <li>
+              <p class="font-semibold">{t.tranche}</p>
+              <MiniCompare info={methode('accidents_detail')} items={versus(t.part_luynes, t.part_37)} />
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
   <section id="moments" aria-labelledby="moments-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
     <h2 id="moments-titre" class={titreH2}>Quand ?</h2>
     <div class="mt-8 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
       <div class={carte}>
-        <Waffle
+        <Waffle info={methode('accidents_detail')}
           title="Sur 100 accidents à Luynes"
           unit="accidents"
           items={moments.map((m) => ({ label: `${m.libelle}`, value: m.part_luynes }))}
@@ -244,7 +296,7 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
           <div class={carte}>
             <h3 class="flex items-center gap-2 font-display text-xl font-bold"><Icon name="calendrier" class="h-6 w-6 text-loire" /> Le week-end</h3>
             <p class="mt-1 text-sm text-ink-2">Part des accidents survenus un samedi ou un dimanche.</p>
-            <MiniCompare items={versus(weekEnd.part_luynes, weekEnd.part_37)} />
+            <MiniCompare info={methode('accidents_detail')} items={versus(weekEnd.part_luynes, weekEnd.part_37)} />
           </div>
         )
       }
@@ -258,7 +310,7 @@ const routePrincipale = routesAccidents.find((x) => !x.est_autres);
       (M) en 2017 : elles sont comptées sous leur ancien nom.
     </p>
     <div class:list={['mt-8 max-w-3xl', carte]}>
-      <CompareBars
+      <CompareBars info={methode('accidents_detail')}
         title="Accidents par route"
         items={routesAccidents.map((x) => ({ label: x.route, value: x.accidents, display: formatNumber(x.accidents), highlight: x === routePrincipale }))}
       />

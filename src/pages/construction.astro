@@ -1,0 +1,99 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon from '../components/Icon.astro';
+import MiniColumns from '../components/charts/MiniColumns.astro';
+import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
+import CompareBars from '../components/charts/CompareBars.astro';
+import Waffle from '../components/charts/Waffle.astro';
+import SourcesMethode from '../components/SourcesMethode.astro';
+import { anneesConstruction, resumeConstruction as r, sociauxParEpoque, sociauxParPieces } from '../data/construction';
+import { CREDITS_CONSTRUCTION } from '../data/credits';
+import { methode } from '../data/methodes';
+import { formatNumber } from '../lib/format';
+import { faitsConstruction } from '../lib/faits-construction';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+
+const colonnes: Column[] = anneesConstruction.map((a) => ({
+  label: `’${String(a.annee).slice(2)}`,
+  fullLabel: String(a.annee),
+  value: a.commences,
+  display: formatNumber(a.commences),
+  highlight: a.annee === r.annee_record,
+}));
+const maxPieces = Math.max(...sociauxParPieces.map((g) => g.logements));
+const pieces = sociauxParPieces.map((g) => ({ label: g.libelle, value: g.logements, display: formatNumber(g.logements), highlight: g.logements === maxPieces }));
+const epoques = sociauxParEpoque.filter((g) => g.logements > 0);
+---
+
+<Base
+  title="Construction et logement social à Luynes — Luynes en chiffres"
+  description={`${formatNumber(r.commences_total)} logements mis en chantier à Luynes de ${r.annee_debut} à ${r.annee_fin}, et ${formatNumber(r.logements_sociaux)} logements sociaux.`}
+  sources={CREDITS_CONSTRUCTION}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="grue" class="h-5 w-5" /> Thème · Construction & logement social</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.6rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      Ça <span class="text-accent">construit ?</span>
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Les logements autorisés par un permis puis mis en chantier à Luynes depuis {r.annee_debut}, et le parc de logements
+      sociaux d'aujourd'hui.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés de la construction" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <KeyFigure tone="loire" icon="grue" label={`Logements mis en chantier ${r.annee_debut}-${r.annee_fin}`} value={r.commences_total} info={methode('logements_commences')}>
+      <MiniColumns onDark values={anneesConstruction.map((a) => ({ label: String(a.annee), value: a.commences }))} ariaLabel={`Logements commencés par année, ${r.annee_debut} à ${r.annee_fin}`} />
+    </KeyFigure>
+    <KeyFigure tone="accent" icon="immeuble" label="Dont appartements (collectif)" value={r.part_collectifs} decimals={1} unit="%" info={methode('logements_commences')} />
+    <KeyFigure icon="cle" label="Logements sociaux" value={r.logements_sociaux} info={methode('logements_sociaux')}>
+      <p class="mt-4 text-sm text-ink-2">{formatNumber(r.surface_moyenne_sociaux)} m² en moyenne.</p>
+    </KeyFigure>
+  </section>
+
+  <section id="chantiers" aria-labelledby="chantiers-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="chantiers-titre" class={titreH2}>Les chantiers, année par année</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Logements mis en chantier chaque année (maisons et appartements). En orange, l'année record ({r.annee_record}).
+      Les dates sont celles où le chantier a été enregistré, pas toujours celles du premier coup de pelle.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <ColumnChart
+        info={methode('logements_commences')}
+        columns={colonnes}
+        unit="logements"
+        headers={['Année', 'Logements commencés']}
+        ariaLabel={`Logements commencés à Luynes de ${r.annee_debut} à ${r.annee_fin} : ${formatNumber(r.commences_total)} au total, record en ${r.annee_record}.`}
+        tableCaption="Logements mis en chantier à Luynes par année"
+      />
+    </div>
+  </section>
+
+  <section id="social" aria-labelledby="social-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="social-titre" class={titreH2}>Le logement social</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Les {formatNumber(r.logements_sociaux)} logements des bailleurs sociaux à Luynes : leur taille et l'époque de leur construction.
+    </p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      <div class={carte}>
+        <CompareBars info={methode('logements_sociaux')} title="Logements sociaux par nombre de pièces" items={pieces} />
+      </div>
+      <div class={carte}>
+        <Waffle
+          info={methode('logements_sociaux')}
+          title="Sur 100 logements sociaux, construits…"
+          unit="logements"
+          items={epoques.map((g) => ({ label: g.libelle, value: (100 * g.logements) / r.logements_sociaux }))}
+          ariaLabel={`Époque de construction des logements sociaux : ${epoques.map((g) => `${g.libelle} ${formatNumber(g.logements)}`).join(', ')}.`}
+        />
+      </div>
+    </div>
+  </section>
+
+  <FunFacts facts={faitsConstruction()} id="saviez-vous-construction" />
+  <SourcesMethode page="construction" />
+</Base>

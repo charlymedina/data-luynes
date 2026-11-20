@@ -36,7 +36,8 @@ type Annee = Record<Table, string>;
 type AnneeArchivee = Annee & { sql?: string };
 type Manifest = Record<string, AnneeArchivee>;
 const TIMEOUT_MS = 120_000;
-const MAX_ANNEES_PAR_CONSTRUCTION = 3;
+/** Réglable pour un rattrapage complet en local : BAAC_MAX_ANNEES=30 npm run data. */
+const MAX_ANNEES_PAR_CONSTRUCTION = Number(process.env.BAAC_MAX_ANNEES ?? 3);
 const PAUSE_ENTRE_ESSAIS_MS = 5_000;
 
 /** « caracteristiques_2016.csv », « carcteristiques-2022.csv », « Caract_2024.csv » → { table, année }. */
@@ -61,8 +62,19 @@ async function anneesPubliees(): Promise<Manifest> {
   return Object.fromEntries(completes) as Manifest;
 }
 
-/** Télécharge un fichier et le réécrit en UTF-8 avec des fins de ligne simples ; renvoie le séparateur détecté. */
-async function telecharger(url: string, destination: string): Promise<string> {
+/**
+ * Colonnes qui n'existent que dans certains formats (ex. « vma » et « secu1 » depuis 2019, « secu » avant).
+ * Celles absentes d'un fichier sont ajoutées vides, pour que les requêtes data/sql/baac/*.sql marchent sur toutes les années.
+ */
+const COLONNES_FACULTATIVES = ['vma', 'surf', 'secu', 'secu1', 'secu2', 'secu3', 'sexe', 'an_nais', 'col', 'int', 'jour', 'hrmn', 'place', 'obsm', 'manv', 'catr', 'voie'];
+
+interface FichierTelecharge {
+  sep: string;
+  colonnes: string[];
+}
+
+/** Télécharge un fichier et le réécrit en UTF-8 avec des fins de ligne simples ; renvoie le séparateur et les colonnes. */
+async function telecharger(url: string, destination: string): Promise<FichierTelecharge> {
   for (let essai = 1; ; essai++) {
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
@@ -80,7 +92,9 @@ async function telecharger(url: string, destination: string): Promise<string> {
       const entete = texte.slice(0, fin).replace(/"?Accident_Id"?/, 'Num_Acc');
       await writeFile(destination, entete + texte.slice(fin));
       const compte = (c: string): number => entete.split(c).length;
-      return [';', '\t', ','].reduce((a, b) => (compte(b) > compte(a) ? b : a));
+      const sep = [';', '\t', ','].reduce((a, b) => (compte(b) > compte(a) ? b : a));
+      const colonnes = entete.split(sep).map((c) => c.replaceAll('"', '').trim());
+      return { sep, colonnes };
     } catch (error: unknown) {
       if (essai === 3) throw new Error(`${url} : ${error instanceof Error ? error.message : String(error)}`);
       await sleep(PAUSE_ENTRE_ESSAIS_MS * essai);
@@ -88,14 +102,20 @@ async function telecharger(url: string, destination: string): Promise<string> {
   }
 }
 
-async function requete(table: Table, fichier: string, sep: string, annee: string): Promise<string> {
+async function requete(table: Table, annee: string): Promise<string> {
   const sql = await readFile(path.join(SQL_DIR, `${table}.sql`), 'utf8');
   return sql
-    .replaceAll('{fichier}', fichier)
-    .replaceAll('{sep}', sep === '\t' ? '\\t' : sep)
     .replaceAll('{annee}', annee)
     .trim()
     .replace(/;\s*$/, '');
+}
+
+/** Vue « brut » sur le fichier téléchargé, complétée des colonnes facultatives absentes (vides). */
+async function creerVueBrut(connection: DuckDBConnection, fichier: string, { sep, colonnes }: FichierTelecharge): Promise<void> {
+  const presentes = new Set(colonnes.map((c) => c.toLowerCase()));
+  const manquantes = COLONNES_FACULTATIVES.filter((c) => !presentes.has(c)).map((c) => `, NULL::VARCHAR AS "${c}"`).join('');
+  const delim = sep === '\t' ? '\\t' : sep;
+  await connection.run(`CREATE OR REPLACE TEMP VIEW brut AS SELECT *${manquantes} FROM read_csv('${fichier}', delim = '${delim}', all_varchar = true, header = true)`);
 }
 
 async function archiverAnnee(connection: DuckDBConnection, annee: string, urls: Annee): Promise<void> {
@@ -103,8 +123,8 @@ async function archiverAnnee(connection: DuckDBConnection, annee: string, urls: 
   await mkdir(dossier, { recursive: true });
   for (const table of TABLES) {
     const fichier = path.join(dossier, `${table}.csv`);
-    const sep = await telecharger(urls[table], fichier);
-    const selection = await requete(table, fichier, sep, annee);
+    await creerVueBrut(connection, fichier, await telecharger(urls[table], fichier));
+    const selection = await requete(table, annee);
     if (table === 'caract') await connection.run(`CREATE OR REPLACE TEMP TABLE accidents_annee AS ${selection}`);
     const source = table === 'caract' ? 'SELECT * FROM accidents_annee' : selection;
     await connection.run(`COPY (${source}) TO '${path.join(ARCHIVE_DIR, `${annee}-${table}.parquet`)}' (FORMAT parquet, COMPRESSION zstd)`);

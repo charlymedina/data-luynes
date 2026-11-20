@@ -136,7 +136,7 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
       }
     </ol>
     <div class:list={['mt-6', carte]}>
-      <LineChart
+      <LineChart info={methode('population_historique')}
         xs={years}
         series={[{ name: 'Habitants', color: 'var(--chart-1)', values: historique.map((r) => r.population) }]}
         xTicks={historyTicks}
@@ -157,12 +157,12 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
     <div class="mt-8 grid gap-6 lg:grid-cols-[3fr_2fr]">
       <div class={carte}>
         <h3 class="mb-4 font-display text-xl font-bold">Pyramide des âges, {anneeRecensement}</h3>
-        <AgePyramid tranches={pyramide} />
+        <AgePyramid info={methode('pyramide')} tranches={pyramide} />
         <p class="mt-3 text-xs text-muted">Le haut de la pyramide est probablement gonflé par les résidents de l'EHPAD et des unités de long séjour du centre hospitalier Jean-Pagès, comptés comme habitants.</p>
       </div>
       <div class="flex flex-col gap-6">
         <div class={carte}>
-          <PictoGrid
+          <PictoGrid info={methode('part_65')}
             count={luynes.part_65_plus}
             label="habitants ont 65 ans ou plus"
             ariaLabel={`${formatNumber(Math.round(luynes.part_65_plus))} habitants sur 100 ont 65 ans ou plus à Luynes`}
@@ -175,7 +175,7 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
                 <Icon name="calendrier" class="h-5 w-5 text-loire" /> En {evolutionFin.annee - evolutionDebut.annee} ans
               </h3>
               <p class="mt-1 text-sm text-ink-2">Part des 65 ans et plus, et des moins de 20 ans.</p>
-              <MiniCompare
+              <MiniCompare info={methode('evolution_ages')}
                 items={[
                   { label: `65+ · ${evolutionDebut.annee}`, value: evolutionDebut.part_65_plus, display: formatPercent(evolutionDebut.part_65_plus) },
                   { label: `65+ · ${evolutionFin.annee}`, value: evolutionFin.part_65_plus, display: formatPercent(evolutionFin.part_65_plus), highlight: true },
@@ -189,9 +189,9 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
       </div>
     </div>
     <div class:list={['mt-6 grid gap-6 md:grid-cols-3', carte]}>
-      <CompareBars title="Âge médian" items={compare((r) => r.age_median, enAns)} />
-      <CompareBars title="Part des 65 ans et plus" items={compare((r) => r.part_65_plus, formatPercent)} />
-      <CompareBars title="Part des moins de 20 ans" items={compare((r) => r.part_moins_20, formatPercent)} />
+      <CompareBars info={methode('age_median')} title="Âge médian" items={compare((r) => r.age_median, enAns)} />
+      <CompareBars info={methode('part_65')} title="Part des 65 ans et plus" items={compare((r) => r.part_65_plus, formatPercent)} />
+      <CompareBars info={methode('part_moins_20')} title="Part des moins de 20 ans" items={compare((r) => r.part_moins_20, formatPercent)} />
     </div>
     <p class="mt-3 text-xs text-ink-2">« France » : France entière, outre-mer compris. Âge médian estimé à partir des tranches d'âge du recensement.</p>
   </section>
@@ -212,7 +212,7 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
       )
     }
     <div class:list={['mt-8', carte]}>
-      <LineChart
+      <LineChart info={methode('naissances')}
         xs={etatCivilYears}
         series={[
           { name: 'Naissances', color: 'var(--chart-1)', values: naissancesDeces.map((r) => r.naissances) },
@@ -251,16 +251,16 @@ const bilan: { icon: IconName; titre: string; valeur: number }[] = [
     <h2 id="departement-titre" class={titreH2}>Luynes parmi les {formatCommunes(rang.nb_communes)}</h2>
     <p class="mt-4 max-w-2xl text-ink-2">Le point orange situe Luynes, de la valeur la plus élevée à la plus faible.</p>
     <div class="mt-8 grid gap-4 md:grid-cols-3">
-      <RankGauge label="Population" rank={rang.rang_population} total={rang.nb_communes} icon="personnes" ends={['la plus peuplée', 'la moins peuplée']} />
+      <RankGauge info={methode('rang_population')} label="Population" rank={rang.rang_population} total={rang.nb_communes} icon="personnes" ends={['la plus peuplée', 'la moins peuplée']} />
       <div class="flex flex-col">
-        <RankGauge label={`Croissance ${rang.annee_debut}-${rang.annee_fin}`} rank={rang.rang_evolution} total={rang.nb_communes} icon="graphique" ends={['la plus forte', 'la plus faible']} />
+        <RankGauge info={methode('rang_croissance')} label={`Croissance ${rang.annee_debut}-${rang.annee_fin}`} rank={rang.rang_evolution} total={rang.nb_communes} icon="graphique" ends={['la plus forte', 'la plus faible']} />
         <div class="-mt-3 flex flex-wrap gap-2 rounded-b-[1.25rem] border border-t-0 border-line bg-surface px-5 pt-4 pb-5 text-sm">
           <span class="rounded-full bg-accent-soft px-3 py-1"><strong class="tabular">{formatVariation(rang.evolution_pct)}</strong> Luynes</span>
           <span class="rounded-full bg-chart-grid px-3 py-1"><strong class="tabular">{formatVariation(rang.evolution_departement_pct)}</strong> Indre-et-Loire</span>
         </div>
       </div>
       <div class="flex flex-col">
-        <RankGauge label="Part des 65 ans et plus" rank={rang.rang_65_plus} total={rang.nb_communes} icon="calendrier" />
+        <RankGauge info={methode('part_65')} label="Part des 65 ans et plus" rank={rang.rang_65_plus} total={rang.nb_communes} icon="calendrier" />
         <div class="-mt-3 rounded-b-[1.25rem] border border-t-0 border-line bg-surface px-5 pt-1 pb-5">
           <MiniCompare
             items={[

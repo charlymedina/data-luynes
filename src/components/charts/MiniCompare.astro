@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * Mini-comparaison à glisser sous un chiffre clé : quelques barres fines (Luynes en avant, références en retrait),
  * pour remplacer une phrase pleine de chiffres. Les valeurs restent écrites en petit au bout des barres.
@@ -11,15 +13,18 @@ export interface MiniItem {
 }
 
 interface Props {
+  /** Bulle ⓘ, quand ces mini-barres ne sont pas déjà dans un chiffre clé qui a la sienne. */
+  info?: Methode;
   items: readonly MiniItem[];
   /** Sur fond sarcelle (carte « loire »), les barres passent en clair. */
   onDark?: boolean;
 }
 
-const { items, onDark = false } = Astro.props;
+const { items, onDark = false, info } = Astro.props;
 const max = Math.max(...items.map((i) => i.value), 1);
 ---
 
+{info && <div class="-mb-3 mt-3 flex justify-end"><InfoTip methode={info} label={info.titre} onDark={onDark} /></div>}
 <ul class="mt-5 space-y-1.5 text-xs">
   {
     items.map((item) => (

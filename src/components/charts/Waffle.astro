@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * « Sur 100 … » en grille de 10 × 10 cases : chaque case = 1 %. Couleurs catégorielles validées (ordre fixe),
  * légende avec libellés directs (la couleur n'est jamais seule), petit espace entre les cases,
@@ -13,6 +15,8 @@ export interface WaffleItem {
 }
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   title: string;
   items: readonly WaffleItem[];
   /** Unité d'une case, ex. « € » pour « sur 100 € » */
@@ -22,7 +26,7 @@ interface Props {
   colors?: readonly string[];
 }
 
-const { title, items, unit, ariaLabel, colors } = Astro.props;
+const { title, items, unit, ariaLabel, colors, info } = Astro.props;
 /** Ordre catégoriel validé (orange, sarcelle, bleu, or). Au-delà de 4 catégories, regrouper en « Autres ». */
 const COLORS: readonly string[] = colors ?? ['var(--chart-2)', 'var(--chart-1)', 'var(--chart-3)', 'var(--chart-4)'];
 
@@ -47,8 +51,8 @@ const tip = (item: WaffleItem, index: number): string =>
   JSON.stringify({ title: item.label, rows: [{ label: `sur 100 ${unit}`, value: `${formatNumber(item.value, 1)} ${unit}`, color: COLORS[index] }] });
 ---
 
-<figure class="waffle">
-  <figcaption class="text-sm font-semibold text-ink">{title}</figcaption>
+<figure class="waffle" data-indicateur={info ? 'ok' : 'sans-bulle'}>
+  <figcaption class="flex items-center gap-2 text-sm font-semibold text-ink">{title}{info && <InfoTip methode={info} label={info.titre} />}</figcaption>
   <div class="relative mt-4 grid items-center gap-5 sm:grid-cols-[minmax(0,13rem)_1fr]" data-chart="rows">
     <svg viewBox={`0 0 ${10 * (CELL + GAP) - GAP} ${10 * (CELL + GAP) - GAP}`} class="w-full max-w-[13rem]" role="img" aria-label={ariaLabel}>
       {

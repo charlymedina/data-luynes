@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * Petites barres de comparaison (ex. âge médian à Luynes, en Indre-et-Loire, en France).
  * Luynes est mise en avant en couleur, les références en gris. Valeur écrite au bout de chaque barre.
@@ -12,16 +14,18 @@ export interface CompareItem {
 }
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   title: string;
   items: readonly CompareItem[];
 }
 
-const { title, items } = Astro.props;
+const { title, items, info } = Astro.props;
 const max = Math.max(...items.map((item) => item.value));
 ---
 
-<figure>
-  <figcaption class="text-sm font-semibold text-ink">{title}</figcaption>
+<figure data-indicateur={info ? 'ok' : 'sans-bulle'}>
+  <figcaption class="flex items-center gap-2 text-sm font-semibold text-ink">{title}{info && <InfoTip methode={info} label={info.titre} />}</figcaption>
   <ul class="mt-3 space-y-2">
     {
       items.map((item) => (

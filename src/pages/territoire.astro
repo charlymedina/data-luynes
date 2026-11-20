@@ -54,8 +54,8 @@ const mini = (items: CompareItem[], display: (v: number) => string): MiniItem[] 
     <KeyFigure tone="accent" icon="immeuble" label="Densité" value={commune.densite_hab_km2} unit="hab./km²" info={methode('densite')}>
       <MiniCompare items={mini(densites, (v) => formatNumber(v))} />
     </KeyFigure>
-    <RankGauge label="Rang en densité" rank={rang.rang_densite} total={rang.nb_communes} icon="immeuble" ends={['la plus dense', 'la moins dense']} />
-    <RankGauge label="Rang en superficie" rank={rang.rang_surface} total={rang.nb_communes} icon="regle" ends={['la plus grande', 'la plus petite']} />
+    <RankGauge info={methode('densite')} label="Rang en densité" rank={rang.rang_densite} total={rang.nb_communes} icon="immeuble" ends={['la plus dense', 'la moins dense']} />
+    <RankGauge info={methode('superficie')} label="Rang en superficie" rank={rang.rang_surface} total={rang.nb_communes} icon="regle" ends={['la plus grande', 'la plus petite']} />
   </section>
 
   <section id="densite" aria-labelledby="densite-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
@@ -68,7 +68,7 @@ const mini = (items: CompareItem[], display: (v: number) => string): MiniItem[] 
       )
     }
     <div class:list={['mt-8', carte]}>
-      <RankSkyline
+      <RankSkyline info={methode('densite_communes')}
         communes={communesDepartement}
         ariaLabel={`Densité des ${rang.nb_communes} communes d'Indre-et-Loire, de la plus dense à la moins dense. Luynes est ${formatRankOf(rang.rang_densite, rang.nb_communes)} avec ${formatNumber(commune.densite_hab_km2)} habitants au km².`}
       />
@@ -79,11 +79,11 @@ const mini = (items: CompareItem[], display: (v: number) => string): MiniItem[] 
     <h2 id="comparaison-titre" class={titreH2}>Luynes face au département</h2>
     <div class="mt-8 grid gap-6 lg:grid-cols-2">
       <div class={carte}>
-        <CompareBars title="Superficie" items={superficies} />
+        <CompareBars info={methode('superficie')} title="Superficie" items={superficies} />
         <p class="mt-4 text-sm text-ink-2">« Médiane » : la moitié des communes d'Indre-et-Loire sont plus petites, l'autre moitié plus grandes.</p>
       </div>
       <div class={carte}>
-        <CompareBars title="Habitants au km²" items={densites} />
+        <CompareBars info={methode('densite')} title="Habitants au km²" items={densites} />
         <p class="mt-4 text-sm text-ink-2">Densité du département = tous ses habitants divisés par toute sa superficie.</p>
       </div>
     </div>

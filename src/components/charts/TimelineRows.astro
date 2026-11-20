@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * Frise chronologique en lignes : une ligne par catégorie (ex. sécheresse, inondation…), un point par événement
  * placé à son année. L'identité vient du libellé de la ligne (pas de la couleur) : une seule teinte suffit.
@@ -13,6 +15,8 @@ export interface TimelineRow {
 }
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   rows: readonly TimelineRow[];
   ariaLabel: string;
   /** Nom de l'événement au pluriel, ex. « arrêtés » */
@@ -20,7 +24,7 @@ interface Props {
   tableCaption: string;
 }
 
-const { rows, ariaLabel, unite, tableCaption } = Astro.props;
+const { rows, ariaLabel, unite, tableCaption, info } = Astro.props;
 const DECENNIE = 10;
 const all = rows.flatMap((r) => r.annees);
 const start = Math.floor(Math.min(...all) / DECENNIE) * DECENNIE;
@@ -60,6 +64,7 @@ const tipFor = (row: TimelineRow): string => {
 ---
 
 <figure data-chart="rows" class="relative">
+  <div class="mb-1 flex justify-end" data-indicateur={info ? 'ok' : 'sans-bulle'}>{info && <InfoTip methode={info} label={info.titre} />}</div>
   <div role="img" aria-label={ariaLabel}>
     <ul class="space-y-1" aria-hidden="true">
       {

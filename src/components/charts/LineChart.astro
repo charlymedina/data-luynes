@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * Graphique en courbes dessiné côté serveur.
  * Les tracés sont en SVG (étirés à la taille du cadre, traits d'épaisseur constante) ;
@@ -24,6 +26,8 @@ export interface LineAnnotation {
 }
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   xs: readonly number[];
   series: readonly LineSeries[];
   xTicks: readonly number[];
@@ -36,7 +40,7 @@ interface Props {
   heightClass?: string;
 }
 
-const { xs, series, xTicks, ariaLabel, tableCaption, unit = '', area = false, annotations = [], heightClass = 'h-64 sm:h-80' } =
+const { xs, series, xTicks, ariaLabel, tableCaption, unit = '', area = false, annotations = [], heightClass = 'h-64 sm:h-80', info } =
   Astro.props;
 
 const xMin = Math.min(...xs);
@@ -73,6 +77,7 @@ const tooltipJson = JSON.stringify(tooltipPoints).replaceAll('<', '\\u003c');
 ---
 
 <figure data-chart="line" class="relative">
+  <div class="mb-1 flex justify-end" data-indicateur={info ? 'ok' : 'sans-bulle'}>{info && <InfoTip methode={info} label={info.titre} />}</div>
   {
     series.length > 1 && (
       <ul class="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2" aria-label="Légende">

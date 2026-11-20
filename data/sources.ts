@@ -10,6 +10,8 @@ import { SOURCES_EQUIPEMENTS } from './sources-equipements.ts';
 import { SOURCES_ENERGIE } from './sources-energie.ts';
 import { SOURCES_ELECTIONS } from './sources-elections.ts';
 import { SOURCES_DELINQUANCE } from './sources-delinquance.ts';
+import { SOURCES_EAU } from './sources-eau.ts';
+import { SOURCES_CONSTRUCTION } from './sources-construction.ts';
 
 export interface Source {
   /** Nom du fichier produit dans data/raw/ (sans extension) */
@@ -23,9 +25,11 @@ export interface Source {
   /**
    * Réponse découpée en pages, fusionnées dans un seul fichier { "data": [...] } :
    *  - « georisques » : API Géorisques (champ total_pages, paramètre page) ;
-   *  - « tabular »    : API tabulaire data.gouv (lien links.next).
+   *  - « tabular »    : API tabulaire data.gouv (lien links.next) ;
+   *  - « hubeau »     : API Hub'eau (lien next) ;
+   *  - « dido »       : API DiDo du SDES (lien nextPage, pages de 100 lignes).
    */
-  readonly pagination?: 'georisques' | 'tabular';
+  readonly pagination?: 'georisques' | 'tabular' | 'hubeau' | 'dido';
   /**
    * « json » (par défaut) : réponse JSON enregistrée dans data/raw/<id>.json.
    * « fichiers » : fichiers bruts (ex. CSV compressés) enregistrés tels quels dans le dossier data/raw/<id>/.
@@ -366,4 +370,10 @@ export const SOURCES: readonly Source[] = [
 
   // — Délinquance (voir data/sources-delinquance.ts) —
   ...SOURCES_DELINQUANCE,
+
+  // — Eau potable (voir data/sources-eau.ts) —
+  ...SOURCES_EAU,
+
+  // — Construction et logements sociaux (voir data/sources-construction.ts) —
+  ...SOURCES_CONSTRUCTION,
 ];

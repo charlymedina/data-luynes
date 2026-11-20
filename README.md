@@ -3,7 +3,7 @@
 Site de **données ouvertes sur Luynes** (Indre-et-Loire, code INSEE `37139`) : rassembler, vérifier et présenter
 simplement les données publiques de la commune.
 
-Site en ligne : **https://luynes.pages.dev** — 11 thèmes + une page d'accueil, reconstruits chaque lundi (et à chaque
+Site en ligne : **https://luynes.pages.dev** — 13 thèmes + une page d'accueil, reconstruits chaque lundi (et à chaque
 modification) à partir des dernières données publiées.
 
 ---
@@ -32,6 +32,8 @@ modification) à partir des dernières données publiées.
 | Énergie & mobilité | `/energie-mobilite` | Agence ORE, ODRÉ, SDES, base IRVE |
 | Élections | `/elections` | Ministère de l'Intérieur (données agrégées data.gouv.fr) |
 | Délinquance | `/delinquance` | SSMSI (ministère de l'Intérieur) |
+| Eau du robinet | `/eau` | Hub'eau (contrôle sanitaire des ARS) |
+| Construction & logement social | `/construction` | SDES (Sitadel, RPLS) |
 
 Le détail (producteur, licence, fréquence de mise à jour) est dans [`docs/sources.md`](docs/sources.md) ;
 l'inventaire des données disponibles et leur statut dans [`docs/catalogue-donnees.md`](docs/catalogue-donnees.md).

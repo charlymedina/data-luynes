@@ -1,4 +1,6 @@
 ---
+import InfoTip from './InfoTip.astro';
+import type { Methode } from '../data/methodes';
 /**
  * Carte de toutes les ventes immobilières de Luynes, avec filtres (type de bien, année), légende des prix
  * au m² et tableau des ventes (alternative accessible, filtré en même temps que la carte).
@@ -9,12 +11,14 @@ import { TYPES_BIEN, type Vente } from '../data/immobilier';
 import { formatNumber } from '../lib/format';
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de la carte (src/data/methodes.ts). */
+  info?: Methode;
   ventes: readonly Vente[];
   contour: Geometry;
   seuils: readonly number[];
 }
 
-const { ventes, contour, seuils } = Astro.props;
+const { ventes, contour, seuils, info } = Astro.props;
 const anneesDispo = [...new Set(ventes.map((v) => v.annee))].sort((a, b) => b - a);
 const config = JSON.stringify({ contour, seuils }).replaceAll('<', '\\u003c');
 const PLURIELS: Record<string, string> = { Maison: 'Maisons', Appartement: 'Appartements', Terrain: 'Terrains', Autre: 'Autres' };
@@ -29,7 +33,7 @@ const pastille =
   'cursor-pointer rounded-full border border-line px-3 py-1.5 text-sm transition select-none hover:border-loire peer-checked:border-loire peer-checked:bg-loire peer-checked:text-bg peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-loire';
 ---
 
-<figure data-map="ventes" data-ventes-url="/donnees/ventes-immobilieres.json" class="map-root overflow-hidden rounded-[1.5rem] border border-line bg-surface">
+<figure data-map="ventes" data-ventes-url="/donnees/ventes-immobilieres.json" class="map-root overflow-hidden rounded-[1.5rem] border border-line bg-surface" data-indicateur={info ? 'ok' : 'sans-bulle'}>
   <form class="space-y-3 border-b border-line px-4 py-4 sm:px-6" aria-label="Filtrer les ventes">
     <fieldset class="flex flex-wrap items-center gap-2">
       <legend class="sr-only">Type de bien</legend>
@@ -82,6 +86,7 @@ const pastille =
         <span class="inline-grid size-4 place-items-center rounded-full bg-ink text-[0.55rem] font-bold text-bg" aria-hidden="true">9</span>
         plusieurs ventes : cliquer pour zoomer
       </li>
+      {info && <li class="ml-auto"><InfoTip methode={info} label={info.titre} /></li>}
     </ul>
   </div>
   <figcaption class="border-t border-line px-4 py-3 text-xs text-muted sm:px-6">

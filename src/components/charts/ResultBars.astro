@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * Résultats d'un scrutin, présentés de façon neutre : une barre par candidat ou liste (part des voix exprimées
  * à Luynes), toutes de la même couleur — aucune couleur de parti, aucune étiquette politique.
@@ -20,11 +22,13 @@ export interface ResultItem {
 }
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   items: readonly ResultItem[];
   caption: string;
 }
 
-const { items, caption } = Astro.props;
+const { items, caption, info } = Astro.props;
 const avecReperes = items.some((i) => i.part_37 !== null || i.part_france !== null);
 const max = Math.max(...items.flatMap((i) => [i.part_luynes, i.part_37 ?? 0, i.part_france ?? 0]), 1);
 const pos = (v: number): string => `${(v / max) * 100}%`;
@@ -41,6 +45,7 @@ const nom = (i: ResultItem): string => {
 ---
 
 <figure>
+  <div class="mb-1 flex justify-end" data-indicateur={info ? 'ok' : 'sans-bulle'}>{info && <InfoTip methode={info} label={info.titre} />}</div>
   {
     avecReperes && (
       <ul class="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-2" aria-label="Légende">

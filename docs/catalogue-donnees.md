@@ -276,7 +276,9 @@ Comptage d'enregistrements contenant « luynes » (19/11/2026) : arrêts Fil Ble
 | Délinquance (SSMSI) | ✅ en ligne | `/delinquance` |
 | Climat (Météo-France) | ❌ écarté : pas de station à Luynes (choix éditorial) | — |
 | Bus Fil Bleu (GTFS) | ❌ écarté (choix éditorial) | — |
-| Eau potable (Hub'eau), construction (Sitadel), qualité de l'air, logements sociaux (RPLS), santé détaillée (FINESS, APL), IRCOM | ⏳ à faire | — |
+| Eau potable (Hub'eau) | ✅ en ligne | `/eau` |
+| Construction (Sitadel) et logements sociaux (RPLS) | ✅ en ligne | `/construction` |
+| Qualité de l'air, santé détaillée (FINESS, APL), IRCOM | ⏳ à faire | — |
 
 ## 5. Points de vigilance généraux
 - **Code postal 37230 partagé avec Fondettes** : ne jamais filtrer par code postal ; toujours par code INSEE 37139 (ou `dep=037/icom=139`, `dep=370/com=139` selon les formats).

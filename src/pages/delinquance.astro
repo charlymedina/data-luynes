@@ -50,7 +50,7 @@ const positionTexte = (i: IndicateurDelinquance & { taux_luynes: number }): stri
   `${i.libelle} : ${POSITION_TEXTE[positionVs37(i)]} la moyenne de l'Indre-et-Loire`;
 const VIOLENCES_SEXUELLES = 'Violences sexuelles';
 const PRUDENCE_PETITS_NOMBRES =
-  "Ce taux repose sur un petit nombre de faits enregistrés ; il peut varier fortement d'une année à l'autre et reflète aussi l'évolution des dépôts de plainte.";
+  "Ce taux repose sur un petit nombre de faits enregistrés ; il peut varier fortement d'une année à l'autre et reflète aussi l'évolution des dépôts de plainte. Chaque victime compte pour un fait, à l'endroit où les faits ont été commis, l'année où ils ont été enregistrés (parfois longtemps après).";
 const hausses = phraseHausses();
 
 /** Texte quand le taux de Luynes n'est pas calculable : on dit exactement ce qui manque et ce qui est publié. */
@@ -157,7 +157,7 @@ const periodeTexte = `${periode.debut}-${periode.fin}`;
             </p>
             <div class="mt-4">
               {i.taux_luynes !== null ? (
-                <CompareBars
+                <CompareBars info={methode('delinquance_indicateur')}
                   title={pour1000(i)}
                   items={[
                     { label: 'Luynes', value: i.taux_luynes, display: taux(i.taux_luynes), highlight: true },
@@ -170,7 +170,7 @@ const periodeTexte = `${periode.debut}-${periode.fin}`;
               )}
               {i.indicateur === VIOLENCES_SEXUELLES && <p class="mt-3 text-xs leading-relaxed text-ink-2">{PRUDENCE_PETITS_NOMBRES}</p>}
             </div>
-            <AnnualStrip values={serieDe(i.indicateur).map((a) => ({ annee: a.annee, nombre: a.nombre }))} label={i.libelle} />
+            <AnnualStrip info={methode('delinquance_indicateur')} values={serieDe(i.indicateur).map((a) => ({ annee: a.annee, nombre: a.nombre }))} label={i.libelle} />
           </li>
         ))
       }
@@ -185,6 +185,15 @@ const periodeTexte = `${periode.debut}-${periode.fin}`;
         <p class="mt-2 text-sm text-ink-2">
           Un fait n'apparaît que s'il a été signalé (plainte, constat) et enregistré par la police ou la gendarmerie.
           Une hausse peut aussi venir d'une plus grande facilité à porter plainte.
+        </p>
+      </li>
+      <li class={carte}>
+        <h3 class="font-display text-lg font-bold">Où et quand les faits sont comptés</h3>
+        <p class="mt-2 text-sm text-ink-2">
+          Chaque fait est rattaché à la commune où il a été commis, et non à celle où la plainte a été déposée : une
+          plainte reçue à la gendarmerie de Luynes pour des faits commis dans une commune voisine compte pour cette
+          commune. Il est compté l'année de son enregistrement, qui peut être postérieure aux faits (faits anciens
+          révélés plus tard). Le ministère ne publie aucun détail par commune (âge des victimes, cadre familial…).
         </p>
       </li>
       <li class={carte}>

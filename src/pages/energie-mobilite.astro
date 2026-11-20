@@ -101,7 +101,7 @@ const borne = bornesRecharge[0];
     </p>
     <div class="mt-8 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
       <div class={carte}>
-        <Waffle
+        <Waffle info={methode('energie_secteurs')}
           title="Sur 100 MWh consommés à Luynes"
           unit="MWh"
           items={secteurs}
@@ -112,7 +112,7 @@ const borne = bornesRecharge[0];
         <h3 class="flex items-center gap-2 font-display text-xl font-bold"><Icon name="flamme" class="h-6 w-6 text-accent" /> Logements chauffés au gaz ?</h3>
         <p class="mt-1 text-sm text-ink-2">Logements raccordés au gaz, sur 100 logements raccordés à l'électricité.</p>
         <div class="mt-5">
-          <PictoGrid
+          <PictoGrid info={methode('energie_secteurs')}
             shape="maison"
             count={r.part_logements_gaz_pct}
             label="raccordés au gaz"
@@ -120,7 +120,7 @@ const borne = bornesRecharge[0];
           />
         </div>
         <p class="mt-5 text-sm font-medium">Gaz consommé par logement raccordé</p>
-        <MiniCompare items={versus(r.gaz_mwh_par_logement, r.gaz_mwh_par_logement_37, kwh)} />
+        <MiniCompare info={methode('gaz')} items={versus(r.gaz_mwh_par_logement, r.gaz_mwh_par_logement_37, kwh)} />
       </div>
     </div>
     <div class:list={['mt-6', carte]}>
@@ -129,7 +129,7 @@ const borne = bornesRecharge[0];
         La consommation suit la météo (un hiver doux fait baisser le gaz) ; mieux vaut regarder la tendance que les petites variations.
       </p>
       <div class="mt-6">
-        <LineChart
+        <LineChart info={methode('energie_series')}
           xs={xsEnergie}
           series={seriesEnergie}
           xTicks={ticksEnergie}
@@ -154,7 +154,7 @@ const borne = bornesRecharge[0];
       </div>
       <div class={carte}>
         <h3 class="font-display text-xl font-bold">Puissance solaire pour 1 000 habitants</h3>
-        <MiniCompare items={versus(r.solaire_kw_pour_1000, r.solaire_kw_pour_1000_37, (v) => `${formatNumber(v)} kW`)} />
+        <MiniCompare info={methode('solaire')} items={versus(r.solaire_kw_pour_1000, r.solaire_kw_pour_1000_37, (v) => `${formatNumber(v)} kW`)} />
         <p class="mt-6 text-sm text-ink-2">
           La moyenne du département est tirée vers le haut par quelques grandes centrales solaires, de plusieurs milliers
           de kW chacune, dans des communes peu peuplées. Les petites installations (moins de 36 kW, souvent sur les toits des maisons) sont comptées ensemble par le registre.
@@ -169,7 +169,7 @@ const borne = bornesRecharge[0];
       Voitures particulières immatriculées à Luynes au 1er janvier de chaque année ({formatNumber(r.voitures)} en {r.annee_parc}), par motorisation.
     </p>
     <div class:list={['mt-8', carte]}>
-      <LineChart
+      <LineChart info={methode('parc_voitures')}
         xs={xsParc}
         series={seriesParc}
         xTicks={ticksParc}
@@ -180,7 +180,7 @@ const borne = bornesRecharge[0];
     </div>
     <div class="mt-6 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
       <div class={carte}>
-        <Waffle
+        <Waffle info={methode('parc_voitures')}
           title={`Sur 100 voitures à Luynes (${r.annee_parc})`}
           unit="voitures"
           items={critair}
@@ -189,9 +189,9 @@ const borne = bornesRecharge[0];
       </div>
       <div class={carte}>
         <h3 class="font-display text-xl font-bold">Les moins polluantes (Crit'Air E ou 1)</h3>
-        <MiniCompare items={versus(propres.luynes, propres.dep, pourcent)} />
+        <MiniCompare info={methode('parc_voitures')} items={versus(propres.luynes, propres.dep, pourcent)} />
         <h3 class="mt-8 font-display text-xl font-bold">Le diesel</h3>
-        <MiniCompare
+        <MiniCompare info={methode('parc_voitures')}
           items={[
             { label: `Luynes ${r.annee_parc_debut}`, value: r.part_diesel_debut_pct, display: pourcent(r.part_diesel_debut_pct) },
             { label: `Luynes ${r.annee_parc}`, value: r.part_diesel_pct, display: pourcent(r.part_diesel_pct), highlight: true },
@@ -230,9 +230,9 @@ const borne = bornesRecharge[0];
   <section id="departement" aria-labelledby="departement-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
     <h2 id="departement-titre" class={titreH2}>Luynes dans le département</h2>
     <div class="mt-8 grid gap-4 md:grid-cols-3">
-      <RankGauge label="Part de voitures électriques" rank={r.rang_electrique} total={r.nb_communes_parc} icon="voiture" ends={['la plus forte', 'la plus faible']} />
-      <RankGauge label="Solaire par habitant" rank={r.rang_solaire} total={r.nb_communes} icon="soleil" ends={['le plus', 'le moins']} />
-      <RankGauge label="Électricité par logement" rank={r.rang_elec} total={r.nb_communes_elec} icon="eclair" ends={['la plus forte', 'la plus faible']} />
+      <RankGauge info={methode('voitures_electriques')} label="Part de voitures électriques" rank={r.rang_electrique} total={r.nb_communes_parc} icon="voiture" ends={['la plus forte', 'la plus faible']} />
+      <RankGauge info={methode('solaire')} label="Solaire par habitant" rank={r.rang_solaire} total={r.nb_communes} icon="soleil" ends={['le plus', 'le moins']} />
+      <RankGauge info={methode('electricite')} label="Électricité par logement" rank={r.rang_elec} total={r.nb_communes_elec} icon="eclair" ends={['la plus forte', 'la plus faible']} />
     </div>
     {
       r.elec_mwh_par_logement > r.elec_mwh_par_logement_37 && r.rang_elec > r.nb_communes_elec / 2 && (

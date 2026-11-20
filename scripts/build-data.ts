@@ -78,6 +78,25 @@ function pageTabular(body: unknown): Page {
   return { data, next: links.next };
 }
 
+/** Lit une page Hub'eau ({ data, next }). */
+function pageHubeau(body: unknown): Page {
+  const { data, next } = body as { data: unknown[]; next: string | null };
+  return { data, next };
+}
+
+/** Lit une page de l'API DiDo du SDES ({ data, nextPage }). */
+function pageDido(body: unknown): Page {
+  const { data, nextPage } = body as { data: unknown[]; nextPage?: string | null };
+  return { data, next: nextPage || null }; // la dernière page renvoie une adresse vide
+}
+
+function lirePage(source: Source, body: unknown, url: string): Page {
+  if (source.pagination === 'georisques') return pageGeorisques(body, url);
+  if (source.pagination === 'hubeau') return pageHubeau(body);
+  if (source.pagination === 'dido') return pageDido(body);
+  return pageTabular(body);
+}
+
 /** Récupère toutes les pages d'une adresse paginée et renvoie l'ensemble des lignes. */
 async function fetchAllPages(source: Source, firstUrl: string): Promise<unknown[]> {
   const rows: unknown[] = [];
@@ -85,7 +104,7 @@ async function fetchAllPages(source: Source, firstUrl: string): Promise<unknown[
   for (let count = 0; url !== null; count++) {
     if (count === MAX_PAGES) throw new Error(`plus de ${MAX_PAGES} pages`);
     const body = await getJson(url);
-    const page: Page = source.pagination === 'georisques' ? pageGeorisques(body, url) : pageTabular(body);
+    const page: Page = lirePage(source, body, url);
     rows.push(...(page.data ?? []));
     url = page.next;
   }

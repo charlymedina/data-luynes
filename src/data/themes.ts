@@ -25,4 +25,6 @@ export const THEMES: readonly Theme[] = [
   { slug: 'energie-mobilite', titre: 'Énergie & mobilité', court: 'Énergie', icon: 'eclair', resume: 'Électricité, gaz, solaire, voitures électriques, bornes.' },
   { slug: 'elections', titre: 'Élections', court: 'Élections', icon: 'urne', resume: 'Participation depuis 1999, résultats des derniers scrutins.' },
   { slug: 'delinquance', titre: 'Délinquance', court: 'Délinquance', icon: 'bouclier', resume: 'Faits enregistrés, comparés au département et à la France.' },
+  { slug: 'eau', titre: 'Eau du robinet', court: 'Eau', icon: 'goutte', resume: 'Contrôles sanitaires, nitrates, calcaire.' },
+  { slug: 'construction', titre: 'Construction & logement social', court: 'Construction', icon: 'grue', resume: 'Logements autorisés et construits, logements sociaux.' },
 ];

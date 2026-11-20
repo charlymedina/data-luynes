@@ -6,6 +6,7 @@
  * et ne déborde pas de l'écran. Les lecteurs d'écran lisent son texte comme description du bouton, sans l'ouvrir.
  */
 import type { Methode } from '../data/methodes';
+import { idUnique } from '../lib/ids';
 
 interface Props {
   methode: Methode;
@@ -22,7 +23,7 @@ const slug = `${methode.titre}-${label}`
   .toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-|-$/g, '');
-const id = `info-${slug}`;
+const id = idUnique(`info-${slug}`);
 ---
 
 <button

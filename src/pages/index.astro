@@ -30,12 +30,16 @@ import { faitsElections } from '../lib/faits-elections';
 import { indicateursDessus37, indicateursPublies, indicateursSansFait, indicateursSous37, periodeDelinquance, positionVs37 } from '../data/delinquance';
 import { faitsDelinquance } from '../lib/faits-delinquance';
 import { methode } from '../data/methodes';
+import { resumeEau } from '../data/eau';
+import { faitsEau } from '../lib/faits-eau';
+import { anneesConstruction, resumeConstruction } from '../data/construction';
+import { faitsConstruction } from '../lib/faits-construction';
 
 const luynes = agesDe('Luynes');
 const france = agesDe('France');
 
 // Mélange des anecdotes des différents thèmes (une de chaque à tour de rôle).
-const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie(), faitsElections(), faitsDelinquance()];
+const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie(), faitsElections(), faitsDelinquance(), faitsEau(), faitsConstruction()];
 const longueurMax = Math.max(...sources.map((s) => s.length));
 const faits = Array.from({ length: longueurMax }, (_, i) => sources.flatMap((s) => (s[i] ? [s[i]] : []))).flat();
 
@@ -234,6 +238,34 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
           {indicateursDessus37.length > 0 && `Au-dessus : ${indicateursDessus37.map((i) => i.libelle.toLowerCase()).join(', ')}. `}
           Taux sur 3 ans, faits enregistrés par la police et la gendarmerie.
         </p>
+      </KeyFigure>
+      <KeyFigure
+        class="sm:col-span-3"
+        tone="loire"
+        href="/eau"
+        icon="goutte"
+        label={`Eau du robinet : prélèvements conformes (bactéries, ${resumeEau.annee_debut}-${resumeEau.annee_fin})`}
+        value={resumeEau.conformes_bact}
+        decimals={1}
+        unit="%"
+        info={methode('eau_conformite')}
+      >
+        <MiniCompare
+          onDark
+          items={duo(resumeEau.nitrates_luynes, [['Indre-et-Loire', resumeEau.nitrates_37]], (v) => `${formatOneDecimal(v)} mg/L`)}
+        />
+        <p class="mt-2 text-xs opacity-85">Nitrates, moyenne {resumeEau.fenetre_debut}-{resumeEau.fenetre_fin}.</p>
+      </KeyFigure>
+      <KeyFigure
+        class="sm:col-span-3"
+        href="/construction"
+        icon="grue"
+        label={`Logements mis en chantier (${resumeConstruction.annee_debut}-${resumeConstruction.annee_fin})`}
+        value={resumeConstruction.commences_total}
+        info={methode('logements_commences')}
+      >
+        <MiniColumns values={anneesConstruction.map((a) => ({ label: String(a.annee), value: a.commences }))} ariaLabel={`Logements commencés à Luynes par année, ${resumeConstruction.annee_debut} à ${resumeConstruction.annee_fin}`} />
+        <p class="mt-2 text-xs text-ink-2">Et {formatNumber(resumeConstruction.logements_sociaux)} logements sociaux aujourd'hui.</p>
       </KeyFigure>
     </div>
   </section>

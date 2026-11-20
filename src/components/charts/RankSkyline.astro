@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * « Silhouette » de classement : toutes les communes du département rangées de la plus dense à la moins dense,
  * une colonne fine par commune (échelle logarithmique, car Tours est 500 fois plus dense que les plus petites).
@@ -9,11 +11,13 @@ import type { TipContent } from '../../lib/chart-tooltip';
 import { formatNumber, formatRank } from '../../lib/format';
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   communes: readonly CommuneDepartement[];
   ariaLabel: string;
 }
 
-const { communes, ariaLabel } = Astro.props;
+const { communes, ariaLabel, info } = Astro.props;
 const LOG_TICKS = [10, 100, 1000] as const;
 const values = communes.map((c) => Math.max(c.densite_hab_km2, 1));
 const logMin = Math.log10(Math.min(...values, LOG_TICKS[0]) * 0.7);
@@ -37,6 +41,7 @@ const tipFor = (c: CommuneDepartement): string => {
 ---
 
 <figure data-chart="rows" class="relative">
+  <div class="mb-1 flex justify-end" data-indicateur={info ? 'ok' : 'sans-bulle'}>{info && <InfoTip methode={info} label={info.titre} />}</div>
   <div class="pb-7 pl-12">
     <div class="relative h-56 sm:h-72" role="img" aria-label={ariaLabel}>
       {

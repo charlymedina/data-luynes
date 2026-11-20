@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * Pyramide des âges : hommes à gauche, femmes à droite, en % de la population totale.
  * Le contour fin montre la France au même âge, pour comparer la « forme » de Luynes.
@@ -9,10 +11,12 @@ import type { TipContent } from '../../lib/chart-tooltip';
 import { formatNumber, formatPercent } from '../../lib/format';
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   tranches: readonly TranchePyramide[];
 }
 
-const { tranches } = Astro.props;
+const { tranches, info } = Astro.props;
 const max = Math.max(...tranches.flatMap((t) => [t.part_hommes, t.part_femmes, t.part_hommes_france, t.part_femmes_france]));
 const width = (part: number): string => `${(part / max) * 100}%`;
 const shortLabel = (libelle: string): string => libelle.replace(' ans et +', '+').replace(' ans', '');
@@ -35,6 +39,7 @@ const tipFor = (t: TranchePyramide): string => {
 ---
 
 <figure data-chart="rows" class="relative">
+  <div class="mb-1 flex justify-end" data-indicateur={info ? 'ok' : 'sans-bulle'}>{info && <InfoTip methode={info} label={info.titre} />}</div>
   <ul class="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2" aria-label="Légende">
     <li class="flex items-center gap-2"><span class="h-3 w-3 rounded-[3px] bg-chart-1" aria-hidden="true"></span>Hommes</li>
     <li class="flex items-center gap-2"><span class="h-3 w-3 rounded-[3px] bg-chart-2" aria-hidden="true"></span>Femmes</li>

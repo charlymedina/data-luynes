@@ -102,7 +102,7 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
       <div class={carte}>
         <h3 class="font-display text-xl font-bold">Sous le seuil de pauvreté</h3>
         <p class="mt-1 mb-6 text-sm text-ink-2">Moins de 60 % du niveau de vie médian national.</p>
-        <PictoGrid
+        <PictoGrid info={methode('pauvrete')}
           count={r.pauvrete}
           label={`Luynois sous le seuil de pauvreté. ${formatNumber(Math.round(r.pauvrete_37))} sur 100 en Indre-et-Loire.`}
           ariaLabel={`${formatNumber(r.pauvrete, 1)} % des Luynois vivent sous le seuil de pauvreté, contre ${formatNumber(r.pauvrete_37, 1)} % en Indre-et-Loire et ${formatNumber(r.pauvrete_france, 1)} % en France métropolitaine.`}
@@ -110,7 +110,7 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
       </div>
     </div>
     <div class="mt-6 max-w-md">
-      <RankGauge label="Niveau de vie médian" rank={r.rang_niveau_vie} total={r.nb_communes_niveau_vie} icon="pieces" />
+      <RankGauge info={methode('niveau_vie')} label="Niveau de vie médian" rank={r.rang_niveau_vie} total={r.nb_communes_niveau_vie} icon="pieces" />
     </div>
   </section>
 
@@ -119,7 +119,7 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
     <p class="mt-4 max-w-2xl text-ink-2">Recensement {r.annee_recensement} : une case = 1 Luynois de 15 à 64 ans sur 100.</p>
     <div class="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
       <div class={carte}>
-        <Waffle
+        <Waffle info={methode('actifs')}
           title="Sur 100 Luynois de 15 à 64 ans"
           unit="pers."
           items={situations}
@@ -128,14 +128,14 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
       </div>
       <div class={carte}>
         <h3 class="font-display text-xl font-bold">En emploi</h3>
-        <MiniCompare items={trio(luynes.en_emploi, dep.en_emploi, france.en_emploi, pourcent)} />
+        <MiniCompare info={methode('actifs')} items={trio(luynes.en_emploi, dep.en_emploi, france.en_emploi, pourcent)} />
         <h3 class="mt-8 font-display text-xl font-bold">Au chômage</h3>
-        <MiniCompare items={trio(luynes.chomage, dep.chomage, france.chomage, pourcent)} />
+        <MiniCompare info={methode('chomage')} items={trio(luynes.chomage, dep.chomage, france.chomage, pourcent)} />
         <p class="mt-6 text-xs text-ink-2">En % de tous les 15-64 ans (le taux de chômage, lui, se calcule sur les seuls actifs).</p>
       </div>
     </div>
     <div class="mt-6 max-w-md">
-      <RankGauge label="Chômage déclaré au recensement (15-64 ans)" rank={r.rang_chomage} total={r.nb_communes_chomage} icon="mallette" />
+      <RankGauge info={methode('chomage')} label="Chômage déclaré au recensement (15-64 ans)" rank={r.rang_chomage} total={r.nb_communes_chomage} icon="mallette" />
     </div>
   </section>
 
@@ -146,7 +146,7 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
     </p>
     <div class="mt-8 grid gap-6 lg:grid-cols-2">
       <div class={carte}>
-        <Waffle
+        <Waffle info={methode('trajets')}
           title="Où ? Sur 100 actifs en emploi"
           unit="pers."
           items={lieux}
@@ -154,7 +154,7 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
         />
       </div>
       <div class={carte}>
-        <Waffle
+        <Waffle info={methode('trajets')}
           title="Comment ? Sur 100 actifs en emploi"
           unit="pers."
           items={transports}
@@ -170,7 +170,7 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
     <div class="mt-8 grid gap-6 md:grid-cols-2">
       <div class={carte}>
         <h3 class="font-display text-xl font-bold">Femmes et hommes à Luynes</h3>
-        <MiniCompare
+        <MiniCompare info={methode('salaire')}
           items={[
             { label: 'Femmes', value: r.salaire_femmes, display: euros(r.salaire_femmes), highlight: true },
             { label: 'Hommes', value: r.salaire_hommes, display: euros(r.salaire_hommes) },
@@ -180,7 +180,7 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
       </div>
       <div class={carte}>
         <h3 class="font-display text-xl font-bold">Tous salariés</h3>
-        <MiniCompare items={trio(r.salaire, r.salaire_37, r.salaire_france, euros)} />
+        <MiniCompare info={methode('salaire')} items={trio(r.salaire, r.salaire_37, r.salaire_france, euros)} />
       </div>
     </div>
   </section>
@@ -189,7 +189,7 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
     <h2 id="entreprises-titre" class={titreH2}>Les créations d'entreprises</h2>
     <p class="mt-4 max-w-2xl text-ink-2">Entreprises créées à Luynes chaque année, micro-entreprises comprises. En orange, l'année record.</p>
     <div class:list={['mt-8', carte]}>
-      <ColumnChart
+      <ColumnChart info={methode('creations')}
         columns={colonnes}
         unit="créations"
         headers={['Année', "Entreprises créées"]}

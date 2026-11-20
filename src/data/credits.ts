@@ -127,6 +127,26 @@ const OPENFREEMAP: FooterSource = {
   detail: 'fond de carte, données © contributeurs OpenStreetMap (ODbL)',
 };
 
+const HUBEAU_EAU: FooterSource = {
+  nom: "Hub'eau — qualité de l'eau potable (ARS, ministère de la Santé)",
+  url: 'https://hubeau.eaufrance.fr/page/api-qualite-eau-potable',
+  detail: 'contrôle sanitaire de l’eau distribuée, 2016 → aujourd’hui — Licence Ouverte 2.0',
+};
+
+const SDES_SITADEL: FooterSource = {
+  nom: 'SDES — Sitadel (logements autorisés et commencés)',
+  url: 'https://www.statistiques.developpement-durable.gouv.fr/catalogue?page=dataset&datasetId=660432ce0b8987ef5dd9465d',
+  detail: 'séries mensuelles communales depuis 2002 — Licence Ouverte 2.0',
+};
+
+const SDES_RPLS: FooterSource = {
+  nom: 'SDES — répertoire des logements sociaux (RPLS)',
+  url: 'https://www.statistiques.developpement-durable.gouv.fr/catalogue?page=datafile&datafileRid=f3c2f2cb-8fb1-40fd-8733-964247744c9a',
+  detail: 'logements des bailleurs sociaux au 1er janvier — Licence Ouverte 2.0',
+};
+
+export const CREDITS_EAU: readonly FooterSource[] = [HUBEAU_EAU];
+export const CREDITS_CONSTRUCTION: readonly FooterSource[] = [SDES_SITADEL, SDES_RPLS];
 export const CREDITS_ELECTIONS: readonly FooterSource[] = [ELECTIONS_AGREGEES, MUNICIPALES_2026];
 export const CREDITS_DELINQUANCE: readonly FooterSource[] = [SSMSI];
 export const CREDITS_EQUIPEMENTS: readonly FooterSource[] = [INSEE_BPE, EDUCATION_NATIONALE, API_GEO];
@@ -156,5 +176,7 @@ export const CREDITS_ACCUEIL: readonly FooterSource[] = [
     CREDITS_ENERGIE,
     CREDITS_ELECTIONS,
     CREDITS_DELINQUANCE,
+    CREDITS_EAU,
+    CREDITS_CONSTRUCTION,
   ].flat()),
 ].filter((source) => source !== OPENFREEMAP);

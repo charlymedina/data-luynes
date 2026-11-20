@@ -37,4 +37,16 @@ WHERE fois_au_dessus_france > nb_premiers_tours
 UNION ALL
 SELECT 'équipements : la somme des domaines ne fait pas le total'
 FROM equipements_resume
-WHERE equipements <> (SELECT sum(nombre) FROM equipements_domaines WHERE domaine <> '_T');
+WHERE equipements <> (SELECT sum(nombre) FROM equipements_domaines WHERE domaine <> '_T')
+
+UNION ALL
+
+SELECT 'eau : aucun prélèvement ou valeurs impossibles'
+FROM eau_resume
+WHERE prelevements < 10 OR nitrates_luynes < 0 OR durete_luynes NOT BETWEEN 0 AND 80
+
+UNION ALL
+
+SELECT 'construction : pas de logements ou de logements sociaux'
+FROM construction_resume
+WHERE commences_total <= 0 OR logements_sociaux <= 0 OR annee_debut > annee_fin

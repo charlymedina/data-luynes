@@ -4,16 +4,18 @@
  * Les années sont toujours lues dans les données (jamais écrites à la main) : elles suivent les mises à jour.
  */
 import { generatedAt, rang } from './commune';
-import { agesDe, derniereAnneeEtatCivil, faits } from './population';
+import { agesDe, derniereAnneeEtatCivil, evolutionAges, faits, historique } from './population';
 import { resumeRisques } from './patrimoine';
 import { loyerMaison, resumeImmobilier } from './immobilier';
-import { resumeBudget } from './budget';
-import { resumeRevenus } from './revenus';
+import { anneesBudget, resumeBudget } from './budget';
+import { creations, resumeRevenus } from './revenus';
 import { resumeAccidents } from './accidents';
-import { resumeEquipements } from './equipements';
-import { resumeEnergie } from './energie';
-import { dernierDe, resumeElections } from './elections';
+import { ipsEtablissements, resumeEquipements } from './equipements';
+import { anneesEnergie, resumeEnergie } from './energie';
+import { dernierDe, participations, resumeElections } from './elections';
 import { periodeDelinquance } from './delinquance';
+import { resumeEau } from './eau';
+import { resumeConstruction } from './construction';
 import { formatCommunes, formatMonthYear, formatNumber } from '../lib/format';
 
 export interface Methode {
@@ -25,6 +27,8 @@ export interface Methode {
 }
 
 const extraction = `extraction de ${formatMonthYear(generatedAt)}`;
+const premiere = (annees: readonly number[]): number => Math.min(...annees);
+const derniere = (annees: readonly number[]): number => Math.max(...annees);
 const recensement = agesDe('Luynes').annee;
 const pres = dernierDe('pres');
 const muni = dernierDe('muni');
@@ -32,6 +36,7 @@ const { debut: delinquanceDebut, fin: delinquanceFin } = periodeDelinquance;
 const prix = `${resumeImmobilier.annee_debut_prix}-${resumeImmobilier.annee_fin}`;
 const DVF = 'DGFiP, demandes de valeurs foncières (DVF), via Etalab';
 const DGFIP = 'DGFiP, comptes individuels des communes';
+const HUBEAU = "contrôle sanitaire des eaux (ARS, ministère de la Santé), via l'API Hub'eau";
 const POPULATION_DGFIP = `population retenue par la DGFiP (${formatNumber(resumeBudget.population)} habitants, population légale « totale »)`;
 
 const METHODES = {
@@ -121,6 +126,12 @@ const METHODES = {
   },
   loyer_maison: {
     titre: "Loyer d'une maison",
+    source: 'Ministère de la Transition écologique, carte des loyers',
+    calcul: "loyer d'annonce estimé par un modèle statistique (et non moyenne des annonces), charges comprises, en €/m² par mois",
+    millesime: String(loyerMaison?.annee ?? ''),
+  },
+  loyer_appartement: {
+    titre: "Loyer d'un appartement",
     source: 'Ministère de la Transition écologique, carte des loyers',
     calcul: "loyer d'annonce estimé par un modèle statistique (et non moyenne des annonces), charges comprises, en €/m² par mois",
     millesime: String(loyerMaison?.annee ?? ''),
@@ -281,6 +292,217 @@ const METHODES = {
     calcul: `destructions et dégradations volontaires enregistrées en moyenne par an, divisées par la population × 1 000`,
     millesime: `${delinquanceDebut}-${delinquanceFin}`,
   },
+  // — Graphiques (une bulle par graphique, réglette, carte…) —
+  population_historique: {
+    titre: 'Population à chaque recensement',
+    source: 'INSEE, séries historiques du recensement, publiées par Tours Métropole',
+    calcul: 'population municipale (sans doubles comptes) à chaque recensement',
+    millesime: `${premiere(historique.map((h) => h.annee))}-${faits.annee_derniere}`,
+  },
+  pyramide: {
+    titre: 'Pyramide des âges',
+    source: 'INSEE, recensement (population par âge et sexe)',
+    calcul: "habitants par tranche d'âge et par sexe ; le contour « France » donne la même répartition rapportée à la population de Luynes",
+    millesime: String(recensement),
+  },
+  part_moins_20: {
+    titre: 'Moins de 20 ans',
+    source: 'INSEE, recensement',
+    calcul: 'habitants de moins de 20 ans divisés par la population totale',
+    millesime: String(recensement),
+  },
+  rang_croissance: {
+    titre: 'Croissance de la population',
+    source: 'INSEE, recensement (via API Melodi)',
+    calcul: `évolution de la population municipale entre deux recensements ; rang parmi les ${formatCommunes(rang.nb_communes)} (1 = la plus forte hausse)`,
+    millesime: `${rang.annee_debut}-${rang.annee_fin}`,
+  },
+  rang_population: {
+    titre: 'Rang en population',
+    source: 'INSEE, populations légales, via l’API Géo',
+    calcul: `population municipale ; rang parmi les ${formatCommunes(rang.nb_communes)} (1 = la plus peuplée)`,
+    millesime: String(faits.annee_derniere),
+  },
+  densite_communes: {
+    titre: 'Densité des communes',
+    source: 'INSEE (population) et IGN (surface), via l’API Géo',
+    calcul: 'habitants divisés par la surface de chaque commune, rangées de la plus dense à la moins dense (échelle logarithmique)',
+    millesime: String(faits.annee_derniere),
+  },
+  zone_inondable: {
+    titre: 'Zone inondable',
+    source: 'Géorisques, territoire à risque important d’inondation (TRI) de Tours, scénario moyen',
+    calcul: 'surface de la zone inondable découpée par le contour de la commune, divisée par la surface communale',
+    millesime: extraction,
+  },
+  carte_patrimoine: {
+    titre: 'Carte patrimoine et risques',
+    source: 'Mérimée (monuments), BRGM / Géorisques (cavités, zone inondable), IGN (contour) ; fond OpenFreeMap',
+    calcul: 'positions publiées par chaque base ; les noms des cavités et les adresses privées ne sont pas repris',
+    millesime: extraction,
+  },
+  carte_ventes: {
+    titre: 'Carte des ventes',
+    source: `${DVF} ; fond OpenFreeMap`,
+    calcul: 'une vente = une mutation, placée à la parcelle ; couleur = prix au m² des ventes d’un seul logement',
+    millesime: `${resumeImmobilier.annee_debut}-${resumeImmobilier.annee_fin}`,
+  },
+  ventes_prix_tranches: {
+    titre: 'Prix des maisons vendues',
+    source: DVF,
+    calcul: "ventes d'une seule maison réparties par tranche de prix",
+    millesime: prix,
+  },
+  dpe: {
+    titre: 'Étiquettes énergie',
+    source: 'ADEME, diagnostics de performance énergétique (DPE) des logements',
+    calcul: 'répartition des étiquettes A à G des diagnostics réalisés depuis juillet 2021 ; « passoire » = F ou G',
+    millesime: extraction,
+  },
+  budget_flux: {
+    titre: 'Recettes et dépenses',
+    source: DGFIP,
+    calcul: 'répartition des recettes et des charges de fonctionnement par grand poste, ramenée à 100 €',
+    millesime: String(resumeBudget.annee),
+  },
+  budget_series: {
+    titre: 'Budget dans le temps',
+    source: DGFIP,
+    calcul: `montants par habitant (population DGFiP) chaque année, Luynes et moyenne des communes de même taille`,
+    millesime: `${premiere(anneesBudget.map((a) => a.annee))}-${resumeBudget.annee}`,
+  },
+  actifs: {
+    titre: 'Activité des 15-64 ans',
+    source: 'INSEE, recensement',
+    calcul: 'répartition des 15-64 ans par situation déclarée (emploi, chômage, études, retraite…)',
+    millesime: String(resumeRevenus.annee_recensement),
+  },
+  trajets: {
+    titre: 'Trajets domicile-travail',
+    source: 'INSEE, recensement (mobilités professionnelles)',
+    calcul: 'actifs ayant un emploi, selon le lieu de travail et le mode de transport principal déclarés',
+    millesime: String(resumeRevenus.annee_recensement),
+  },
+  creations: {
+    titre: "Créations d'entreprises",
+    source: 'INSEE, répertoire des entreprises et des établissements (SIRENE)',
+    calcul: "entreprises créées chaque année dans la commune, micro-entreprises comprises",
+    millesime: `${premiere(creations.map((c) => c.annee))}-${derniere(creations.map((c) => c.annee))}`,
+  },
+  accidents_gravite: {
+    titre: 'Conséquences des accidents',
+    source: 'ONISR (BAAC)',
+    calcul: 'accidents classés selon la conséquence la plus grave pour une des personnes impliquées',
+    millesime: `${resumeAccidents.annee_debut}-${resumeAccidents.annee_fin}`,
+  },
+  accidents_detail: {
+    titre: 'Accidents en détail',
+    source: 'ONISR (BAAC) ; fond de carte OpenFreeMap',
+    calcul: 'informations publiées pour chaque accident (sans l’adresse) ; âge = année de l’accident − année de naissance',
+    millesime: `${resumeAccidents.annee_debut}-${resumeAccidents.annee_fin}`,
+  },
+  energie_secteurs: {
+    titre: 'Énergie par secteur',
+    source: 'Agence ORE (électricité et gaz)',
+    calcul: 'consommation annuelle par secteur (résidentiel, tertiaire, industrie, agriculture), ramenée à 100 MWh',
+    millesime: String(resumeEnergie.annee_energie),
+  },
+  energie_series: {
+    titre: 'Consommation par logement',
+    source: 'Agence ORE',
+    calcul: 'consommation résidentielle divisée par le nombre de points de livraison résidentiels, chaque année',
+    millesime: `${premiere(anneesEnergie.map((a) => a.annee))}-${resumeEnergie.annee_energie}`,
+  },
+  parc_voitures: {
+    titre: 'Voitures par motorisation',
+    source: 'SDES, parc de véhicules par commune',
+    calcul: 'voitures particulières immatriculées dans la commune au 1er janvier, par motorisation et vignette Crit’Air',
+    millesime: `1er janvier ${resumeEnergie.annee_parc}`,
+  },
+  elections_resultats: {
+    titre: 'Résultats des élections',
+    source: "Ministère de l'Intérieur, résultats officiels par bureau de vote",
+    calcul: 'voix de chaque candidat ou liste divisées par les suffrages exprimés ; candidats sous 3 % partout regroupés',
+    millesime: `${premiere(participations.map((p) => p.annee))}-${derniere(participations.map((p) => p.annee))}`,
+  },
+  delinquance_indicateur: {
+    titre: 'Délinquance par indicateur',
+    source: "SSMSI (ministère de l'Intérieur), base communale",
+    calcul: 'faits enregistrés au lieu de commission, en moyenne par an, divisés par la population (ou les logements pour les cambriolages) × 1 000 ; années non publiées en pointillé',
+    millesime: `${delinquanceDebut}-${delinquanceFin}`,
+  },
+  logements_commences: {
+    titre: 'Logements mis en chantier',
+    source: 'SDES (ministère de la Transition écologique), base Sitadel des permis de construire',
+    calcul: 'logements commencés chaque année d’après les déclarations d’ouverture de chantier, en date de prise en compte administrative ; « collectif » = appartements ; années complètes seulement',
+    millesime: `${resumeConstruction.annee_debut}-${resumeConstruction.annee_fin}`,
+  },
+  logements_sociaux: {
+    titre: 'Logements sociaux',
+    source: 'SDES, répertoire des logements locatifs des bailleurs sociaux (RPLS)',
+    calcul: 'logements des bailleurs sociaux situés dans la commune au 1er janvier du dernier millésime publié',
+    millesime: extraction,
+  },
+  evolution_ages: {
+    titre: 'Évolution des âges',
+    source: 'INSEE, recensement',
+    calcul: 'part des 65 ans et plus et des moins de 20 ans dans la population, à deux recensements',
+    millesime: `${premiere(evolutionAges.map((a) => a.annee))}-${derniere(evolutionAges.map((a) => a.annee))}`,
+  },
+  ips: {
+    titre: 'Indice de position sociale (IPS)',
+    source: 'Éducation nationale (DEPP), IPS des écoles et collèges',
+    calcul: 'indice calculé à partir des professions des parents d’élèves (plus il est élevé, plus le milieu social est favorisé) ; référence : moyenne des établissements du même secteur dans le département',
+    millesime: [...new Set(ipsEtablissements.map((e) => e.rentree))].join(', '),
+  },
+  participation: {
+    titre: 'Participation',
+    source: "Ministère de l'Intérieur, résultats officiels par bureau de vote",
+    calcul: 'votants divisés par les inscrits au 1er tour ; rang parmi les communes du département',
+    millesime: `${premiere(participations.map((p) => p.annee))}-${derniere(participations.map((p) => p.annee))}`,
+  },
+  gaz: {
+    titre: 'Gaz par logement raccordé',
+    source: 'Agence ORE (GRDF et autres gestionnaires)',
+    calcul: 'consommation de gaz du secteur résidentiel divisée par le nombre de points de livraison résidentiels',
+    millesime: String(resumeEnergie.annee_energie),
+  },
+  anecdotes: {
+    titre: 'Le saviez-vous ?',
+    source: 'les mêmes données publiques que les chiffres de la page (détail dans « Sources et méthode » et en pied de page)',
+    calcul: 'phrases calculées automatiquement à partir des chiffres publiés, sans aucun chiffre écrit à la main',
+    millesime: extraction,
+  },
+  eau_conformite: {
+    titre: 'Conformité bactériologique',
+    source: HUBEAU,
+    calcul: "part des prélèvements d'eau du robinet conformes aux limites sanitaires pour les bactéries, parmi ceux où elles ont été contrôlées ; comparaison : analyses E. coli de tout le département",
+    millesime: `${resumeEau.annee_debut}-${resumeEau.annee_fin} (comparaison ${resumeEau.fenetre_debut}-${resumeEau.fenetre_fin})`,
+  },
+  eau_physico: {
+    titre: 'Conformité physico-chimique',
+    source: HUBEAU,
+    calcul: 'part des prélèvements conformes aux limites sanitaires physico-chimiques (nitrates, métaux, pesticides…)',
+    millesime: `${resumeEau.annee_debut}-${resumeEau.annee_fin}`,
+  },
+  eau_prelevements: {
+    titre: "Prélèvements d'eau",
+    source: HUBEAU,
+    calcul: "nombre d'échantillons d'eau prélevés sur le réseau qui alimente Luynes et analysés par le contrôle sanitaire, par année",
+    millesime: `${resumeEau.annee_debut}-${resumeEau.annee_fin}`,
+  },
+  eau_nitrates: {
+    titre: 'Nitrates',
+    source: HUBEAU,
+    calcul: 'moyenne des mesures de nitrates (mg/L) ; les valeurs sous le seuil de détection comptent pour 0 ; département : moyenne de toutes ses analyses, classement : moyenne de chaque commune',
+    millesime: `${resumeEau.fenetre_debut}-${resumeEau.fenetre_fin}`,
+  },
+  eau_durete: {
+    titre: 'Calcaire (dureté)',
+    source: HUBEAU,
+    calcul: 'moyenne du titre hydrotimétrique (°f, degrés français) mesuré ; département : moyenne de toutes ses analyses',
+    millesime: `${resumeEau.fenetre_debut}-${resumeEau.fenetre_fin}`,
+  },
 } as const satisfies Record<string, Methode>;
 
 export type CleMethode = keyof typeof METHODES;
@@ -291,7 +513,7 @@ export function methode(cle: CleMethode): Methode {
 
 /** Méthodes affichées dans la section « Sources et méthode » de chaque page (dans l'ordre des chiffres clés). */
 const PAR_PAGE: Record<string, readonly CleMethode[]> = {
-  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan'],
+  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences'],
   population: ['population', 'multiplie_1968', 'age_median', 'part_65', 'naissances'],
   territoire: ['superficie', 'densite'],
   'patrimoine-risques': ['monuments', 'cavites', 'catnat', 'mouvements'],
@@ -303,6 +525,8 @@ const PAR_PAGE: Record<string, readonly CleMethode[]> = {
   'energie-mobilite': ['voitures_electriques', 'solaire', 'electricite', 'bornes'],
   elections: ['inscrits', 'participation_pres', 'participation_muni', 'au_dessus_france'],
   delinquance: ['delinquance_bilan', 'delinquance_cambriolages', 'delinquance_degradations'],
+  eau: ['eau_conformite', 'eau_physico', 'eau_prelevements', 'eau_nitrates', 'eau_durete'],
+  construction: ['logements_commences', 'logements_sociaux'],
 };
 
 export function methodesDePage(page: string): Methode[] {

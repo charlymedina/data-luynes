@@ -1,4 +1,6 @@
 ---
+import InfoTip from './InfoTip.astro';
+import type { Methode } from '../data/methodes';
 /**
  * Carte interactive de Luynes : contour de la commune, zones colorées (ex. zone inondable) et couches de points,
  * avec légende (cases à cocher pour afficher / masquer chaque couche). La carte elle-même est dessinée
@@ -19,13 +21,15 @@ export interface MapAreaLegendItem {
 }
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de la carte (src/data/methodes.ts). */
+  info?: Methode;
   ariaLabel: string;
   contour: Geometry;
   legend: readonly MapLegendItem[];
   areas?: readonly MapAreaLegendItem[];
 }
 
-const { ariaLabel, contour, legend, areas = [] } = Astro.props;
+const { ariaLabel, contour, legend, areas = [], info } = Astro.props;
 const data: MapData = { contour, areas: areas.map((item) => item.area), layers: legend.map((item) => item.layer) };
 const json = JSON.stringify(data).replaceAll('<', '\\u003c');
 const entries = [
@@ -34,7 +38,7 @@ const entries = [
 ];
 ---
 
-<figure data-map="couches" class="map-root overflow-hidden rounded-[1.5rem] border border-line bg-surface">
+<figure data-map="couches" class="map-root overflow-hidden rounded-[1.5rem] border border-line bg-surface" data-indicateur={info ? 'ok' : 'sans-bulle'}>
   <div class="flex flex-wrap gap-x-5 gap-y-2 border-b border-line px-4 py-3 text-sm sm:px-6">
     {
       entries.map((entry) => (
@@ -56,6 +60,7 @@ const entries = [
       <span class="inline-block h-0 w-5 border-t-2 border-dashed border-loire" aria-hidden="true"></span>
       Limite de la commune
     </span>
+    {info && <span class="ml-auto"><InfoTip methode={info} label={info.titre} /></span>}
   </div>
   <div class="map-canvas relative h-[22rem] w-full sm:h-[30rem]" role="region" aria-label={ariaLabel}>
     <p class="map-fallback absolute inset-0 grid place-items-center p-6 text-center text-sm text-muted">

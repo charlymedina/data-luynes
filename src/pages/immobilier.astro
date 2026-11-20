@@ -126,7 +126,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
       {r.ventes > r.ventes_geolocalisees && ` ${formatNumber(r.ventes_geolocalisees)} ventes sur ${formatNumber(r.ventes)} sont localisées : les autres n'ont pas de coordonnées dans le fichier.`}
     </p>
     <div class="mt-8">
-      <CarteVentes ventes={ventes} contour={contourCommune} seuils={SEUILS_PRIX_M2} />
+      <CarteVentes info={methode('carte_ventes')} ventes={ventes} contour={contourCommune} seuils={SEUILS_PRIX_M2} />
     </div>
   </section>
 
@@ -138,7 +138,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
       en {r.annee_fin - r.annee_debut + 1} ans) pour une courbe fiable.
     </p>
     <div class:list={['mt-8', carte]}>
-      <LineChart
+      <LineChart info={methode('prix_m2_maison')}
         xs={xs}
         xTicks={xs}
         unit="€/m²"
@@ -158,7 +158,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
       <div class={carte}>
         <h3 class="font-display text-xl font-bold">Ventes par année</h3>
         <p class="mt-1 mb-6 text-sm text-ink-2">Tous biens confondus : maisons, appartements, terrains, autres.</p>
-        <ColumnChart
+        <ColumnChart info={methode('ventes')}
           columns={colonnesVentes}
           unit="ventes"
           headers={['Année', 'Ventes']}
@@ -172,7 +172,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
           Nombre de maisons vendues par tranche de prix (en milliers d'euros). En orange, la tranche du prix médian
           ({enEuros(r.prix_maison)}).
         </p>
-        <ColumnChart
+        <ColumnChart info={methode('ventes_prix_tranches')}
           columns={colonnesPrix}
           unit="maisons"
           headers={['Prix de vente', 'Maisons vendues']}
@@ -193,7 +193,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
       {
         classements.map((c) => (
           <div class="flex flex-col">
-            <RankGauge label={c.titre} rank={c.rank} total={c.total} ensemble={c.ensemble} icon={c.icon} ends={['la plus chère', 'la moins chère']} />
+            <RankGauge info={methode(c.icon === 'maison' ? 'prix_m2_maison' : c.icon === 'cle' ? 'loyer_maison' : 'loyer_appartement')} label={c.titre} rank={c.rank} total={c.total} ensemble={c.ensemble} icon={c.icon} ends={['la plus chère', 'la moins chère']} />
             <div class="-mt-3 rounded-b-[1.25rem] border border-t-0 border-line bg-surface px-5 pt-1 pb-5">
               <MiniCompare items={c.items} />
             </div>
@@ -211,7 +211,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
     </p>
     <div class="mt-8 grid gap-6 lg:grid-cols-[3fr_2fr]">
       <div class={carte}>
-        <DpeBars
+        <DpeBars info={methode('dpe')}
           etiquettes={etiquettesDpe}
           ariaLabel={`Répartition des ${formatNumber(nbDpe)} étiquettes énergie à Luynes et en Indre-et-Loire. ${formatNumber(partPassoires, 1)} % de passoires thermiques à Luynes, ${formatNumber(partPassoires37, 1)} % dans le département.`}
         />
@@ -219,13 +219,13 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
       <div class={carte}>
         <h3 class="flex items-center gap-2 font-display text-lg font-bold"><Icon name="feuille" class="h-5 w-5 text-loire" /> Les passoires thermiques</h3>
         <p class="mt-1 mb-5 text-sm text-ink-2">Logements classés F ou G, sur 100 diagnostiqués.</p>
-        <PictoGrid
+        <PictoGrid info={methode('dpe')}
           count={partPassoires}
           label="logements diagnostiqués sont des passoires thermiques"
           shape="maison"
           ariaLabel={`${formatNumber(partPassoires, 1)} % de passoires thermiques à Luynes`}
         />
-        <MiniCompare items={comparerA37(partPassoires, partPassoires37, (v) => `${formatNumber(v, 1)} %`, 'Indre-et-L.')} />
+        <MiniCompare info={methode('dpe')} items={comparerA37(partPassoires, partPassoires37, (v) => `${formatNumber(v, 1)} %`, 'Indre-et-L.')} />
       </div>
     </div>
     <p class="mt-4 max-w-2xl text-sm text-ink-2">

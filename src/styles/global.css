@@ -254,6 +254,9 @@ body {
   padding: 0.5rem 0.75rem !important;
   font-size: 0.8125rem;
   font-family: var(--font-sans);
+  /* les fiches sur plusieurs lignes (ex. accidents) gardent leurs retours à la ligne */
+  white-space: pre-line;
+  max-width: min(22rem, 80vw);
 }
 .maplibregl-popup-anchor-top .maplibregl-popup-tip,
 .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,

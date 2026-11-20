@@ -1,10 +1,13 @@
 # En-têtes de sécurité appliqués par Cloudflare Pages à toutes les pages.
+# script-src 'self' : seuls les fichiers JavaScript du site s'exécutent (aucun script intégré dans les pages,
+# vérifié par npm test). style-src garde 'unsafe-inline' : les graphiques fixent leurs dimensions et couleurs
+# avec des attributs style="…" (largeur des barres, couleurs des séries), sans risque d'exécution de code.
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; child-src blob:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; child-src blob:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
 
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable

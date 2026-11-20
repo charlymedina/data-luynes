@@ -132,13 +132,13 @@ const tourDecisif = municipales.some((l) => l.voix_t2 !== null) ? 2 : 1;
           <div class={carte}>
             <h3 class="flex items-center gap-2 font-display text-xl font-bold"><Icon name="banque" class="h-6 w-6 text-loire" /> Présidentielle {pres.annee}</h3>
             <div class="mt-5">
-              <PictoGrid count={pres.participation_luynes} label="ont voté" ariaLabel={`${formatNumber(Math.round(pres.participation_luynes))} inscrits sur 100 ont voté à Luynes au 1er tour de la présidentielle ${pres.annee}`} />
+              <PictoGrid info={methode('participation_pres')} count={pres.participation_luynes} label="ont voté" ariaLabel={`${formatNumber(Math.round(pres.participation_luynes))} inscrits sur 100 ont voté à Luynes au 1er tour de la présidentielle ${pres.annee}`} />
             </div>
           </div>
           <div class={carte}>
             <h3 class="flex items-center gap-2 font-display text-xl font-bold"><Icon name="mairie" class="h-6 w-6 text-loire" /> Municipales {muni.annee}</h3>
             <div class="mt-5">
-              <PictoGrid count={muni.participation_luynes} label="ont voté" ariaLabel={`${formatNumber(Math.round(muni.participation_luynes))} inscrits sur 100 ont voté à Luynes au 1er tour des municipales ${muni.annee}`} />
+              <PictoGrid info={methode('participation_muni')} count={muni.participation_luynes} label="ont voté" ariaLabel={`${formatNumber(Math.round(muni.participation_luynes))} inscrits sur 100 ont voté à Luynes au 1er tour des municipales ${muni.annee}`} />
             </div>
           </div>
         </div>
@@ -157,8 +157,8 @@ const tourDecisif = municipales.some((l) => l.voix_t2 !== null) ? 2 : 1;
               <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-loire-soft text-loire"><Icon name={ICONES[d.famille]} class="h-5 w-5" /></span>
               {d.type} {d.annee}
             </p>
-            <MiniCompare items={trio(d.participation_luynes, d.participation_37, d.participation_france)} />
-            <MiniRank rank={d.rang} total={d.nb_communes} what="la participation la plus forte" />
+            <MiniCompare info={methode('participation')} items={trio(d.participation_luynes, d.participation_37, d.participation_france)} />
+            <MiniRank info={methode('participation')} rank={d.rang} total={d.nb_communes} what="la participation la plus forte" />
           </li>
         ))
       }
@@ -183,7 +183,7 @@ const tourDecisif = municipales.some((l) => l.voix_t2 !== null) ? 2 : 1;
               <Icon name={ICONES[m.famille]} class="h-5 w-5 text-loire" /> {NOMS[m.famille]}
             </h3>
             <div class="mt-4">
-              <LineChart
+              <LineChart info={methode('participation_pres')}
                 xs={m.xs}
                 series={m.series}
                 xTicks={m.ticks}
@@ -269,7 +269,7 @@ const tourDecisif = municipales.some((l) => l.voix_t2 !== null) ? 2 : 1;
             {bloc.tours.map((t) => (
               <div class="min-w-0">
                 <h3 class="mb-4 text-sm font-semibold text-muted">{t.tour === 1 ? '1er tour' : '2nd tour'}</h3>
-                <ResultBars items={t.items} caption={`${NOMS[bloc.famille]} ${bloc.annee}, ${t.tour === 1 ? '1er' : '2nd'} tour : part des voix exprimées`} />
+                <ResultBars info={methode('elections_resultats')} items={t.items} caption={`${NOMS[bloc.famille]} ${bloc.annee}, ${t.tour === 1 ? '1er' : '2nd'} tour : part des voix exprimées`} />
               </div>
             ))}
           </div>

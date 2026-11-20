@@ -175,13 +175,13 @@ const niveauxCollege = college
               {d.libelle}
             </p>
             <p class="mt-1 text-sm text-ink-2">{formatNumber(d.nombre)} à Luynes</p>
-            <MiniCompare items={versus(d.pour_1000_luynes, d.pour_1000_37)} />
+            <MiniCompare info={methode('equipements')} items={versus(d.pour_1000_luynes, d.pour_1000_37)} />
           </li>
         ))
       }
     </ul>
     <div class="mt-6 max-w-md">
-      <RankGauge label="Équipements par habitant" rank={r.rang_equipements} total={r.nb_communes} icon="boutique" ends={['le mieux équipé', 'le moins équipé']} />
+      <RankGauge info={methode('equipements')} label="Équipements par habitant" rank={r.rang_equipements} total={r.nb_communes} icon="boutique" ends={['le mieux équipé', 'le moins équipé']} />
     </div>
   </section>
 
@@ -203,7 +203,7 @@ const niveauxCollege = college
             lignesSante.map((s) => (
               <li class="mt-4">
                 <p class="text-sm font-medium">{s.libelle}</p>
-                <MiniCompare items={versus(s.t.pour_10000_luynes, s.t.pour_10000_37)} />
+                <MiniCompare info={methode('medecins')} items={versus(s.t.pour_10000_luynes, s.t.pour_10000_37)} />
               </li>
             ))
           }
@@ -220,7 +220,7 @@ const niveauxCollege = college
       contre {formatNumber(r.evolution_eleves_37_pct, 0)} % en Indre-et-Loire.
     </p>
     <div class:list={['mt-8', carte]}>
-      <ColumnChart
+      <ColumnChart info={methode('eleves')}
         columns={colonnesEleves}
         unit="élèves"
         headers={['Rentrée', 'Élèves']}
@@ -257,7 +257,7 @@ const niveauxCollege = college
         </p>
         <div class="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
           <div class={carte}>
-            <ColumnChart
+            <ColumnChart info={methode('etablissements')}
               columns={colonnesCollege}
               unit="élèves"
               headers={['Rentrée', 'Élèves']}
@@ -299,7 +299,7 @@ const niveauxCollege = college
                 <Icon name={e.est_college ? 'livre' : 'ecole'} class="h-5 w-5" /> {e.secteur} · {e.rentree}
               </p>
               <p class="mt-2 font-display text-lg leading-tight font-bold">{e.nom}</p>
-              <MiniCompare
+              <MiniCompare info={methode('ips')}
                 items={[
                   { label: 'IPS', value: e.ips, display: unDecimal(e.ips), highlight: true },
                   { label: `37, ${e.secteur}`, value: e.ips_37_secteur, display: unDecimal(e.ips_37_secteur) },

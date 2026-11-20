@@ -14,6 +14,10 @@ WITH valeurs AS (
   UNION ALL SELECT 'participation ' || id_election, participation_luynes FROM elections_participation
   UNION ALL SELECT 'participation France ' || id_election, participation_france FROM elections_participation WHERE participation_france IS NOT NULL
   UNION ALL SELECT 'DPE ' || etiquette, part_luynes FROM immobilier_dpe
+  UNION ALL SELECT 'eau : conformité bactériologique', conformes_bact FROM eau_resume
+  UNION ALL SELECT 'eau : conformité physico-chimique', conformes_pc FROM eau_resume
+  UNION ALL SELECT 'eau : conformité bactériologique du département', conformes_bact_37 FROM eau_resume
+  UNION ALL SELECT 'construction : part des appartements', part_collectifs FROM construction_resume
 )
 SELECT 'pourcentage impossible : ' || nom || ' = ' || coalesce(v::VARCHAR, 'vide') AS probleme
 FROM valeurs

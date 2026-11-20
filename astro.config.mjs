@@ -10,5 +10,7 @@ export default defineConfig({
   trailingSlash: 'never',
   vite: {
     plugins: [tailwindcss()],
+    // Aucun script intégré dans la page : la politique de sécurité (public/_headers) n'autorise que les fichiers du site.
+    build: { assetsInlineLimit: 0 },
   },
 });

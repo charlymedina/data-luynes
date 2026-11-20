@@ -1,0 +1,131 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon from '../components/Icon.astro';
+import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
+import RankGauge from '../components/charts/RankGauge.astro';
+import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
+import InfoTip from '../components/InfoTip.astro';
+import SourcesMethode from '../components/SourcesMethode.astro';
+import { anneesEau, LIMITE_NITRATES, resumeEau as r } from '../data/eau';
+import { CREDITS_EAU } from '../data/credits';
+import { methode } from '../data/methodes';
+import { formatNumber, formatOneDecimal } from '../lib/format';
+import { faitsEau } from '../lib/faits-eau';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
+const mgL = (v: number): string => `${formatOneDecimal(v)} mg/L`;
+const degres = (v: number): string => `${formatOneDecimal(v)} °f`;
+const versus = (luynes: number, dep: number, display: (v: number) => string): MiniItem[] => [
+  { label: 'Luynes', value: luynes, display: display(luynes), highlight: true },
+  { label: 'Indre-et-Loire', value: dep, display: display(dep) },
+];
+/** « VEOLIA EAU CGE » → « Veolia Eau CGE » (les sigles de 3 lettres ou moins restent en capitales). */
+const nomPropre = (texte: string): string =>
+  texte.split(' ').map((mot) => (mot.length <= 3 ? mot : mot[0] + mot.slice(1).toLowerCase())).join(' ');
+const fenetre = `${r.fenetre_debut}-${r.fenetre_fin}`;
+
+const colonnes: Column[] = anneesEau.map((a) => ({
+  label: `’${String(a.annee).slice(2)}`,
+  fullLabel: String(a.annee),
+  value: a.prelevements,
+  display: formatNumber(a.prelevements),
+  highlight: a.non_conformes_bact + a.non_conformes_pc > 0,
+}));
+const anneesNonConformes = anneesEau.filter((a) => a.non_conformes_bact + a.non_conformes_pc > 0).map((a) => a.annee);
+// Jauge des nitrates : position de la moyenne de Luynes et du département sur l'échelle 0 → limite de 50 mg/L
+const pctLimite = (v: number): number => Math.min(100, (100 * v) / LIMITE_NITRATES);
+---
+
+<Base
+  title="Eau du robinet à Luynes — Luynes en chiffres"
+  description={`Qualité de l'eau du robinet à Luynes : ${formatNumber(r.prelevements)} prélèvements contrôlés depuis ${r.annee_debut}, nitrates, calcaire, comparaison avec l'Indre-et-Loire.`}
+  sources={CREDITS_EAU}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="goutte" class="h-5 w-5" /> Thème · Eau potable</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.6rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      L'eau <span class="text-accent">du robinet</span>
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      L'Agence régionale de santé contrôle régulièrement l'eau distribuée à Luynes : bactéries, nitrates, calcaire, goût…
+      Voici ce que disent ces analyses depuis {r.annee_debut}{r.distributeur && <>, pour une eau distribuée par {nomPropre(r.distributeur)}</>}.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés de l'eau" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <KeyFigure tone="loire" icon="goutte" label="Prélèvements conformes (bactéries)" value={r.conformes_bact} decimals={1} unit="%" info={methode('eau_conformite')}>
+      <p class="mt-4 text-sm opacity-90">{formatNumber(r.prelevements)} prélèvements depuis {r.annee_debut}, dont {formatNumber(r.non_conformes_bact)} non conforme{r.non_conformes_bact > 1 ? 's' : ''} pour les bactéries.</p>
+    </KeyFigure>
+    <KeyFigure tone="accent" icon="feuille" label={`Nitrates (moyenne ${fenetre})`} value={r.nitrates_luynes} decimals={1} unit="mg/L" info={methode('eau_nitrates')}>
+      <MiniCompare items={versus(r.nitrates_luynes, r.nitrates_37, mgL)} />
+    </KeyFigure>
+    <KeyFigure icon="calcaire" label={`Calcaire (moyenne ${fenetre})`} value={r.durete_luynes} decimals={1} unit="°f" info={methode('eau_durete')}>
+      <MiniCompare items={versus(r.durete_luynes, r.durete_37, degres)} />
+    </KeyFigure>
+  </section>
+
+  <section id="controles" aria-labelledby="controles-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="controles-titre" class={titreH2}>Contrôlée toute l'année</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Nombre de prélèvements analysés chaque année sur le réseau qui alimente Luynes.{' '}
+      {anneesNonConformes.length > 0 ? <>En orange, les années où au moins un prélèvement a dépassé une limite sanitaire ({anneesNonConformes.join(', ')}).</> : 'Aucun dépassement de limite sanitaire sur la période.'}
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <p class="text-sm font-semibold">Prélèvements par année</p>
+      <ColumnChart info={methode('eau_prelevements')}
+        columns={colonnes}
+        unit="prélèvements"
+        headers={['Année', 'Prélèvements analysés']}
+        ariaLabel={`Prélèvements d'eau analysés à Luynes de ${r.annee_debut} à ${r.annee_fin} : ${formatNumber(r.prelevements)} au total.`}
+        tableCaption="Prélèvements d'eau du robinet analysés à Luynes par année"
+      />
+    </div>
+    <div class="mt-6 grid gap-6 md:grid-cols-2">
+      <div class={carte}>
+        <h3 class="flex items-center gap-2 font-display text-xl font-bold">Bactéries ({fenetre}) <InfoTip methode={methode('eau_conformite')} label="Bactéries, comparaison" /></h3>
+        <p class="mt-1 text-sm text-ink-2">Part des contrôles bactériologiques conformes aux limites sanitaires.</p>
+        <MiniCompare items={versus(r.conformes_bact_fenetre_luynes, r.conformes_bact_37, pourcent)} />
+      </div>
+      <div class={carte}>
+        <h3 class="flex items-center gap-2 font-display text-xl font-bold">Physico-chimie <InfoTip methode={methode('eau_physico')} label="Physico-chimie" /></h3>
+        <p class="mt-1 text-sm text-ink-2">Nitrates, métaux, pesticides… : part des prélèvements conformes aux limites sanitaires depuis {r.annee_debut}.</p>
+        <p class="mt-4 font-display text-4xl font-extrabold">{pourcent(r.conformes_pc)}</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="nitrates" aria-labelledby="nitrates-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="nitrates-titre" class={titreH2}>Les nitrates</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Les nitrates viennent surtout des engrais agricoles. La limite sanitaire est de {LIMITE_NITRATES} mg/L. Moyennes {fenetre},
+      à Luynes et sur l'ensemble des analyses d'Indre-et-Loire.
+    </p>
+    <div class:list={['mt-8 max-w-3xl', carte]}>
+      <p class="flex items-center gap-2 text-sm font-semibold">Sur l'échelle de la limite sanitaire <InfoTip methode={methode('eau_nitrates')} label="Nitrates sur l'échelle de la limite" /></p>
+      <div class="relative mt-8 h-3 rounded-full bg-line" role="img" aria-label={`Nitrates : ${mgL(r.nitrates_luynes)} à Luynes, ${mgL(r.nitrates_37)} en Indre-et-Loire, limite ${LIMITE_NITRATES} mg/L.`}>
+        <span class="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-accent" style={`left: ${pctLimite(r.nitrates_luynes)}%`}></span>
+        <span class="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-chart-1" style={`left: ${pctLimite(r.nitrates_37)}%`}></span>
+      </div>
+      <div class="mt-3 flex justify-between text-xs text-ink-2"><span>0 mg/L</span><span>limite : {LIMITE_NITRATES} mg/L</span></div>
+      <ul class="mt-4 flex flex-wrap gap-4 text-sm">
+        <li class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-accent"></span>Luynes : {mgL(r.nitrates_luynes)}</li>
+        <li class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-chart-1"></span>Indre-et-Loire : {mgL(r.nitrates_37)}</li>
+      </ul>
+    </div>
+    <div class="mt-6 grid gap-6 md:grid-cols-2">
+      <RankGauge info={methode('eau_nitrates')} label={`Nitrates dans l'eau (moyenne ${fenetre})`} rank={r.rang_nitrates} total={r.nb_communes_nitrates} icon="feuille" ends={['le plus de nitrates', 'le moins de nitrates']} />
+      {r.rang_durete !== null && <RankGauge info={methode('eau_durete')} label={`Calcaire (moyenne ${fenetre})`} rank={r.rang_durete} total={r.nb_communes_durete} ensemble="communes d'Indre-et-Loire mesurées" icon="calcaire" ends={['la plus calcaire', 'la moins calcaire']} />}
+    </div>
+    <p class="mt-4 max-w-2xl text-xs text-ink-2">
+      Calcaire : la dureté se mesure en degrés français (°f) ; plus le chiffre est élevé, plus l'eau est calcaire. Elle n'a pas de
+      limite sanitaire. Le classement du calcaire ne porte que sur les communes où il a été mesuré sur la période.
+    </p>
+  </section>
+
+  <FunFacts facts={faitsEau()} id="saviez-vous-eau" />
+  <SourcesMethode page="eau" />
+</Base>

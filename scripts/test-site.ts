@@ -41,6 +41,15 @@ async function main(): Promise<void> {
     const mots = texteVisible(html).match(/\b(NaN|undefined|null)\b/g);
     if (mots) erreurs.push(`${page} : texte suspect (${[...new Set(mots)].join(', ')})`);
     if (page !== '404.html' && !html.includes('>Sources<')) erreurs.push(`${page} : pas de sources en pied de page`);
+    // Politique de sécurité (public/_headers, script-src 'self') : aucun script exécutable intégré dans la page.
+    for (const [balise] of html.matchAll(/<script\b[^>]*>/g)) {
+      const donnees = /type="application\/json"/.test(balise);
+      if (!donnees && !/\ssrc="/.test(balise)) erreurs.push(`${page} : script intégré interdit par la CSP (${balise})`);
+    }
+    if (/\son[a-z]+="/.test(html)) erreurs.push(`${page} : attribut on…="…" interdit par la CSP`);
+    // Chaque graphique, réglette, carte… (composants marqués data-indicateur) doit avoir sa bulle ⓘ.
+    const sansBulle = (html.match(/data-indicateur="sans-bulle"/g) ?? []).length;
+    if (sansBulle > 0) erreurs.push(`${page} : ${sansBulle} graphique(s) ou indicateur(s) sans bulle « Source · Calcul · Année »`);
     const chiffres = (html.match(/class="figure-value[\s"]/g) ?? []).length;
     const bulles = (html.match(/data-info-btn/g) ?? []).length;
     if (bulles < chiffres) erreurs.push(`${page} : ${chiffres - bulles} chiffre(s) clé(s) sans bulle « Source · Calcul · Année »`);

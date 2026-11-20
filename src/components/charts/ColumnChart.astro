@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * Histogramme en colonnes (ex. ventes par année, répartition des prix), dessiné côté serveur.
  * Valeur écrite au-dessus de chaque colonne, libellé court en dessous ; survol : infobulle détaillée.
@@ -18,6 +20,8 @@ export interface Column {
 }
 
 interface Props {
+  /** Bulle ⓘ « Source · Calcul · Année » de ce graphique (src/data/methodes.ts). */
+  info?: Methode;
   columns: readonly Column[];
   ariaLabel: string;
   tableCaption: string;
@@ -27,7 +31,7 @@ interface Props {
   unit: string;
 }
 
-const { columns, ariaLabel, tableCaption, headers, unit } = Astro.props;
+const { columns, ariaLabel, tableCaption, headers, unit, info } = Astro.props;
 const max = Math.max(...columns.map((c) => c.value), 1);
 const tip = (c: Column): string =>
   JSON.stringify({
@@ -37,6 +41,7 @@ const tip = (c: Column): string =>
 ---
 
 <figure data-chart="rows" class="relative">
+  <div class="mb-1 flex justify-end" data-indicateur={info ? 'ok' : 'sans-bulle'}>{info && <InfoTip methode={info} label={info.titre} />}</div>
   <div class="relative flex h-48 items-end gap-[2px] border-b border-chart-grid sm:h-60" role="img" aria-label={ariaLabel}>
     {
       columns.map((c) => (

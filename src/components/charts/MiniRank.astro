@@ -1,4 +1,6 @@
 ---
+import InfoTip from '../InfoTip.astro';
+import type { Methode } from '../../data/methodes';
 /**
  * Réglette de classement compacte, à glisser dans une carte de chiffre clé :
  * une ligne de 1 à N (toutes les communes du département) et un point pour Luynes.
@@ -8,6 +10,8 @@
 import { COMMUNES_37, formatCommunes, formatRank } from '../../lib/format';
 
 interface Props {
+  /** Bulle ⓘ, quand ces mini-barres ne sont pas déjà dans un chiffre clé qui a la sienne. */
+  info?: Methode;
   rank: number;
   total: number;
   /** Ce qui est classé, ex. « la plus peuplée » (lu par les lecteurs d'écran et affiché en petit) */
@@ -18,11 +22,12 @@ interface Props {
   onDark?: boolean;
 }
 
-const { rank, total, what, ensemble = COMMUNES_37, onDark = false } = Astro.props;
+const { rank, total, what, ensemble = COMMUNES_37, onDark = false, info } = Astro.props;
 const position = total > 1 ? ((rank - 1) / (total - 1)) * 100 : 0;
 const surQui = `sur ${formatCommunes(total, ensemble)}`;
 ---
 
+{info && <div class="-mb-3 mt-3 flex justify-end"><InfoTip methode={info} label={info.titre} onDark={onDark} /></div>}
 <figure class="mt-5 text-xs">
   <div
     class:list={['relative h-2 rounded-full', onDark ? 'bg-bg/25' : 'bg-chart-grid']}

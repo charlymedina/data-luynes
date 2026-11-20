@@ -111,7 +111,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
       Le pointillé marque la limite de la commune.
     </p>
     <aside class="mt-6 grid max-w-4xl gap-6 rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8 md:grid-cols-[3fr_2fr] md:items-center">
-      <Waffle
+      <Waffle info={methode('zone_inondable')}
         title="Sur 100 hectares de la commune"
         unit="ha"
         colors={['var(--chart-3)', 'var(--bar)']}
@@ -130,7 +130,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
       </p>
     </aside>
     <div class="mt-8">
-      <MapView
+      <MapView info={methode('carte_patrimoine')}
         ariaLabel={`Carte de Luynes : ${formatNumber(r.monuments)} monuments historiques, ${formatNumber(r.cavites)} cavités souterraines et la zone inondable de la Loire (${formatNumber(zoneInondable.part_commune_pct, 1)} % de la commune)`}
         contour={contourCommune}
         legend={legende}
@@ -179,7 +179,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
       Les sécheresses font « travailler » les sols argileux, ce qui peut fissurer les maisons.
     </p>
     <div class:list={['mt-8', carte]}>
-      <TimelineRows
+      <TimelineRows info={methode('catnat')}
         rows={lignesCatnat}
         unite="événements"
         ariaLabel={`${formatNumber(r.catnat)} événements reconnus catastrophe naturelle entre ${r.catnat_premiere_annee} et ${r.catnat_derniere_annee} : ${formatNumber(r.catnat_secheresse)} pour sécheresse, ${formatNumber(r.catnat_mouvement)} pour mouvement de terrain, ${formatNumber(r.catnat_inondation)} pour inondation.`}
@@ -200,7 +200,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
       catastrophes naturelles ci-dessus.
     </p>
     <div class:list={['mt-8', carte]}>
-      <TimelineRows
+      <TimelineRows info={methode('mouvements')}
         rows={lignesMouvements}
         unite="événements"
         ariaLabel={`${formatNumber(r.mouvements)} mouvements de terrain recensés à Luynes entre ${r.mouvement_plus_ancien} et ${r.mouvement_plus_recent}.`}
@@ -218,7 +218,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
       {
         comparaisons.map((c) => (
           <div class="flex flex-col">
-            <RankGauge label={c.titre} rank={c.rank} total={r.nb_communes} icon={c.icon} ends={['le plus', 'le moins']} />
+            <RankGauge info={methode(c.icon === 'aqueduc' ? 'monuments' : c.icon === 'cave' ? 'cavites' : 'catnat')} label={c.titre} rank={c.rank} total={r.nb_communes} icon={c.icon} ends={['le plus', 'le moins']} />
             <div class="-mt-3 rounded-b-[1.25rem] border border-t-0 border-line bg-surface px-5 pt-1 pb-5">
               <MiniCompare items={c.items} />
             </div>

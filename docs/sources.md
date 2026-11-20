@@ -102,7 +102,7 @@ Notes :
 
 | Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
 |---|---|---|---|---|---|
-| [Bases annuelles des accidents corporels de la circulation (BAAC)](https://www.data.gouv.fr/datasets/53698f4ca3a729239d2036df/) | Accidents corporels 2005 → dernière année : date (mois, jour de la semaine, heure), lumière, météo, commune, coordonnées ; gravité et catégorie des usagers (ni âge ni sexe) ; catégorie des véhicules ; type et numéro de route | ONISR (Observatoire national interministériel de la sécurité routière), d'après les forces de l'ordre | Licence Ouverte 2.0 | Annuelle (automne, année N-1) | Archive `data/archive/baac/<année>-<table>.parquet` |
+| [Bases annuelles des accidents corporels de la circulation (BAAC)](https://www.data.gouv.fr/datasets/53698f4ca3a729239d2036df/) | Accidents corporels 2005 → dernière année : date et heure, lumière, météo, agglomération, intersection, type de collision, commune, coordonnées (pas l’adresse) ; usagers (rôle, gravité, sexe, année de naissance, équipement de sécurité) ; catégorie des véhicules ; type et numéro de route, vitesse maximale autorisée (depuis 2019), état de la chaussée | ONISR (Observatoire national interministériel de la sécurité routière), d'après les forces de l'ordre | Licence Ouverte 2.0 | Annuelle (automne, année N-1) | Archive `data/archive/baac/<année>-<table>.parquet` |
 
 Notes :
 - **Archive** : les 4 fichiers nationaux de chaque année (~25 Mo) ne sont pas retéléchargés à chaque construction. `scripts/archive-baac.ts` lit la liste des fichiers dans l'API data.gouv, et ne télécharge une année que si sa publication a changé (adresses notées dans `data/archive/baac/manifest.json`). Seule l'Indre-et-Loire est gardée (~0,6 Mo pour 2005-2025). Si data.gouv.fr ne répond pas pour la **liste** des fichiers, l'archive existante est utilisée ; au plus 3 années sont retéléchargées par construction (l'archive se complète sur plusieurs semaines si toutes les adresses changent). Une modification des requêtes `data/sql/baac/*.sql` refait l'archive (empreinte « sql » de `manifest.json`).
@@ -175,6 +175,24 @@ Notes :
 - Taux = moyenne des 3 dernières années (faits / population ou logements × 1 000) ; le taux de Luynes n'est calculé que si les 3 années sont publiées. Les cambriolages se rapportent aux logements, le reste aux habitants.
 - Indicateurs « stupéfiants » non repris (ils mesurent l'activité des services, pas des victimes). Pas de classement départemental (trop instable avec si peu de faits).
 - Requêtes : `data/sql/_delinquance.sql`, `data/sql/delinquance_*.sql`.
+
+## Thème Eau potable
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Hub'eau — qualité de l'eau potable](https://hubeau.eaufrance.fr/page/api-qualite-eau-potable) | Toutes les analyses de l'eau distribuée à Luynes (réseau « FONDETTES (LUYNES) ») depuis 2016 : paramètres, résultats, conformité de chaque prélèvement | Agences régionales de santé (contrôle sanitaire), ministère de la Santé ; API Hub'eau (OFB, BRGM) | Licence Ouverte 2.0 | Mensuelle | `data/raw/eau_luynes.json` |
+| Idem, Indre-et-Loire | Nitrates (1340), dureté (1345) et E. coli (1449) de toutes les communes, années récentes (Hub'eau limite une requête à 20 000 résultats) | idem | Licence Ouverte 2.0 | Mensuelle | `data/raw/eau_37_*.json` |
+
+Notes : un prélèvement = un échantillon analysé pour plusieurs paramètres ; conformité « C / N / S » (conforme, non conforme, sans objet). Les valeurs sous le seuil de détection (« <0,5 ») sont publiées à 0. Requêtes : `data/sql/_eau.sql`, `data/sql/eau_*.sql`.
+
+## Thème Construction & logement social
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Sitadel — logements autorisés et commencés, séries mensuelles communales](https://www.statistiques.developpement-durable.gouv.fr/catalogue?page=dataset&datasetId=660432ce0b8987ef5dd9465d) | Logements autorisés et commencés à Luynes par mois depuis 2002, total et collectifs | SDES (ministère de la Transition écologique) | Licence Ouverte 2.0 | Mensuelle | `data/raw/sitadel_luynes.json` |
+| [RPLS — répertoire des logements locatifs des bailleurs sociaux](https://www.statistiques.developpement-durable.gouv.fr/catalogue?page=datafile&datafileRid=f3c2f2cb-8fb1-40fd-8733-964247744c9a) | Logements sociaux de Luynes : pièces, surface, année de construction, DPE (sans l'adresse) | SDES | Licence Ouverte 2.0 | Annuelle (1er janvier) | `data/raw/rpls_luynes.json` |
+
+Notes : l'API DiDo du SDES est lente (≈ 20 s par page de 100 lignes) : seuls Luynes et deux types de logements (total, collectif) sont téléchargés, d'où l'absence de comparaison départementale. Sitadel est en date de prise en compte administrative (pas la date réelle du chantier) ; l'année en cours, incomplète, n'est pas affichée. Requêtes : `data/sql/_construction.sql`, `data/sql/construction_*.sql`.
 
 ## Mise à jour et pannes
 

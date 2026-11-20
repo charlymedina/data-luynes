@@ -1,5 +1,8 @@
 ---
 /** Carte « Le saviez-vous ? » avec un bouton qui fait défiler les anecdotes (calculées à partir des données). */
+import InfoTip from './InfoTip.astro';
+import { methode } from '../data/methodes';
+
 interface Props {
   facts: readonly string[];
   id?: string;
@@ -11,7 +14,10 @@ const factsJson = JSON.stringify(facts).replaceAll('<', '\\u003c');
 
 <section aria-labelledby={id} class="fun-facts reveal relative mt-16 sm:mt-24">
   <div class="relative rotate-[-1deg] rounded-[2rem] bg-ink p-8 text-bg shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:p-12">
-    <h2 id={id} class="font-display text-sm font-bold tracking-[0.2em] text-accent uppercase">Le saviez-vous ?</h2>
+    <div class="flex items-center gap-2" data-indicateur="ok">
+      <h2 id={id} class="font-display text-sm font-bold tracking-[0.2em] text-accent uppercase">Le saviez-vous ?</h2>
+      <InfoTip methode={methode('anecdotes')} label={`Le saviez-vous, ${id}`} onDark />
+    </div>
     <p class="fact-text mt-4 min-h-[5.5rem] max-w-3xl font-display text-2xl leading-snug font-semibold sm:text-4xl" aria-live="polite">
       {facts[0]}
     </p>
