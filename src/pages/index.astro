@@ -36,12 +36,14 @@ import { anneesConstruction, resumeConstruction } from '../data/construction';
 import { faitsConstruction } from '../lib/faits-construction';
 import { faitsTransparence } from '../lib/faits-transparence';
 import { comparaison, conseil } from '../data/transparence';
+import { resumeSport } from '../data/sport';
+import { faitsSport } from '../lib/faits-sport';
 
 const luynes = agesDe('Luynes');
 const france = agesDe('France');
 
 // Mélange des anecdotes des différents thèmes (une de chaque à tour de rôle).
-const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie(), faitsElections(), faitsDelinquance(), faitsEau(), faitsConstruction(), faitsTransparence()];
+const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie(), faitsElections(), faitsDelinquance(), faitsEau(), faitsConstruction(), faitsTransparence(), faitsSport()];
 const longueurMax = Math.max(...sources.map((s) => s.length));
 const faits = Array.from({ length: longueurMax }, (_, i) => sources.flatMap((s) => (s[i] ? [s[i]] : []))).flat();
 
@@ -275,6 +277,14 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
       </KeyFigure>
       <KeyFigure class="sm:col-span-3" href="/transparence#conseil" icon="personnes" label="Conseil municipal" value={conseil.nb_elus} unit="élus" info={methode('conseil_parite')}>
         <MiniCompare items={duo(conseil.part_femmes, [['Habitants', conseil.part_femmes_population]], (v) => `${formatNumber(v, 1)} % de femmes`)} />
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" tone="loire" href="/sport" icon="medaille" label={`Licences sportives pour 100 habitants (${resumeSport.annee_fin})`} value={resumeSport.licences_pour_100} decimals={1} info={methode('sport_licences')}>
+        <MiniCompare onDark items={duo(resumeSport.licences_pour_100, [['Indre-et-Loire', resumeSport.licences_pour_100_37]], (v) => formatOneDecimal(v))} />
+        <p class="mt-2 text-xs opacity-85">{formatNumber(resumeSport.licences)} licences dans {formatNumber(resumeSport.federations)} fédérations.</p>
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" href="/sport#equipements" icon="ballon" label="Équipements sportifs pour 1 000 habitants" value={resumeSport.equipements_pour_1000} decimals={1} info={methode('sport_equipements')}>
+        <MiniCompare items={duo(resumeSport.equipements_pour_1000, [['Indre-et-Loire', resumeSport.equipements_pour_1000_37]], (v) => formatOneDecimal(v))} />
+        <p class="mt-2 text-xs text-ink-2">{formatNumber(resumeSport.equipements)} équipements dans {formatNumber(resumeSport.installations)} installations.</p>
       </KeyFigure>
     </div>
   </section>

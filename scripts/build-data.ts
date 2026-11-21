@@ -169,7 +169,34 @@ async function downloadParquetExtrait(source: Source): Promise<void> {
   await rename(`${cible}.tmp`, cible);
 }
 
+/**
+ * Source au format « csv-extrait » : comme « parquet-extrait », mais pour de gros CSV (séparateur « ; »).
+ * DuckDB lit les fichiers en continu, ne garde que les lignes du filtre (le disque ne reçoit que l'extrait) et
+ * ajoute la colonne « fichier » (adresse d'origine) pour retrouver l'année de chaque fichier.
+ */
+async function downloadCsvExtrait(source: Source): Promise<void> {
+  if (!source.filtre) throw new Error('csv-extrait demande un filtre');
+  const urls = (await resolveUrls(source)).map((u) => `'${u}'`).join(', ');
+  const instance = await DuckDBInstance.create(':memory:');
+  const connection = await instance.connect();
+  const cible = path.join(RAW_DIR, `${source.id}.parquet`);
+  try {
+    await connection.run('INSTALL httpfs; LOAD httpfs;');
+    await connection.run(
+      `COPY (SELECT * FROM read_csv([${urls}], delim = ';', header = true, all_varchar = true, union_by_name = true, filename = 'fichier') WHERE ${source.filtre}) TO '${cible}.tmp' (FORMAT parquet)`,
+    );
+  } finally {
+    connection.closeSync();
+    instance.closeSync();
+  }
+  await rename(`${cible}.tmp`, cible);
+}
+
 async function download(source: Source): Promise<void> {
+  if (source.format === 'csv-extrait') {
+    await downloadCsvExtrait(source);
+    return;
+  }
   if (source.format === 'parquet-extrait') {
     await downloadParquetExtrait(source);
     return;
@@ -183,7 +210,7 @@ async function download(source: Source): Promise<void> {
 
 /** Chemin de la version locale d'une source (fichier JSON ou dossier de fichiers). */
 function cheminLocal(source: Source): string {
-  if (source.format === 'parquet-extrait') return path.join(RAW_DIR, `${source.id}.parquet`);
+  if (source.format === 'parquet-extrait' || source.format === 'csv-extrait') return path.join(RAW_DIR, `${source.id}.parquet`);
   return source.format === 'fichiers' ? path.join(RAW_DIR, source.id) : path.join(RAW_DIR, `${source.id}.json`);
 }
 

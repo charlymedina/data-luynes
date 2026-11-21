@@ -64,6 +64,24 @@ export const ICON_PATHS = {
   vitre: 'M4.5 4.5h15v15h-15Z M11 4.5l1.5 5-3 2.5 2 7.5 M12.5 9.5l4 1.5 M9.5 12l-5 .5',
   /** Famille : deux adultes et un enfant (violences intrafamiliales). */
   famille: 'M7.5 8.5a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z M16.5 8.5a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z M3.5 18.5c.4-3.6 1.8-6.5 4-6.5s3.6 2.9 4 6.5 M12.5 18.5c.4-3.6 1.8-6.5 4-6.5s3.6 2.9 4 6.5 M12 14.5a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2Z',
+  /** Ballon : sports collectifs. */
+  ballon: 'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Z M12 3.5v17 M3.5 12h17 M5.5 6.5c3 2 3 9 0 11 M18.5 6.5c-3 2-3 9 0 11',
+  /** Médaille au bout de son ruban (podium, classement). */
+  medaille: 'M9 10.5 6.5 3.5h4L12 7l1.5-3.5h4L15 10.5 M12 10.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z M12 13.5l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3Z',
+  /** Boule et cochonnet (boule de fort, pétanque). */
+  boule: 'M10.5 8a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Z M8 13h.01 M11.5 12.5h.01 M9.5 16.5h.01 M13.5 16h.01 M19 6.5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6Z',
+  /** Raquette et balle (tennis, tennis de table). */
+  raquette: 'M9.5 3.5a5.5 6.5 0 1 0 0 13 5.5 6.5 0 0 0 0-13Z M13.5 15.5l6 5 M6.5 7.5l6 7 M12.5 7.5l-6 7 M18.5 5.5h.01',
+  /** Nageur sur les vagues (bassins). */
+  nage: 'M16.5 5.5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6Z M4 13.5l5-3 4 2 3.5-3 M3 17c1.5-1.3 3-1.3 4.5 0s3 1.3 4.5 0 3-1.3 4.5 0 3 1.3 4.5 0 M3 21c1.5-1.3 3-1.3 4.5 0s3 1.3 4.5 0 3-1.3 4.5 0 3 1.3 4.5 0',
+  /** Cible et flèche (tir). */
+  cible: 'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Z M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z M12 12 20.5 3.5 M17 3.5h3.5V7',
+  /** Pièce d'échecs (jeux de réflexion). */
+  pion: 'M12 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z M10 8.5h4l1 4.5H9Z M8 13h8 M7 20.5h10l-1.2-4.5H8.2Z',
+  /** Haltère (gymnastique, salles). */
+  haltere: 'M3.5 9.5v5 M6.5 7v10 M17.5 7v10 M20.5 9.5v5 M6.5 12h11',
+  /** Piste d'athlétisme (ovale à deux couloirs). */
+  piste: 'M7 5h10a7 7 0 0 1 0 14H7A7 7 0 0 1 7 5Z M8 9h8a3 3 0 0 1 0 6H8a3 3 0 0 1 0-6Z',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

@@ -207,6 +207,16 @@ Notes : l'API DiDo du SDES est lente (≈ 20 s par page de 100 lignes) : seuls L
 
 Notes : plan comptable M14 jusqu'en 2023, M57 depuis 2024 : les comptes sont rapprochés par leurs premiers chiffres (6531 → 65311, 6574 → 65748, 657362 → 657363) ; les amortissements et provisions (68) et les cessions (675, 676) sont écartés, ce sont des écritures sans sortie d'argent. **Les montants des marchés sont des plafonds de contrat, jamais des dépenses : ils ne sont pas additionnés.** La commune ne publie ses marchés dans la base nationale que depuis fin 2025. Le fichier des élus est téléchargé sans nom ni prénom (colonnes choisies dans l'adresse de l'API) ; seule la fonction « Maire » est téléchargée avec son nom ; aucun PDF de la commune n'est utilisé. Le gros fichier DECP (≈ 280 Mo) n'est pas téléchargé : DuckDB n'en lit à distance que les lignes de Luynes (source de type « parquet-extrait »). Requêtes : `data/sql/_transparence.sql`, `data/sql/transparence_*.sql`.
 
+## Thème Sport
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Recensement des licences et clubs auprès des fédérations sportives agréées (données géocodées)](https://www.data.gouv.fr/datasets/donnees-geocodees-issues-du-recensement-des-licences-et-clubs-aupres-des-federations-sportives-agreees-par-le-ministere-charge-des-sports/) | Licences par commune de résidence, fédération, sexe et tranche d'âge (communes d'Indre-et-Loire), les 4 dernières années publiées | INJEP / ministère des Sports | Licence Ouverte | Annuelle (fin d'année, avec ≈ 2 ans de décalage) | `data/raw/sport_licences_37.parquet` |
+| [Recensement des équipements sportifs (RES, « Data ES »)](https://equipements.sports.gouv.fr) | Équipements de Luynes : type, installation, mise en service (année ou période), travaux, position, nature, accessibilité | Ministère des Sports | Licence Ouverte | Continue (déclarations des collectivités) | `data/raw/sport_equipements_luynes/` |
+| Idem, Indre-et-Loire | Seulement six colonnes (identifiants, commune, type, mise en service) : nombre d'équipements de chaque commune, pour comparer | Ministère des Sports | Licence Ouverte | Continue | `data/raw/sport_equipements_37/` |
+
+Notes : une **licence n'est pas une personne** (un habitant licencié dans deux fédérations compte deux fois) ; les fédérations du sport scolaire et universitaire (codes en 6xx : UNSS, UGSEL, USEP…) sont comptées dans le total mais présentées à part du podium. Le rattachement est la commune de **résidence** du licencié, pas celle du club. Les CSV de licences font ≈ 250 Mo par année : ils sont lus en continu par DuckDB et seules les lignes d'Indre-et-Loire sont gardées (source de type « csv-extrait », ≈ 40 s par année). Dans le RES, une ligne = un équipement, mais certaines lignes sont des activités d'une installation sans type ni position : elles comptent comme équipements, sans figurer sur la carte. Les années 2020 et 2021 sont marquées par la crise sanitaire. Requêtes : `data/sql/_sport.sql`, `data/sql/sport_*.sql`.
+
 ## Mise à jour et pannes
 
 Les données sont téléchargées à nouveau à chaque construction du site (au moins une fois par semaine), avec 3 tentatives

@@ -28,4 +28,5 @@ export const THEMES: readonly Theme[] = [
   { slug: 'eau', titre: 'Eau du robinet', court: 'Eau', icon: 'goutte', resume: 'Contrôles sanitaires, nitrates, calcaire.' },
   { slug: 'construction', titre: 'Construction & logement social', court: 'Construction', icon: 'grue', resume: 'Logements autorisés et construits, logements sociaux.' },
   { slug: 'transparence', titre: 'Transparence', court: 'Transparence', icon: 'mairie', resume: 'Dépenses, indemnités des élus, subventions, marchés publics, conseil municipal.' },
+  { slug: 'sport', titre: 'Sport', court: 'Sport', icon: 'ballon', resume: 'Licences par fédération, équipements, carte.' },
 ];

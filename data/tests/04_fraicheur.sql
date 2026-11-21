@@ -19,6 +19,7 @@ WITH series AS (
   UNION ALL SELECT 'parc automobile', annee_parc, 1 FROM energie_resume
   UNION ALL SELECT 'délinquance', max(annee_fin), 2 FROM delinquance_indicateurs
   UNION ALL SELECT 'balances comptables', max(annee), 2 FROM transparence_elus
+  UNION ALL SELECT 'licences sportives (INJEP)', annee_fin, 4 FROM sport_resume
   UNION ALL SELECT 'recensement (conseil municipal)', max(annee_recensement), 5 FROM transparence_conseil_resume
 )
 SELECT 'données trop anciennes : ' || serie || ' (dernière année ' || derniere || ', attendue au moins '

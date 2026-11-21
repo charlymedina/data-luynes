@@ -3,7 +3,7 @@
 Site de **données ouvertes sur Luynes** (Indre-et-Loire, code INSEE `37139`) : rassembler, vérifier et présenter
 simplement les données publiques de la commune.
 
-Site en ligne : **https://luynes.pages.dev** — 14 thèmes + une page d'accueil, reconstruits chaque lundi (et à chaque
+Site en ligne : **https://luynes.pages.dev** — 15 thèmes + une page d'accueil, reconstruits chaque lundi (et à chaque
 modification) à partir des dernières données publiées.
 
 ---
@@ -35,6 +35,7 @@ modification) à partir des dernières données publiées.
 | Eau du robinet | `/eau` | Hub'eau (contrôle sanitaire des ARS) |
 | Construction & logement social | `/construction` | SDES (Sitadel, RPLS) |
 | Transparence | `/transparence` | DGFiP (balances comptables), DECP, BOAMP, répertoire national des élus |
+| Sport | `/sport` | INJEP (licences par commune), ministère des Sports (recensement des équipements, RES) |
 
 Le détail (producteur, licence, fréquence de mise à jour) est dans [`docs/sources.md`](docs/sources.md) ;
 l'inventaire des données disponibles et leur statut dans [`docs/catalogue-donnees.md`](docs/catalogue-donnees.md).
@@ -48,7 +49,8 @@ Sources publiques ──► data/raw/ ──► requêtes SQL (DuckDB) ──►
 
 1. `scripts/build-data.ts` télécharge chaque source listée dans `data/sources.ts` (et `data/sources-<thème>.ts`).
    Si une source ne répond pas après 3 essais, sa version précédente est réutilisée et signalée en pied de page.
-   Une source peut aussi être de type « parquet-extrait » (gros Parquet en ligne dont DuckDB ne lit que les lignes utiles).
+   Une source peut aussi être de type « parquet-extrait » (gros Parquet en ligne dont DuckDB ne lit que les lignes utiles)
+   ou « csv-extrait » (gros CSV lus en continu, seules les lignes du filtre sont gardées).
 2. Les **archives** (`data/archive/`) gardent ce que les producteurs ne publient plus ou qui est trop lourd à
    retélécharger : ventes DVF anciennes (`dvf/`), accidents de l'Indre-et-Loire (`baac/`), résultats électoraux
    (`elections/`). Elles sont mises à jour par `scripts/archive-*.ts` et enregistrées automatiquement dans le dépôt

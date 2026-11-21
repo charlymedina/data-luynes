@@ -17,6 +17,7 @@ import { periodeDelinquance } from './delinquance';
 import { resumeEau } from './eau';
 import { resumeConstruction } from './construction';
 import { appelsOffres, comparaison, conseil, derniereAnnee as derniereAnneeBalance, premiereAnnee as premiereAnneeBalance, premiereNotification, premierePublication } from './transparence';
+import { periodesEquipements, resumeSport } from './sport';
 import { formatCommunes, formatMonthYear, formatNumber } from '../lib/format';
 
 export interface Methode {
@@ -41,6 +42,9 @@ const HUBEAU = "contrôle sanitaire des eaux (ARS, ministère de la Santé), via
 const BALANCES = 'DGFiP, balances comptables des communes (budget principal)';
 const RNE = 'ministère de l\'Intérieur, répertoire national des élus (conseillers municipaux)';
 const balances = `${premiereAnneeBalance}-${derniereAnneeBalance}`;
+const INJEP = 'INJEP / ministère des Sports, recensement des licences auprès des fédérations sportives agréées (par commune de résidence)';
+const RES = 'ministère des Sports, recensement des équipements sportifs (RES, « Data ES »)';
+const licencesAnnees = `${resumeSport.annee_debut}-${resumeSport.annee_fin}`;
 const POPULATION_DGFIP = `population retenue par la DGFiP (${formatNumber(resumeBudget.population)} habitants, population légale « totale »)`;
 
 const METHODES = {
@@ -555,6 +559,60 @@ const METHODES = {
     calcul: 'catégorie socioprofessionnelle déclarée, regroupée en grandes catégories de l\'INSEE (les anciens cadres, anciens employés… sont classés avec les retraités)',
     millesime: extraction,
   },
+  sport_licences: {
+    titre: 'Licences sportives',
+    source: INJEP,
+    calcul: `licences délivrées aux habitants de Luynes (une personne licenciée dans deux fédérations compte deux fois), divisées par la population légale (${formatNumber(resumeSport.population)} habitants) ; comparaison : toutes les communes d'Indre-et-Loire ; classement : 1ʳᵉ = le plus de licences par habitant, communes sans licence comprises`,
+    millesime: String(resumeSport.annee_fin),
+  },
+  sport_federations: {
+    titre: 'Podium des fédérations',
+    source: INJEP,
+    calcul: "licences par fédération ; les fédérations du sport scolaire et universitaire (UNSS, UGSEL, USEP…, codes 6xx) sont présentées à part du podium mais comptées dans le total",
+    millesime: String(resumeSport.annee_fin),
+  },
+  sport_parite: {
+    titre: 'Femmes et hommes',
+    source: INJEP,
+    calcul: 'part des femmes dans les licences dont le sexe est connu ; comparaison : toutes les licences d\'Indre-et-Loire',
+    millesime: String(resumeSport.annee_fin),
+  },
+  sport_ages: {
+    titre: 'Âge des licenciés',
+    source: INJEP,
+    calcul: "licences regroupées en cinq tranches d'âge (les âges inconnus sont écartés) ; part de chaque tranche à Luynes et en Indre-et-Loire",
+    millesime: String(resumeSport.annee_fin),
+  },
+  sport_evolution: {
+    titre: 'Licences par année',
+    source: INJEP,
+    calcul: "nombre de licences de chaque année publiée ; indice : première année = 100, à Luynes et en Indre-et-Loire. Les années 2020 et 2021 sont marquées par la crise sanitaire",
+    millesime: licencesAnnees,
+  },
+  sport_equipements: {
+    titre: 'Équipements sportifs',
+    source: RES,
+    calcul: `équipements recensés à Luynes (une ligne du RES = un équipement ; certaines lignes n'ont ni type ni position), pour 1 000 habitants ; comparaison et classement : toutes les communes d'Indre-et-Loire, communes sans équipement comprises`,
+    millesime: `recensement consulté en ${formatMonthYear(generatedAt)}`,
+  },
+  sport_types: {
+    titre: "Types d'équipements",
+    source: RES,
+    calcul: "équipements regroupés par famille du RES ; à défaut de type renseigné, par première activité sportive citée",
+    millesime: `recensement consulté en ${formatMonthYear(generatedAt)}`,
+  },
+  sport_frise: {
+    titre: 'Mise en service des équipements',
+    source: RES,
+    calcul: `équipements classés par période de mise en service (l'année exacte, quand elle est renseignée, désigne la période) ; ${formatNumber(resumeSport.equipements - periodesEquipements.reduce((total, p) => total + p.nombre, 0))} sans date connue`,
+    millesime: `recensement consulté en ${formatMonthYear(generatedAt)}`,
+  },
+  sport_carte: {
+    titre: 'Carte des équipements',
+    source: RES + ' ; fond de carte OpenFreeMap (© OpenStreetMap)',
+    calcul: "un point par équipement localisé ; les équipements sans coordonnées figurent dans la liste",
+    millesime: `recensement consulté en ${formatMonthYear(generatedAt)}`,
+  },
 } as const satisfies Record<string, Methode>;
 
 export type CleMethode = keyof typeof METHODES;
@@ -565,7 +623,7 @@ export function methode(cle: CleMethode): Methode {
 
 /** Méthodes affichées dans la section « Sources et méthode » de chaque page (dans l'ordre des chiffres clés). */
 const PAR_PAGE: Record<string, readonly CleMethode[]> = {
-  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences', 'elus_indemnites', 'conseil_parite'],
+  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences', 'elus_indemnites', 'conseil_parite', 'sport_licences', 'sport_equipements'],
   population: ['population', 'multiplie_1968', 'age_median', 'part_65', 'naissances'],
   territoire: ['superficie', 'densite'],
   'patrimoine-risques': ['monuments', 'cavites', 'catnat', 'mouvements'],
@@ -579,6 +637,7 @@ const PAR_PAGE: Record<string, readonly CleMethode[]> = {
   delinquance: ['delinquance_bilan', 'delinquance_cambriolages', 'delinquance_degradations'],
   eau: ['eau_conformite', 'eau_physico', 'eau_prelevements', 'eau_nitrates', 'eau_durete'],
   construction: ['logements_commences', 'logements_sociaux'],
+  sport: ['sport_licences', 'sport_federations', 'sport_parite', 'sport_ages', 'sport_evolution', 'sport_equipements', 'sport_types', 'sport_frise', 'sport_carte'],
   transparence: ['depenses_postes', 'elus_indemnites', 'subventions_associations', 'marches_plafonds', 'appels_offres', 'conseil_parite', 'conseil_ages', 'conseil_professions'],
 };
 

@@ -1,0 +1,334 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon from '../components/Icon.astro';
+import InfoTip from '../components/InfoTip.astro';
+import MapView, { type MapLegendItem } from '../components/MapView.astro';
+import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
+import RankGauge from '../components/charts/RankGauge.astro';
+import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
+import SourcesMethode from '../components/SourcesMethode.astro';
+import {
+  anneesSport,
+  equipements,
+  federationsScolaires,
+  federationsSportives,
+  iconeEquipement,
+  iconeFederation,
+  nomCourtFederation,
+  nomPropre,
+  periodesEquipements,
+  resumeSport as r,
+  tranchesAge,
+  typesEquipements,
+  type EquipementSport,
+} from '../data/sport';
+import { contourCommune } from '../data/patrimoine';
+import { CREDITS_SPORT } from '../data/credits';
+import { methode } from '../data/methodes';
+import { formatNumber, formatOneDecimal } from '../lib/format';
+import { faitsSport } from '../lib/faits-sport';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
+const versus = (luynes: number, dep: number, display: (v: number) => string): MiniItem[] => [
+  { label: 'Luynes', value: luynes, display: display(luynes), highlight: true },
+  { label: 'Indre-et-Loire', value: dep, display: display(dep) },
+];
+
+// — Podium : 1ʳᵉ au centre, 2ᵉ à gauche, 3ᵉ à droite (hors sport scolaire et universitaire) —
+const [premiere, deuxieme, troisieme] = federationsSportives;
+const podium = [
+  { f: deuxieme, rang: 2, hauteur: 'h-24' },
+  { f: premiere, rang: 1, hauteur: 'h-32' },
+  { f: troisieme, rang: 3, hauteur: 'h-16' },
+].filter((p): p is { f: NonNullable<typeof p.f>; rang: number; hauteur: string } => p.f !== undefined);
+const suivantes = federationsSportives.slice(3, 12);
+const maxSuivantes = Math.max(1, ...suivantes.map((f) => f.licences));
+const nbScolaires = federationsScolaires.length;
+
+// — Évolution des licences —
+const colonnesAnnees: Column[] = anneesSport.map((a) => ({
+  label: String(a.annee),
+  fullLabel: String(a.annee),
+  value: a.licences,
+  display: formatNumber(a.licences),
+  highlight: a.annee === r.annee_fin,
+}));
+
+// — Équipements : tuiles par type, frise par période —
+const totalPeriodes = periodesEquipements.reduce((total, p) => total + p.nombre, 0);
+const sansDate = r.equipements - totalPeriodes;
+const plusAnciennePeriode = periodesEquipements.find((p) => p.nombre > 0);
+const colonnesPeriodes: Column[] = periodesEquipements.map((p) => ({
+  label: p.periode.replace('Depuis ', '≥ ').replace('Avant ', '< '),
+  fullLabel: p.periode,
+  value: p.nombre,
+  display: formatNumber(p.nombre),
+  highlight: p.periode === plusAnciennePeriode?.periode,
+}));
+const anneesExactes = equipements.filter((e) => e.annee_service !== null);
+
+// — Carte : un point par équipement localisé, couleur selon qu'il est couvert ou en plein air —
+const fiche = (e: EquipementSport): string =>
+  [
+    nomPropre(e.nom),
+    e.installation !== e.nom ? `Installation : ${nomPropre(e.installation)}` : '',
+    e.adresse ? e.adresse : '',
+    `Type : ${e.type}`,
+    e.annee_service ? `Mise en service : ${e.annee_service}` : e.periode_service ? `Mise en service : ${e.periode_service.toLowerCase()}` : '',
+    e.installation_accessible ? 'Installation accessible aux personnes handicapées' : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+const localises = equipements.filter((e): e is EquipementSport & { lat: number; lon: number } => e.lat !== null && e.lon !== null);
+const natures: { cle: string; libelle: string; colorVar: string }[] = [
+  { cle: 'Intérieur', libelle: 'Salles (intérieur)', colorVar: '--chart-4' },
+  { cle: 'Découvert', libelle: 'En plein air', colorVar: '--chart-1' },
+  { cle: 'Autre', libelle: 'Autres', colorVar: '--chart-2' },
+];
+const legende: MapLegendItem[] = natures
+  .map((n) => {
+    const points = localises.filter((e) => (e.nature === 'Intérieur' || e.nature === 'Découvert' ? e.nature : 'Autre') === n.cle);
+    return { n, points };
+  })
+  .filter(({ points }) => points.length > 0)
+  .map(({ n, points }) => ({
+    label: `${n.libelle} (${formatNumber(points.length)})`,
+    layer: { id: `sport-${n.cle.toLowerCase()}`, colorVar: n.colorVar, radius: 7, points: points.map((e) => ({ lat: e.lat, lon: e.lon, label: fiche(e) })) },
+  }));
+const nonLocalises = equipements.length - localises.length;
+
+// Liste de repli (accessible) : équipements regroupés par installation
+const parInstallation = Object.entries(Object.groupBy(equipements, (e) => e.installation)).map(([nom, liste]) => ({ nom, liste: liste ?? [] }));
+---
+
+<Base
+  title="Sport à Luynes — Luynes en chiffres"
+  description={`Sport à Luynes : ${formatNumber(r.licences)} licences sportives en ${r.annee_fin}, podium des fédérations, ${formatNumber(r.equipements)} équipements sportifs, carte et comparaison avec l'Indre-et-Loire.`}
+  sources={CREDITS_SPORT}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="ballon" class="h-5 w-5" /> Thème · Sport</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.6rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      Luynes <span class="text-accent">en jeu</span>
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Tennis, football, équitation, boule de fort… Les licences prises par les habitants de Luynes auprès des fédérations
+      sportives et les équipements recensés sur la commune, comparés à l'Indre-et-Loire.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés du sport" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <KeyFigure tone="loire" icon="medaille" label={`Licences pour 100 habitants (${r.annee_fin})`} value={r.licences_pour_100} decimals={1} info={methode('sport_licences')}>
+      <MiniCompare onDark items={versus(r.licences_pour_100, r.licences_pour_100_37, (v) => formatOneDecimal(v))} />
+      <p class="mt-3 text-sm opacity-90">{formatNumber(r.licences)} licences dans {formatNumber(r.federations)} fédérations.</p>
+    </KeyFigure>
+    <KeyFigure tone="accent" icon="personnes" label="Part de femmes parmi les licences" value={r.femmes_pct} decimals={1} unit="%" info={methode('sport_parite')}>
+      <MiniCompare items={versus(r.femmes_pct, r.femmes_pct_37, pourcent)} />
+    </KeyFigure>
+    <KeyFigure icon="ballon" label="Équipements sportifs pour 1 000 habitants" value={r.equipements_pour_1000} decimals={1} info={methode('sport_equipements')}>
+      <MiniCompare items={versus(r.equipements_pour_1000, r.equipements_pour_1000_37, (v) => formatOneDecimal(v))} />
+      <p class="mt-3 text-sm text-ink-2">{formatNumber(r.equipements)} équipements dans {formatNumber(r.installations)} installations.</p>
+    </KeyFigure>
+  </section>
+
+  <section id="licences" aria-labelledby="licences-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="licences-titre" class={titreH2}>Le podium des sports</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Licences des habitants de Luynes en {r.annee_fin}, par fédération. Une personne licenciée dans deux fédérations compte
+      deux fois. Le sport scolaire et universitaire est présenté à part.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <p class="flex items-center gap-2 text-sm font-semibold">Les trois fédérations les plus représentées <InfoTip methode={methode('sport_federations')} label="Podium des fédérations" /></p>
+      <ol class="mt-6 grid grid-cols-3 items-end gap-2 sm:gap-6" aria-label="Podium des fédérations sportives">
+        {
+          podium.map(({ f, rang, hauteur }) => (
+            <li class="flex flex-col items-center text-center">
+              <span class="grid h-12 w-12 place-items-center rounded-full bg-loire-soft text-loire sm:h-16 sm:w-16"><Icon name={iconeFederation(f.code)} class="h-6 w-6 sm:h-8 sm:w-8" /></span>
+              <p class="mt-2 text-sm font-semibold break-words sm:text-base">{nomCourtFederation(f.federation)}</p>
+              <p class="font-display text-2xl font-extrabold sm:text-4xl">{formatNumber(f.licences)}</p>
+              <p class="text-xs text-ink-2">licences</p>
+              <div class:list={['mt-3 grid w-full place-items-start rounded-t-2xl pt-2 font-display text-2xl font-extrabold', hauteur, rang === 1 ? 'bg-accent text-bg' : 'bg-loire-soft text-loire']}>
+                <span class="w-full text-center">{rang === 1 ? '1ʳᵉ' : `${rang}ᵉ`}</span>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+      {
+        suivantes.length > 0 && (
+          <ul class="mt-8 space-y-2" aria-label="Fédérations suivantes">
+            {suivantes.map((f) => (
+              <li class="grid grid-cols-[1.5rem_minmax(0,9rem)_1fr_auto] items-center gap-2 text-sm sm:grid-cols-[1.5rem_minmax(0,12rem)_1fr_auto] sm:gap-3">
+                <Icon name={iconeFederation(f.code)} class="h-5 w-5 text-loire" />
+                <span class="truncate" title={f.federation}>{nomCourtFederation(f.federation)}</span>
+                <span class="h-2.5 rounded-full bg-line" aria-hidden="true">
+                  <span class="block h-full rounded-full bg-loire" style={`width: ${(100 * f.licences) / maxSuivantes}%`}></span>
+                </span>
+                <span class="w-10 text-right font-semibold tabular-nums">{formatNumber(f.licences)}</span>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      {
+        federationsScolaires.length > 0 && (
+          <p class="mt-6 border-t border-line pt-4 text-sm text-ink-2">
+            À part, {formatNumber(federationsScolaires.reduce((t, f) => t + f.licences, 0))} licences du sport scolaire et universitaire
+            ({federationsScolaires.slice(0, 3).map((f) => f.federation.match(/\(([^)]+)\)/)?.[1] ?? nomCourtFederation(f.federation)).join(', ')}
+            {nbScolaires > 3 ? '…' : ''}), comptées dans le total.
+          </p>
+        )
+      }
+      <details class="mt-4">
+        <summary class="cursor-pointer text-sm font-semibold hover:text-loire">Les {formatNumber(r.federations)} fédérations, en tableau</summary>
+        <div class="mt-3 max-h-96 overflow-auto">
+          <table class="w-full text-left text-sm">
+            <caption class="sr-only">Licences des habitants de Luynes par fédération, {r.annee_fin}</caption>
+            <thead><tr class="border-b border-line text-ink-2"><th scope="col" class="py-2 pr-3">Fédération</th><th scope="col" class="py-2 text-right">Licences</th></tr></thead>
+            <tbody>
+              {[...federationsSportives, ...federationsScolaires].sort((a, b) => b.licences - a.licences).map((f) => (
+                <tr class="border-b border-line/60"><td class="py-1.5 pr-3">{f.federation}</td><td class="py-1.5 text-right tabular-nums">{formatNumber(f.licences)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+    <div class="mt-6 grid gap-6 md:grid-cols-2">
+      <RankGauge info={methode('sport_licences')} label={`Licences pour 100 habitants (${r.annee_fin})`} rank={r.rang_licences} total={r.nb_communes_licences} icon="medaille" ends={['le plus de licences', 'le moins de licences']} />
+    </div>
+  </section>
+
+  <section id="qui" aria-labelledby="qui-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="qui-titre" class={titreH2}>Qui pratique ?</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Âge des licenciés et évolution du nombre de licences, à Luynes et en Indre-et-Loire.</p>
+    <div class="mt-8 grid gap-6 md:grid-cols-2">
+      <div class={carte}>
+        <h3 class="flex items-center gap-2 font-display text-xl font-bold">Par tranche d'âge <InfoTip methode={methode('sport_ages')} label="Âge des licenciés" /></h3>
+        <p class="mt-1 text-sm text-ink-2">Part de chaque tranche d'âge dans les licences ({r.annee_fin}).</p>
+        <div class="mt-4 space-y-4">
+          {
+            tranchesAge.map((t) => (
+              <div>
+                <p class="text-sm font-semibold">{t.tranche}</p>
+                <MiniCompare items={versus(t.part_luynes, t.part_37, pourcent)} />
+              </div>
+            ))
+          }
+        </div>
+      </div>
+      <div class={carte}>
+        <h3 class="flex items-center gap-2 font-display text-xl font-bold">Licences par année <InfoTip methode={methode('sport_evolution')} label="Licences par année" /></h3>
+        <p class="mt-1 text-sm text-ink-2">Les années {anneesSport[0]?.annee} et {anneesSport[1]?.annee} sont marquées par la crise sanitaire.</p>
+        <ColumnChart
+          columns={colonnesAnnees}
+          unit="licences"
+          headers={['Année', 'Licences à Luynes']}
+          ariaLabel={`Licences sportives à Luynes de ${r.annee_debut} à ${r.annee_fin}`}
+          tableCaption="Licences sportives des habitants de Luynes par année"
+          info={methode('sport_evolution')}
+        />
+        <p class="mt-4 text-sm text-ink-2">Évolution {r.annee_debut}-{r.annee_fin} :</p>
+        <p class="mt-1 text-sm"><strong>Luynes {r.evolution_luynes_pct > 0 ? '+' : ''}{formatOneDecimal(r.evolution_luynes_pct)} %</strong> · Indre-et-Loire {r.evolution_37_pct > 0 ? '+' : ''}{formatOneDecimal(r.evolution_37_pct)} %</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="equipements" aria-labelledby="equipements-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="equipements-titre" class={titreH2}>Où jouer ?</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Le recensement des équipements sportifs compte {formatNumber(r.equipements)} équipements dans {formatNumber(r.installations)} installations
+      à Luynes ({formatNumber(r.installations_accessibles)} installations déclarées accessibles aux personnes handicapées{r.equipements_renoves > 0 && <>, {formatNumber(r.equipements_renoves)} équipements ayant eu des travaux</>}).
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <p class="flex items-center gap-2 text-sm font-semibold">Par type d'équipement <InfoTip methode={methode('sport_types')} label="Types d'équipements" /></p>
+      <ul class="mt-5 grid grid-cols-1 gap-3 min-[460px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+        {
+          typesEquipements.map((t) => (
+            <li class="flex items-center gap-3 rounded-2xl border border-line p-3">
+              <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-loire-soft text-loire"><Icon name={iconeEquipement(t.type)} class="h-5 w-5" /></span>
+              <span class="min-w-0">
+                <span class="block font-display text-2xl leading-none font-extrabold">{formatNumber(t.nombre)}</span>
+                <span class="mt-1 block text-xs leading-tight text-ink-2">{t.type}</span>
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div class="mt-6 grid gap-6 md:grid-cols-2">
+      <div class={carte}>
+        <h3 class="flex items-center gap-2 font-display text-xl font-bold">Pour 1 000 habitants <InfoTip methode={methode('sport_equipements')} label="Équipements pour 1 000 habitants" /></h3>
+        <p class="mt-1 text-sm text-ink-2">Équipements recensés, rapportés à la population.</p>
+        <MiniCompare items={versus(r.equipements_pour_1000, r.equipements_pour_1000_37, (v) => formatOneDecimal(v))} />
+      </div>
+      <RankGauge info={methode('sport_equipements')} label="Équipements pour 1 000 habitants" rank={r.rang_equipements} total={r.nb_communes_equipements} icon="ballon" ends={['le plus d’équipements', 'le moins d’équipements']} />
+    </div>
+  </section>
+
+  <section id="frise" aria-labelledby="frise-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="frise-titre" class={titreH2}>Une histoire d'équipements</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Période de mise en service des équipements recensés à Luynes.
+      {anneesExactes.length > 0 && <> L'année exacte n'est renseignée que pour {formatNumber(anneesExactes.length)} équipement{anneesExactes.length > 1 ? 's' : ''} ({anneesExactes.map((e) => `${nomPropre(e.nom)}, ${e.annee_service}`).join(' ; ')}).</>}
+      {sansDate > 0 && <> {formatNumber(sansDate)} équipements n'ont aucune date connue.</>}
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <p class="text-sm font-semibold">Équipements par période de mise en service</p>
+      <ColumnChart
+        columns={colonnesPeriodes}
+        unit="équipements"
+        headers={['Période', 'Équipements mis en service']}
+        ariaLabel={`Période de mise en service des ${formatNumber(totalPeriodes)} équipements sportifs de Luynes dont la date est connue`}
+        tableCaption="Équipements sportifs de Luynes par période de mise en service"
+        info={methode('sport_frise')}
+      />
+    </div>
+  </section>
+
+  <section id="carte" aria-labelledby="carte-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="carte-titre" class={titreH2}>La carte</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Un point par équipement. Cliquer sur un point pour sa fiche.
+      {nonLocalises > 0 && <> {formatNumber(nonLocalises)} équipements recensés sans coordonnées n'apparaissent pas sur la carte mais figurent dans la liste ci-dessous.</>}
+    </p>
+    <div class="mt-8">
+      <MapView info={methode('sport_carte')} ariaLabel={`Carte des ${formatNumber(localises.length)} équipements sportifs localisés à Luynes`} contour={contourCommune} legend={legende} />
+    </div>
+    <details class:list={['mt-6', carte]}>
+      <summary class="cursor-pointer font-display text-lg font-bold hover:text-loire">La liste des {formatNumber(equipements.length)} équipements, par installation</summary>
+      <ul class="mt-6 divide-y divide-line">
+        {
+          parInstallation.map(({ nom, liste }) => (
+            <li class="py-4">
+              <p class="font-semibold">{nomPropre(nom)}</p>
+              {liste[0]?.adresse && <p class="text-sm text-ink-2">{liste[0].adresse}</p>}
+              <ul class="mt-2 space-y-0.5 text-sm">
+                {liste.map((e) => (
+                  <li class="flex gap-2">
+                    <Icon name={iconeEquipement(e.type)} class="mt-0.5 h-4 w-4 shrink-0 text-loire" />
+                    <span>
+                      {e.nom === e.installation ? e.type : nomPropre(e.nom)}
+                      <span class="text-ink-2">
+                        {e.nom === e.installation ? '' : ` · ${e.type}`}
+                        {e.annee_service ? ` · mise en service ${e.annee_service}` : e.periode_service ? ` · mise en service ${e.periode_service.toLowerCase()}` : ''}
+                        {e.lat === null ? ' · sans position' : ''}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))
+        }
+      </ul>
+    </details>
+  </section>
+
+  <FunFacts facts={faitsSport()} id="saviez-vous-sport" />
+  <SourcesMethode page="sport" />
+</Base>

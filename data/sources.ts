@@ -13,6 +13,7 @@ import { SOURCES_DELINQUANCE } from './sources-delinquance.ts';
 import { SOURCES_EAU } from './sources-eau.ts';
 import { SOURCES_CONSTRUCTION } from './sources-construction.ts';
 import { SOURCES_TRANSPARENCE } from './sources-transparence.ts';
+import { SOURCES_SPORT } from './sources-sport.ts';
 
 export interface Source {
   /** Nom du fichier produit dans data/raw/ (sans extension) */
@@ -36,8 +37,9 @@ export interface Source {
    * « fichiers » : fichiers bruts (ex. CSV compressés) enregistrés tels quels dans le dossier data/raw/<id>/.
    * « parquet-extrait » : gros fichier Parquet en ligne dont seules les lignes demandées (filtre) et les colonnes
    * utiles sont lues à distance par DuckDB, puis enregistrées dans data/raw/<id>.parquet.
+   * « csv-extrait » : gros CSV (séparateur « ; ») lus en continu, seules les lignes du filtre sont gardées (data/raw/<id>.parquet).
    */
-  readonly format?: 'json' | 'fichiers' | 'parquet-extrait';
+  readonly format?: 'json' | 'fichiers' | 'parquet-extrait' | 'csv-extrait';
   /** Format « parquet-extrait » : condition SQL (WHERE) qui garde les lignes de Luynes. */
   readonly filtre?: string;
   /** Format « parquet-extrait » : colonnes à conserver. */
@@ -383,5 +385,10 @@ export const SOURCES: readonly Source[] = [
 
   // — Construction et logements sociaux (voir data/sources-construction.ts) —
   ...SOURCES_CONSTRUCTION,
+
+  // — Transparence (voir data/sources-transparence.ts) —
   ...SOURCES_TRANSPARENCE,
+
+  // — Sport : licences INJEP et équipements RES (voir data/sources-sport.ts) —
+  ...SOURCES_SPORT,
 ];

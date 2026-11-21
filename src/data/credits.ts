@@ -169,6 +169,19 @@ const RNE: FooterSource = {
   detail: 'conseillers municipaux : sexe, âge, profession, fonction (sans les noms, hors maire) — Licence Ouverte 2.0',
 };
 
+const INJEP_LICENCES: FooterSource = {
+  nom: 'INJEP / ministère des Sports — recensement des licences et clubs',
+  url: 'https://www.data.gouv.fr/datasets/donnees-geocodees-issues-du-recensement-des-licences-et-clubs-aupres-des-federations-sportives-agreees-par-le-ministere-charge-des-sports/',
+  detail: 'licences sportives par commune de résidence et fédération, années récentes — Licence Ouverte',
+};
+
+const RES_SPORT: FooterSource = {
+  nom: 'Ministère des Sports — recensement des équipements sportifs (RES, Data ES)',
+  url: 'https://equipements.sports.gouv.fr',
+  detail: 'équipements sportifs, installations, mise en service, position — Licence Ouverte',
+};
+
+export const CREDITS_SPORT: readonly FooterSource[] = [INJEP_LICENCES, RES_SPORT, API_GEO, OPENFREEMAP];
 export const CREDITS_TRANSPARENCE: readonly FooterSource[] = [DGFIP_BALANCES, DGFIP_COMPTES, DECP, BOAMP, RNE, INSEE_RECENSEMENT, API_GEO];
 export const CREDITS_EAU: readonly FooterSource[] = [HUBEAU_EAU];
 export const CREDITS_CONSTRUCTION: readonly FooterSource[] = [SDES_SITADEL, SDES_RPLS];
@@ -204,5 +217,6 @@ export const CREDITS_ACCUEIL: readonly FooterSource[] = [
     CREDITS_EAU,
     CREDITS_CONSTRUCTION,
     CREDITS_TRANSPARENCE,
+    CREDITS_SPORT,
   ].flat()),
 ].filter((source) => source !== OPENFREEMAP);
