@@ -18,6 +18,7 @@ import { resumeEau } from './eau';
 import { resumeConstruction } from './construction';
 import { appelsOffres, comparaison, conseil, derniereAnnee as derniereAnneeBalance, premiereAnnee as premiereAnneeBalance, premiereNotification, premierePublication } from './transparence';
 import { periodesEquipements, resumeSport } from './sport';
+import { resumeRues } from './rues';
 import { formatCommunes, formatMonthYear, formatNumber } from '../lib/format';
 
 export interface Methode {
@@ -44,6 +45,8 @@ const RNE = 'ministère de l\'Intérieur, répertoire national des élus (consei
 const balances = `${premiereAnneeBalance}-${derniereAnneeBalance}`;
 const INJEP = 'INJEP / ministère des Sports, recensement des licences auprès des fédérations sportives agréées (par commune de résidence)';
 const RES = 'ministère des Sports, recensement des équipements sportifs (RES, « Data ES »)';
+const BAN = 'Base Adresse Nationale (BAN, IGN / DINUM), adresses du code INSEE 37139';
+const REFERENCE_RUES = 'table de correspondance écrite à la main (data/reference/noms-de-rues.csv), limitée aux cas certains';
 const licencesAnnees = `${resumeSport.annee_debut}-${resumeSport.annee_fin}`;
 const POPULATION_DGFIP = `population retenue par la DGFiP (${formatNumber(resumeBudget.population)} habitants, population légale « totale »)`;
 
@@ -613,6 +616,54 @@ const METHODES = {
     calcul: "un point par équipement localisé ; les équipements sans coordonnées figurent dans la liste",
     millesime: `recensement consulté en ${formatMonthYear(generatedAt)}`,
   },
+  rues_noms: {
+    titre: 'Voies, lieux-dits et adresses',
+    source: BAN,
+    calcul: "un nom de voie ou de lieu-dit compte une fois, quel que soit son nombre d'adresses ; « voie » si le nom commence par rue, chemin, impasse, place, avenue, allée, route ou square, « lieu-dit ou quartier » sinon (la BAN ne fait pas la différence) ; une adresse = un numéro de la base",
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  rues_types: {
+    titre: 'Types de voies',
+    source: BAN,
+    calcul: 'noms de voies regroupés d\'après leur premier mot (rue, chemin, impasse, place…) ; les autres noms sont comptés comme lieux-dits ou quartiers',
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  rues_classement: {
+    titre: 'Noms les plus « peuplés »',
+    source: BAN,
+    calcul: "nombre d'adresses (numéros) rattachées à chaque nom de voie ou de lieu-dit ; ce n'est ni la longueur de la voie, ni le nombre d'habitants",
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  rues_femmes: {
+    titre: 'Voies portant un nom de femme',
+    source: `${BAN} ; ${REFERENCE_RUES}`,
+    calcul: `parmi les ${formatNumber(resumeRues.voies_de_personnes)} voies dont le nom est celui d'une personne, nombre de voies dont la personne est une femme ; le sexe est déduit du prénom ou du titre (« Saint ») ; ${formatNumber(resumeRues.voies_sexe_indetermine)} voies restent sans sexe déterminé (prénom absent ou ambigu) ; les noms de lieux-dits ne sont pas comptés`,
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  rues_personnes: {
+    titre: 'Personnes honorées',
+    source: `${BAN} ; ${REFERENCE_RUES}`,
+    calcul: `voies dont le nom est celui d'une personne, regroupées par catégorie ; une personne dont l'identité n'est pas établie avec certitude est classée « Non déterminé » (${formatNumber(resumeRues.voies_sans_categorie)} voies) ; deux voies peuvent honorer la même personne`,
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  rues_jumelage: {
+    titre: 'Voies qui évoquent d\'autres communes',
+    source: `${BAN} ; ${REFERENCE_RUES} ; villes jumelées : site de la commune (luynes.fr, comité de jumelages)`,
+    calcul: 'voies dont le nom est celui d\'une ville jumelée avec Luynes, ou d\'une autre commune nommée Luynes',
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  rues_curiosites: {
+    titre: 'Noms qui intriguent',
+    source: `${BAN} ; choix éditorial (${REFERENCE_RUES})`,
+    calcul: "sélection de noms au pouvoir d'évocation, sans explication d'origine (elle n'est pas dans les données) ; orthographe de la base",
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  rues_carte: {
+    titre: 'Carte des voies et lieux-dits',
+    source: BAN + ' ; fond de carte OpenFreeMap (© OpenStreetMap)',
+    calcul: "un point par nom de voie ou de lieu-dit, placé sur l'adresse la plus proche du milieu de ses adresses (le tracé exact des voies n'est pas dans la base)",
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
 } as const satisfies Record<string, Methode>;
 
 export type CleMethode = keyof typeof METHODES;
@@ -623,7 +674,7 @@ export function methode(cle: CleMethode): Methode {
 
 /** Méthodes affichées dans la section « Sources et méthode » de chaque page (dans l'ordre des chiffres clés). */
 const PAR_PAGE: Record<string, readonly CleMethode[]> = {
-  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences', 'elus_indemnites', 'conseil_parite', 'sport_licences', 'sport_equipements'],
+  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences', 'elus_indemnites', 'conseil_parite', 'sport_licences', 'sport_equipements', 'rues_noms'],
   population: ['population', 'multiplie_1968', 'age_median', 'part_65', 'naissances'],
   territoire: ['superficie', 'densite'],
   'patrimoine-risques': ['monuments', 'cavites', 'catnat', 'mouvements'],
@@ -638,6 +689,7 @@ const PAR_PAGE: Record<string, readonly CleMethode[]> = {
   eau: ['eau_conformite', 'eau_physico', 'eau_prelevements', 'eau_nitrates', 'eau_durete'],
   construction: ['logements_commences', 'logements_sociaux'],
   sport: ['sport_licences', 'sport_federations', 'sport_parite', 'sport_ages', 'sport_evolution', 'sport_equipements', 'sport_types', 'sport_frise', 'sport_carte'],
+  rues: ['rues_noms', 'rues_femmes', 'rues_types', 'rues_classement', 'rues_personnes', 'rues_jumelage', 'rues_curiosites', 'rues_carte'],
   transparence: ['depenses_postes', 'elus_indemnites', 'subventions_associations', 'marches_plafonds', 'appels_offres', 'conseil_parite', 'conseil_ages', 'conseil_professions'],
 };
 

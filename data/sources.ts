@@ -14,6 +14,7 @@ import { SOURCES_EAU } from './sources-eau.ts';
 import { SOURCES_CONSTRUCTION } from './sources-construction.ts';
 import { SOURCES_TRANSPARENCE } from './sources-transparence.ts';
 import { SOURCES_SPORT } from './sources-sport.ts';
+import { SOURCES_RUES } from './sources-rues.ts';
 
 export interface Source {
   /** Nom du fichier produit dans data/raw/ (sans extension) */
@@ -391,4 +392,7 @@ export const SOURCES: readonly Source[] = [
 
   // — Sport : licences INJEP et équipements RES (voir data/sources-sport.ts) —
   ...SOURCES_SPORT,
+
+  // — Les rues : Base Adresse Nationale (voir data/sources-rues.ts) —
+  ...SOURCES_RUES,
 ];

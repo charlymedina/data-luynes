@@ -1,0 +1,274 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon from '../components/Icon.astro';
+import InfoTip from '../components/InfoTip.astro';
+import MapView, { type MapLegendItem } from '../components/MapView.astro';
+import SourcesMethode from '../components/SourcesMethode.astro';
+import {
+  CATEGORIE_INCONNUE,
+  categoriesHonorees,
+  classement,
+  curiosites,
+  iconeCategorie,
+  pointsNoms,
+  resumeRues as r,
+  typesDeVoies,
+  voiesAilleurs,
+  voiesDePersonnes,
+} from '../data/rues';
+import { contourCommune } from '../data/patrimoine';
+import { CREDITS_RUES } from '../data/credits';
+import { methode } from '../data/methodes';
+import { formatNumber, formatOneDecimal } from '../lib/format';
+import { faitsRues } from '../lib/faits-rues';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+
+// — Types de voies : barres proportionnelles au nombre de noms —
+const maxTypes = Math.max(1, ...typesDeVoies.map((t) => t.nombre));
+const maxClassement = Math.max(1, ...classement.map((c) => c.adresses));
+
+// — Personnes honorées : une silhouette par voie, classées par sexe —
+const hommes = voiesDePersonnes.filter((v) => v.sexe === 'homme');
+const femmes = voiesDePersonnes.filter((v) => v.sexe === 'femme');
+const indetermines = voiesDePersonnes.filter((v) => v.sexe === 'indetermine');
+const silhouettes = [
+  ...femmes.map((v) => ({ v, classe: 'text-accent' })),
+  ...hommes.map((v) => ({ v, classe: 'text-loire' })),
+  ...indetermines.map((v) => ({ v, classe: 'text-muted' })),
+];
+const categoriesConnues = categoriesHonorees.filter((c) => c.categorie !== CATEGORIE_INCONNUE);
+const categorieInconnue = categoriesHonorees.find((c) => c.categorie === CATEGORIE_INCONNUE);
+const maxCategories = Math.max(1, ...categoriesHonorees.map((c) => c.voies));
+const jumelles = voiesAilleurs.filter((v) => v.nature === 'ville_jumelle');
+const homonymes = voiesAilleurs.filter((v) => v.nature === 'homonyme');
+
+// — Carte : un point par nom, couleur selon voie ou lieu-dit —
+const fiche = (p: (typeof pointsNoms)[number]): string => `${p.nom}\n${p.type}\n${formatNumber(p.adresses)} adresse${p.adresses > 1 ? 's' : ''}`;
+const couches = [
+  { cle: 'voies', libelle: 'Voies', colorVar: '--chart-1', points: pointsNoms.filter((p) => p.voie) },
+  { cle: 'lieux-dits', libelle: 'Lieux-dits et quartiers', colorVar: '--chart-4', points: pointsNoms.filter((p) => !p.voie) },
+];
+const legende: MapLegendItem[] = couches
+  .filter((c) => c.points.length > 0)
+  .map((c) => ({
+    label: `${c.libelle} (${formatNumber(c.points.length)})`,
+    layer: { id: `rues-${c.cle}`, colorVar: c.colorVar, radius: 6, points: c.points.map((p) => ({ lat: p.lat, lon: p.lon, label: fiche(p) })) },
+  }));
+---
+
+<Base
+  title="Les rues de Luynes — Luynes en chiffres"
+  description={`Les rues de Luynes : ${formatNumber(r.voies)} voies, ${formatNumber(r.lieux_dits)} lieux-dits, ${formatNumber(r.adresses)} adresses, les personnes honorées, les villes jumelles et la carte.`}
+  sources={CREDITS_RUES}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="panneau" class="h-5 w-5" /> Thème · Rues &amp; lieux-dits</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.6rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      Au coin <span class="text-accent">de la rue</span>
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Rues, chemins, impasses, hameaux : les noms inscrits sur les panneaux de Luynes, les personnes qu'ils honorent, les villes
+      jumelles qu'ils évoquent et quelques noms qui intriguent. D'après la Base Adresse Nationale.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés des rues" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <KeyFigure tone="loire" icon="panneau" label="Noms de voies et de lieux-dits" value={r.noms} info={methode('rues_noms')}>
+      <p class="mt-3 text-sm opacity-90">{formatNumber(r.voies)} voies et {formatNumber(r.lieux_dits)} lieux-dits ou quartiers.</p>
+    </KeyFigure>
+    <KeyFigure icon="maison" label="Adresses recensées" value={r.adresses} info={methode('rues_noms')}>
+      <p class="mt-3 text-sm text-ink-2">Dont {formatOneDecimal((100 * r.adresses_lieux_dits) / r.adresses)} % dans un lieu-dit ou un quartier.</p>
+    </KeyFigure>
+    <KeyFigure tone="accent" icon="personnes" label={`Voies portant un nom de femme, parmi ${formatNumber(r.voies_de_personnes)} voies de personnes`} value={r.voies_femmes} info={methode('rues_femmes')}>
+      <p class="mt-3 text-sm text-ink-2">{formatNumber(r.voies_hommes)} noms d'hommes{r.voies_sexe_indetermine > 0 ? `, ${formatNumber(r.voies_sexe_indetermine)} sans sexe déterminé` : ''}.</p>
+    </KeyFigure>
+  </section>
+
+  <section id="types" aria-labelledby="types-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="types-titre" class={titreH2}>Rue, chemin ou impasse ?</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Les {formatNumber(r.noms)} noms, selon leur premier mot. Les noms sans type de voie (« Le Port de Luynes », « Les Doguins »…) sont comptés
+      comme lieux-dits ou quartiers.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <p class="flex items-center gap-2 text-sm font-semibold">Nombre de noms par type <InfoTip methode={methode('rues_types')} label="Types de voies" /></p>
+      <ul class="mt-5 space-y-2.5">
+        {
+          typesDeVoies.map((t) => (
+            <li class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-sm sm:grid-cols-[11rem_1fr_auto]">
+              <span class="truncate" title={t.type}>{t.type}</span>
+              <span class="text-right whitespace-nowrap tabular-nums sm:order-3"><strong>{formatNumber(t.nombre)}</strong> <span class="text-ink-2">· {formatNumber(t.adresses)} adr.</span></span>
+              <span class="col-span-2 h-2.5 rounded-full bg-line sm:order-2 sm:col-span-1" aria-hidden="true">
+                <span class:list={['block h-full rounded-full', t.voie ? 'bg-loire' : 'bg-accent']} style={`width: ${(100 * t.nombre) / maxTypes}%`}></span>
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section id="classement" aria-labelledby="classement-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="classement-titre" class={titreH2}>Les plus « peuplées »</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Les noms qui comptent le plus d'adresses. Ce n'est pas la longueur de la voie : seulement le nombre de numéros qui lui sont rattachés.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <p class="flex items-center gap-2 text-sm font-semibold">Dix noms, du plus au moins d'adresses <InfoTip methode={methode('rues_classement')} label="Noms les plus peuplés" /></p>
+      <ol class="mt-5 space-y-2.5">
+        {
+          classement.map((c) => (
+            <li class="grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-sm sm:grid-cols-[2rem_minmax(0,18rem)_1fr_auto]">
+              <span class="font-display font-extrabold text-ink-2 tabular-nums">{c.rang}</span>
+              <span class="truncate" title={c.nom}>{c.nom}</span>
+              <span class="w-8 text-right font-semibold tabular-nums sm:order-4">{formatNumber(c.adresses)}</span>
+              <span class="col-start-2 col-span-2 h-2.5 rounded-full bg-line sm:order-3 sm:col-span-1 sm:col-start-auto" aria-hidden="true">
+                <span class:list={['block h-full rounded-full', c.voie ? 'bg-loire' : 'bg-accent']} style={`width: ${(100 * c.adresses) / maxClassement}%`}></span>
+              </span>
+            </li>
+          ))
+        }
+      </ol>
+      <p class="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-2">
+        <span class="flex items-center gap-2"><span class="inline-block size-3 rounded-full bg-loire" aria-hidden="true"></span>voie</span>
+        <span class="flex items-center gap-2"><span class="inline-block size-3 rounded-full bg-accent" aria-hidden="true"></span>lieu-dit ou quartier</span>
+      </p>
+    </div>
+  </section>
+
+  <section id="personnes" aria-labelledby="personnes-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="personnes-titre" class={titreH2}>Qui est honoré ?</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      {formatNumber(r.voies_de_personnes)} voies portent le nom d'une personne ({formatNumber(r.personnes_distinctes)} personnes différentes). Le sexe et la
+      catégorie ne sont indiqués que lorsqu'ils sont certains ; les autres cas sont classés « {CATEGORIE_INCONNUE} ».
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <p class="flex items-center gap-2 text-sm font-semibold">Une silhouette par voie <InfoTip methode={methode('rues_femmes')} label="Voies de femmes et d'hommes" /></p>
+      <ul class="mt-5 flex flex-wrap gap-1.5" aria-label="Voies portant un nom de personne, par sexe">
+        {
+          silhouettes.map(({ v, classe }) => (
+            <li title={`${v.nom} : ${v.sujet}`} class={classe}><Icon name="personnes" class="h-7 w-7" /></li>
+          ))
+        }
+      </ul>
+      <p class="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2">
+        <span class="flex items-center gap-2"><span class="inline-block size-3 rounded-full bg-accent" aria-hidden="true"></span><strong class="text-ink">{formatNumber(femmes.length)}</strong> {femmes.length > 1 ? 'noms de femmes' : 'nom de femme'}</span>
+        <span class="flex items-center gap-2"><span class="inline-block size-3 rounded-full bg-loire" aria-hidden="true"></span><strong class="text-ink">{formatNumber(hommes.length)}</strong> {hommes.length > 1 ? "noms d'hommes" : "nom d'homme"}</span>
+        {indetermines.length > 0 && <span class="flex items-center gap-2"><span class="inline-block size-3 rounded-full bg-muted" aria-hidden="true"></span><strong class="text-ink">{formatNumber(indetermines.length)}</strong> sans sexe déterminé</span>}
+      </p>
+    </div>
+
+    <div class:list={['mt-6', carte]}>
+      <p class="flex items-center gap-2 text-sm font-semibold">Par catégorie <InfoTip methode={methode('rues_personnes')} label="Catégories de personnes honorées" /></p>
+      <ul class="mt-5 grid gap-3 sm:grid-cols-2">
+        {
+          categoriesConnues.map((c) => (
+            <li class="flex items-center gap-3 rounded-2xl border border-line p-3">
+              <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-loire-soft text-loire"><Icon name={iconeCategorie(c.categorie)} class="h-5 w-5" /></span>
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm font-semibold">{c.categorie}</span>
+                <span class="mt-1.5 block h-2 rounded-full bg-line" aria-hidden="true"><span class="block h-full rounded-full bg-loire" style={`width: ${(100 * c.voies) / maxCategories}%`}></span></span>
+              </span>
+              <span class="font-display text-2xl font-extrabold tabular-nums">{formatNumber(c.voies)}</span>
+            </li>
+          ))
+        }
+      </ul>
+      {
+        categorieInconnue && (
+          <p class="mt-4 border-t border-line pt-4 text-sm text-ink-2">
+            {formatNumber(categorieInconnue.voies)} voies portent le nom d'une personne dont l'identité n'est pas établie avec certitude : elles ne sont pas classées.
+          </p>
+        )
+      }
+      <details class="mt-4">
+        <summary class="cursor-pointer text-sm font-semibold hover:text-loire">Les {formatNumber(r.voies_de_personnes)} voies, en tableau</summary>
+        <div class="mt-3 max-h-96 overflow-auto">
+          <table class="w-full text-left text-sm">
+            <caption class="sr-only">Voies de Luynes portant un nom de personne</caption>
+            <thead><tr class="border-b border-line text-ink-2"><th scope="col" class="py-2 pr-3">Voie</th><th scope="col" class="py-2 pr-3">Catégorie</th><th scope="col" class="py-2 pr-3">Description</th><th scope="col" class="py-2 text-right">Adr.</th></tr></thead>
+            <tbody>
+              {
+                voiesDePersonnes.map((v) => (
+                  <tr class="border-b border-line/60 align-top">
+                    <td class="py-1.5 pr-3">{v.nom}</td>
+                    <td class="py-1.5 pr-3">{v.categorie}</td>
+                    <td class="py-1.5 pr-3 text-ink-2">{v.description ?? ''}</td>
+                    <td class="py-1.5 text-right tabular-nums">{formatNumber(v.adresses)}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section id="ailleurs" aria-labelledby="ailleurs-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="ailleurs-titre" class={titreH2}>Ailleurs, sur les panneaux</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Des voies rappellent les villes jumelées avec Luynes{homonymes.length > 0 ? ' et une autre commune qui porte le même nom' : ''}.</p>
+    <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        [...jumelles, ...homonymes].map((v) => (
+          <li class="rounded-[1.5rem] border border-line bg-surface p-5">
+            <span class="grid h-10 w-10 place-items-center rounded-full bg-loire-soft text-loire"><Icon name="carte" class="h-5 w-5" /></span>
+            <p class="mt-3 font-display text-xl font-bold">{v.sujet}</p>
+            <p class="text-sm text-ink-2">{v.description}</p>
+            <p class="mt-2 text-xs text-ink-2">{v.nom} · {formatNumber(v.adresses)} adresse{v.adresses > 1 ? 's' : ''}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="mt-3 flex items-center gap-2 text-xs text-ink-2">Voies évoquant d'autres communes <InfoTip methode={methode('rues_jumelage')} label="Villes jumelles" /></p>
+  </section>
+
+  <section id="curiosites" aria-labelledby="curiosites-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="curiosites-titre" class={titreH2}>Des noms qui intriguent</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Une sélection de noms de lieux-dits et de voies au pouvoir d'évocation. L'origine de ces noms n'est pas dans les données : elle reste à raconter par celles
+      et ceux qui la connaissent.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <p class="flex items-center gap-2 text-sm font-semibold">{formatNumber(curiosites.length)} noms <InfoTip methode={methode('rues_curiosites')} label="Noms qui intriguent" /></p>
+      <ul class="mt-5 grid grid-cols-1 gap-3 min-[460px]:grid-cols-2 sm:grid-cols-3">
+        {
+          curiosites.map((c) => (
+            <li class="rounded-2xl border border-line p-3">
+              <p class="font-display text-lg leading-tight font-bold">{c.nom}</p>
+              <p class="mt-1 text-xs text-ink-2">{c.type} · {formatNumber(c.adresses)} adresse{c.adresses > 1 ? 's' : ''}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section id="carte" aria-labelledby="carte-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="carte-titre" class={titreH2}>La carte</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Un point par nom, placé sur l'adresse la plus proche du milieu de ses adresses. Cliquer sur un point pour son nom et son nombre d'adresses.</p>
+    <div class="mt-8">
+      <MapView info={methode('rues_carte')} ariaLabel={`Carte des ${formatNumber(pointsNoms.length)} noms de voies et de lieux-dits de Luynes`} contour={contourCommune} legend={legende} />
+    </div>
+    <details class:list={['mt-6', carte]}>
+      <summary class="cursor-pointer font-display text-lg font-bold hover:text-loire">La liste des {formatNumber(pointsNoms.length)} noms, avec leur nombre d'adresses</summary>
+      <ul class="mt-6 grid gap-x-8 text-sm sm:grid-cols-2">
+        {
+          pointsNoms.map((p) => (
+            <li class="flex justify-between gap-3 border-b border-line/60 py-1.5">
+              <span class="min-w-0 break-words">{p.nom}<span class="text-ink-2">{p.voie ? '' : ' · lieu-dit ou quartier'}</span></span>
+              <span class="tabular-nums">{formatNumber(p.adresses)}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </details>
+  </section>
+
+  <FunFacts facts={faitsRues()} id="saviez-vous-rues" />
+  <SourcesMethode page="rues" />
+</Base>

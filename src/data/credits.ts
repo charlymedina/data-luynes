@@ -181,6 +181,13 @@ const RES_SPORT: FooterSource = {
   detail: 'équipements sportifs, installations, mise en service, position — Licence Ouverte',
 };
 
+const BAN: FooterSource = {
+  nom: 'Base Adresse Nationale (IGN / DINUM)',
+  url: 'https://adresse.data.gouv.fr',
+  detail: 'adresses, noms de voies et de lieux-dits — Licence Ouverte 2.0',
+};
+
+export const CREDITS_RUES: readonly FooterSource[] = [BAN, API_GEO, OPENFREEMAP];
 export const CREDITS_SPORT: readonly FooterSource[] = [INJEP_LICENCES, RES_SPORT, API_GEO, OPENFREEMAP];
 export const CREDITS_TRANSPARENCE: readonly FooterSource[] = [DGFIP_BALANCES, DGFIP_COMPTES, DECP, BOAMP, RNE, INSEE_RECENSEMENT, API_GEO];
 export const CREDITS_EAU: readonly FooterSource[] = [HUBEAU_EAU];
@@ -218,5 +225,6 @@ export const CREDITS_ACCUEIL: readonly FooterSource[] = [
     CREDITS_CONSTRUCTION,
     CREDITS_TRANSPARENCE,
     CREDITS_SPORT,
+    CREDITS_RUES,
   ].flat()),
 ].filter((source) => source !== OPENFREEMAP);

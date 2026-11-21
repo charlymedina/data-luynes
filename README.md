@@ -3,7 +3,7 @@
 Site de **données ouvertes sur Luynes** (Indre-et-Loire, code INSEE `37139`) : rassembler, vérifier et présenter
 simplement les données publiques de la commune.
 
-Site en ligne : **https://luynes.pages.dev** — 15 thèmes + une page d'accueil, reconstruits chaque lundi (et à chaque
+Site en ligne : **https://luynes.pages.dev** — 16 thèmes + une page d'accueil, reconstruits chaque lundi (et à chaque
 modification) à partir des dernières données publiées.
 
 ---
@@ -36,6 +36,7 @@ modification) à partir des dernières données publiées.
 | Construction & logement social | `/construction` | SDES (Sitadel, RPLS) |
 | Transparence | `/transparence` | DGFiP (balances comptables), DECP, BOAMP, répertoire national des élus |
 | Sport | `/sport` | INJEP (licences par commune), ministère des Sports (recensement des équipements, RES) |
+| Les rues de Luynes | `/rues` | Base Adresse Nationale (IGN / DINUM), table de correspondance des noms écrite à la main |
 
 Le détail (producteur, licence, fréquence de mise à jour) est dans [`docs/sources.md`](docs/sources.md) ;
 l'inventaire des données disponibles et leur statut dans [`docs/catalogue-donnees.md`](docs/catalogue-donnees.md).
@@ -71,7 +72,7 @@ data-luynes/
 │   ├── sql/*.sql                        # requêtes DuckDB : un .sql = un .json (_*.sql = vues partagées)
 │   ├── sql/baac/, sql/elections/        # requêtes de fabrication des archives
 │   ├── archive/{dvf,baac,elections}/    # archives versionnées (Parquet + manifest.json)
-│   ├── reference/                       # petites tables de référence (libellés des équipements INSEE)
+│   ├── reference/                       # petites tables de référence (libellés des équipements INSEE, noms de rues)
 │   └── tests/*.sql                      # tests de cohérence en SQL (zéro ligne = OK)
 ├── scripts/
 │   ├── build-data.ts                    # téléchargement + requêtes SQL

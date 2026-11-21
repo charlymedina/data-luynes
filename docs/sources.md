@@ -217,6 +217,15 @@ Notes : plan comptable M14 jusqu'en 2023, M57 depuis 2024 : les comptes sont rap
 
 Notes : une **licence n'est pas une personne** (un habitant licencié dans deux fédérations compte deux fois) ; les fédérations du sport scolaire et universitaire (codes en 6xx : UNSS, UGSEL, USEP…) sont comptées dans le total mais présentées à part du podium. Le rattachement est la commune de **résidence** du licencié, pas celle du club. Les CSV de licences font ≈ 250 Mo par année : ils sont lus en continu par DuckDB et seules les lignes d'Indre-et-Loire sont gardées (source de type « csv-extrait », ≈ 40 s par année). Dans le RES, une ligne = un équipement, mais certaines lignes sont des activités d'une installation sans type ni position : elles comptent comme équipements, sans figurer sur la carte. Les années 2020 et 2021 sont marquées par la crise sanitaire. Requêtes : `data/sql/_sport.sql`, `data/sql/sport_*.sql`.
 
+## Thème Les rues de Luynes
+
+| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
+|---|---|---|---|---|---|
+| [Base Adresse Nationale (BAN)](https://adresse.data.gouv.fr) — export CSV du département `adresses-37.csv.gz` | Adresses du code INSEE 37139 : nom de voie ou de lieu-dit, numéro, position | IGN / DINUM (Etalab) | Licence Ouverte 2.0 | Continue (export quotidien) | `data/raw/rues_ban_luynes.parquet` |
+| Table de correspondance des noms (écrite à la main) | Pour les voies de personnes : personne honorée, sexe, catégorie, courte description ; villes jumelles ; sélection de noms qui intriguent | Projet (vérifiée à la main, cas certains seulement) | Libre | À la main | `data/reference/noms-de-rues.csv` |
+
+Notes : la BAN ne distingue pas « voie » et « lieu-dit » : un nom est une voie s'il commence par rue, chemin, impasse, place, avenue, allée, route, square (etc.), sinon un lieu-dit ou quartier (ex. « Vallée de Vaugareau », qui compte 62 adresses, est classée ainsi faute de type dans la base). Le nombre d'adresses d'un nom n'est pas la longueur de la voie, qui n'est pas calculable sans le tracé : elle n'est pas présentée. **Table de correspondance** : une ligne par nom (identique à celui de la BAN) ; `sexe` = homme / femme / indetermine (déduit du prénom ou de « Saint ») ; `categorie` = « Non déterminé » quand la personne n'est pas identifiée avec certitude (voies locales comme « Rue Joseph Thierry », « Rue Alfred Baugé »…, non vérifiables dans les sources consultées). Villes jumelées (Buntingford, Ólvega, Meßstetten) : site de la commune (luynes.fr, comité de jumelages) ; l'orthographe « Mebstetten » de la BAN est conservée dans le nom de la voie. Les noms de lieux-dits « qui intriguent » sont un choix éditorial, sans explication d'origine. Un nom de la table absent de la BAN est ignoré ; le test `data/tests/07_rues.sql` alerte si moins de 80 % des noms sont retrouvés. Requêtes : `data/sql/_rues.sql`, `data/sql/rues_*.sql`.
+
 ## Mise à jour et pannes
 
 Les données sont téléchargées à nouveau à chaque construction du site (au moins une fois par semaine), avec 3 tentatives

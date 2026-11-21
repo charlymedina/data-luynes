@@ -82,6 +82,8 @@ export const ICON_PATHS = {
   haltere: 'M3.5 9.5v5 M6.5 7v10 M17.5 7v10 M20.5 9.5v5 M6.5 12h11',
   /** Piste d'athlétisme (ovale à deux couloirs). */
   piste: 'M7 5h10a7 7 0 0 1 0 14H7A7 7 0 0 1 7 5Z M8 9h8a3 3 0 0 1 0 6H8a3 3 0 0 1 0-6Z',
+  /** Panneau de rue : thème « Les rues de Luynes ». */
+  panneau: 'M12 3.5v17 M7.5 20.5h9 M12 6h6.5l2 2.2-2 2.3H12 M12 12.5H5.5l-2 2.2 2 2.3H12',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;
