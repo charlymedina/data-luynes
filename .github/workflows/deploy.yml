@@ -22,7 +22,8 @@ concurrency:
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # La construction télécharge ~70 sources (≈ 13 min fin 2026) : marge confortable avant l'arrêt forcé.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v5
 
