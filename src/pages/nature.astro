@@ -1,0 +1,321 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon from '../components/Icon.astro';
+import InfoTip from '../components/InfoTip.astro';
+import MapView, { type MapAreaLegendItem } from '../components/MapView.astro';
+import Waffle from '../components/charts/Waffle.astro';
+import SourcesMethode from '../components/SourcesMethode.astro';
+import {
+  appellations,
+  couchesCarte,
+  culturesDetail,
+  especesMenacees,
+  especesTop,
+  famillesCultures,
+  groupesVivants,
+  nomZone,
+  resumeBiodiversite as b,
+  resumeNature as r,
+  zonesProtegees,
+} from '../data/nature';
+import { contourCommune } from '../data/patrimoine';
+import { CREDITS_NATURE } from '../data/credits';
+import { methode } from '../data/methodes';
+import { formatNumber, formatOneDecimal } from '../lib/format';
+import { faitsNature } from '../lib/faits-nature';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
+/** Largeur d'une barre en % de la plus longue (au moins 2 % pour rester visible). */
+const largeur = (v: number, max: number): string => `${Math.max(2, (100 * v) / Math.max(max, 1))}%`;
+
+// — Zones protégées ou inventoriées —
+const maxZone = Math.max(...zonesProtegees.map((z) => z.surface_ha));
+
+// — Cultures : les 8 plus grandes familles, le reste regroupé —
+const NB_FAMILLES_AFFICHEES = 8;
+const principales = famillesCultures.slice(0, NB_FAMILLES_AFFICHEES);
+const autres = famillesCultures.slice(NB_FAMILLES_AFFICHEES);
+const sommeAutres = autres.reduce((t, f) => t + f.surface_ha, 0);
+const sommeAutresAnciennes = autres.reduce((t, f) => t + f.surface_ancienne_ha, 0);
+const lignesCultures = [
+  ...principales.map((f) => ({ nom: f.famille, ha: f.surface_ha, ancien: f.surface_ancienne_ha })),
+  ...(autres.length > 0 ? [{ nom: `Autres cultures (${formatNumber(autres.length)} familles)`, ha: sommeAutres, ancien: sommeAutresAnciennes }] : []),
+];
+const maxCulture = Math.max(...lignesCultures.map((l) => Math.max(l.ha, l.ancien)));
+const evolutionAgricole = r.agricole_ha - r.agricole_ancienne_ha;
+
+// — Biodiversité —
+const maxGroupe = Math.max(...groupesVivants.map((g) => g.observations));
+const maxEspece = Math.max(...especesTop.map((e) => e.observations));
+const regnes: Record<string, string> = { animaux: 'bg-accent', plantes: 'bg-loire', autres: 'bg-muted' };
+
+// — Carte : zones réunies par couche —
+const descriptionsCarte = {
+  znieff: { label: 'ZNIEFF (inventaire scientifique)', colorVar: '--chart-1' },
+  natura: { label: 'Natura 2000', colorVar: '--chart-3' },
+  prairies: { label: 'Prairies permanentes', colorVar: '--chart-4' },
+  vignobles: { label: 'Vignobles délimités AOC', colorVar: '--chart-2' },
+} as const;
+const zonesCarte: MapAreaLegendItem[] = couchesCarte.map((c) => {
+  const d = descriptionsCarte[c.couche];
+  return {
+    label: `${d.label} (${formatNumber(c.surface_ha)} ha)`,
+    area: { id: `nature-${c.couche}`, colorVar: d.colorVar, geometry: c.forme, label: `${d.label} : ${formatNumber(c.surface_ha)} hectares à Luynes` },
+  };
+});
+---
+
+<Base
+  title="Nature et paysages à Luynes — Luynes en chiffres"
+  description={`Nature à Luynes : ${formatOneDecimal(r.zonee_pct)} % de la commune en ZNIEFF ou Natura 2000, ${formatNumber(r.agricole_ha)} hectares de terres agricoles déclarées, vignobles AOC et ${formatNumber(b.especes)} espèces observées.`}
+  sources={CREDITS_NATURE}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="feuille" class="h-5 w-5" /> Thème · Nature &amp; paysages</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.6rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      Côté <span class="text-accent">nature</span>
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Îles de la Loire, champs, vignes, oiseaux et plantes… Les espaces naturels reconnus, les cultures déclarées et les espèces
+      observées sur la commune, mesurés à la limite exacte de Luynes.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés de la nature" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <KeyFigure tone="loire" icon="feuille" label="De la commune en ZNIEFF ou Natura 2000" value={r.zonee_pct} decimals={1} unit="%" info={methode('nature_protege')}>
+      <p class="mt-3 text-sm opacity-90">{formatNumber(r.zonee_ha)} hectares sur {formatNumber(r.surface_commune_ha)}.</p>
+    </KeyFigure>
+    <KeyFigure icon="carte" label={`De terres agricoles déclarées (${r.annee_rpg})`} value={r.agricole_pct} decimals={1} unit="%" info={methode('nature_agricole')}>
+      <p class="mt-3 text-sm text-ink-2">{formatNumber(r.agricole_ha)} hectares, dont {formatNumber(r.prairies_ha)} de prairies permanentes.</p>
+    </KeyFigure>
+    <KeyFigure tone="accent" icon="feuille" label="Hectares délimités pour l'AOC viticole" value={r.aoc_ha} info={methode('nature_aoc')}>
+      <p class="mt-3 text-sm text-ink-2">{formatOneDecimal(r.aoc_pct)} % de la commune, {formatNumber(r.aoc_nb_appellations)} appellations.</p>
+    </KeyFigure>
+    <KeyFigure icon="graphique" label="Espèces observées" value={b.especes} info={methode('nature_especes')}>
+      <p class="mt-3 text-sm text-ink-2">{formatNumber(b.observations)} observations partagées (GBIF).</p>
+    </KeyFigure>
+  </section>
+
+  <section id="espaces" aria-labelledby="espaces-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="espaces-titre" class={titreH2}>Des espaces reconnus</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Deux types de zonages touchent Luynes. Les <strong>ZNIEFF</strong> sont des inventaires scientifiques de secteurs
+      à grand intérêt écologique (sans valeur réglementaire par elles-mêmes). Les sites <strong>Natura 2000</strong> forment un
+      réseau européen de sites gérés par contrat et par charte pour conserver des habitats et des oiseaux.
+    </p>
+    <div class="mt-8 grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <Waffle
+        info={methode('nature_protege')}
+        title="Sur 100 hectares de Luynes"
+        unit="ha"
+        colors={['var(--chart-3)', 'var(--bar)']}
+        items={[
+          { label: 'En ZNIEFF ou Natura 2000', value: r.zonee_pct },
+          { label: 'Hors de ces zonages', value: 100 - r.zonee_pct },
+        ]}
+        ariaLabel={`${formatOneDecimal(r.zonee_pct)} % de la commune, soit ${formatNumber(r.zonee_ha)} hectares, est située dans une ZNIEFF ou un site Natura 2000.`}
+      />
+      <div class={carte}>
+        <p class="flex items-center gap-2 text-sm font-semibold">Les {formatNumber(zonesProtegees.length)} zones <InfoTip methode={methode('nature_zonages')} label="Zones naturelles de Luynes" /></p>
+        <p class="mt-1 text-sm text-ink-2">Hectares situés à Luynes (ces zones se prolongent sur d'autres communes et se chevauchent en partie).</p>
+        <ul class="mt-5 space-y-4">
+          {
+            zonesProtegees.map((z) => (
+              <li>
+                <p class="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+                  <span class="min-w-0 font-semibold break-words">
+                    <a href={z.url} class="underline-offset-2 hover:underline" rel="noopener noreferrer" target="_blank">{nomZone(z.nom)}</a>
+                  </span>
+                  <span class="tabular-nums text-ink-2">{formatOneDecimal(z.surface_ha)} ha · {formatOneDecimal(z.part_commune_pct)} %</span>
+                </p>
+                <p class="text-xs text-ink-2">{z.type_libelle}</p>
+                <span class="mt-1 block h-2.5 rounded-full bg-line" aria-hidden="true">
+                  <span class:list={['block h-full rounded-full', z.type.startsWith('natura') ? 'bg-chart-3' : 'bg-loire']} style={`width: ${largeur(z.surface_ha, maxZone)}`}></span>
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="champs" aria-labelledby="champs-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="champs-titre" class={titreH2}>Dans les champs</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Les parcelles déclarées par les exploitants au registre parcellaire graphique : {formatNumber(r.agricole_ha)} hectares en {r.annee_rpg}
+      ({formatOneDecimal(r.agricole_pct)} % de la commune). Ce registre ne couvre que les parcelles déclarées au titre des aides agricoles.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <p class="flex items-center gap-2 text-sm font-semibold">Hectares par famille de cultures <InfoTip methode={methode('nature_cultures')} label="Cultures déclarées" /></p>
+      <p class="mt-1 text-sm text-ink-2">
+        <span class="mr-1 inline-block size-2.5 rounded-full bg-loire align-middle" aria-hidden="true"></span> {r.annee_rpg}
+        <span class="mx-2 text-line">·</span>
+        <span class="mr-1 inline-block size-2.5 rounded-full bg-line align-middle ring-1 ring-ink-2" aria-hidden="true"></span> {r.annee_rpg_ancienne}
+      </p>
+      <ul class="mt-6 space-y-4" aria-label="Surface par famille de cultures">
+        {
+          lignesCultures.map((l) => (
+            <li>
+              <p class="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+                <span class="font-semibold">{l.nom}</span>
+                <span class="tabular-nums"><strong>{formatNumber(l.ha)} ha</strong> <span class="text-ink-2">({r.annee_rpg_ancienne} : {formatNumber(l.ancien)} ha)</span></span>
+              </p>
+              <span class="mt-1 block h-2.5 rounded-full bg-line" aria-hidden="true">
+                <span class="block h-full rounded-full bg-loire" style={`width: ${largeur(l.ha, maxCulture)}`}></span>
+              </span>
+              <span class="mt-1 block h-1.5 rounded-full bg-line/50" aria-hidden="true">
+                <span class="block h-full rounded-full bg-ink-2/40" style={`width: ${largeur(l.ancien, maxCulture)}`}></span>
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-6 border-t border-line pt-4 text-sm text-ink-2">
+        De {formatNumber(r.agricole_ancienne_ha)} hectares déclarés en {r.annee_rpg_ancienne} à {formatNumber(r.agricole_ha)} en {r.annee_rpg}
+        ({evolutionAgricole > 0 ? '+' : ''}{formatNumber(evolutionAgricole)} ha). Les cultures tournent d'une année sur l'autre (colza, blé, orge…) :
+        seuls les grands équilibres, comme les prairies, se comparent de façon fiable.
+      </p>
+      <details class="mt-4">
+        <summary class="cursor-pointer text-sm font-semibold hover:text-loire">Les cultures les plus étendues, au détail</summary>
+        <div class="mt-3 overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <caption class="sr-only">Cultures les plus étendues à Luynes, {r.annee_rpg}</caption>
+            <thead><tr class="border-b border-line text-ink-2"><th scope="col" class="py-2 pr-3">Culture</th><th scope="col" class="py-2 pr-3">Famille</th><th scope="col" class="py-2 text-right">Hectares</th></tr></thead>
+            <tbody>
+              {culturesDetail.map((c) => (
+                <tr class="border-b border-line/60"><td class="py-1.5 pr-3">{c.culture}</td><td class="py-1.5 pr-3 text-ink-2">{c.famille}</td><td class="py-1.5 text-right tabular-nums">{formatNumber(c.surface_ha)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section id="vignes" aria-labelledby="vignes-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="vignes-titre" class={titreH2}>Une terre de vignes</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Sur {formatNumber(r.aoc_ha)} hectares de la commune ({formatOneDecimal(r.aoc_pct)} %), les parcelles sont délimitées pour produire du vin sous appellation d'origine contrôlée.
+      C'est une aire de production possible, pas une surface plantée : {formatOneDecimal(r.vignes_ha)} hectares de vignes sont déclarés
+      en {r.annee_rpg} ({formatOneDecimal(r.vignes_ancienne_ha)} en {r.annee_rpg_ancienne}).
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <p class="flex items-center gap-2 text-sm font-semibold">Appellations délimitées à Luynes <InfoTip methode={methode('nature_aoc')} label="Vignobles AOC" /></p>
+      <ul class="mt-5 grid gap-3 min-[460px]:grid-cols-2 sm:grid-cols-3">
+        {
+          appellations.map((a) => (
+            <li class="flex items-center gap-3 rounded-2xl border border-line p-3">
+              <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-accent"><Icon name="feuille" class="h-5 w-5" /></span>
+              <span class="min-w-0">
+                <span class="block font-semibold break-words">{a.appellation}</span>
+                <span class="mt-0.5 block text-xs text-ink-2">{formatOneDecimal(a.surface_ha)} ha délimités</span>
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-4 text-sm text-ink-2">Une même parcelle peut porter plusieurs appellations : leurs surfaces ne s'additionnent pas.</p>
+    </div>
+  </section>
+
+  <section id="carte" aria-labelledby="carte-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="carte-titre" class={titreH2}>La carte</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">Zones naturelles reconnues, prairies permanentes et vignobles délimités, découpés à la limite de la commune. Cliquer sur une zone pour son détail.</p>
+    <div class="mt-8">
+      <MapView
+        info={methode('nature_carte')}
+        ariaLabel={`Carte de Luynes : zones ZNIEFF et Natura 2000 (${formatOneDecimal(r.zonee_pct)} % de la commune), prairies permanentes et vignobles délimités`}
+        contour={contourCommune}
+        legend={[]}
+        areas={zonesCarte}
+      >
+        <p class="text-sm text-ink-2">
+          Les zones sont aussi décrites plus haut : {zonesProtegees.map((z) => nomZone(z.nom)).join(', ')} ; prairies permanentes : {formatNumber(r.prairies_ha)} hectares ;
+          vignobles délimités : {formatNumber(r.aoc_ha)} hectares.
+        </p>
+      </MapView>
+    </div>
+  </section>
+
+  <section id="biodiversite" aria-labelledby="biodiversite-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="biodiversite-titre" class={titreH2}>Qui vit à Luynes ?</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      {formatNumber(b.observations)} observations d'espèces ont été partagées sur la commune, pour {formatNumber(b.especes)} espèces différentes.
+    </p>
+    <aside class="mt-4 max-w-2xl rounded-2xl border border-line bg-surface p-4 text-sm text-ink-2" aria-label="Lire ces chiffres avec prudence">
+      <p class="flex items-start gap-3">
+        <Icon name="alerte" class="mt-0.5 h-5 w-5 shrink-0 text-loire" />
+        <span>
+          Ces chiffres comptent des <strong>observations</strong> partagées par des naturalistes, des associations et des applications :
+          ils montrent où l'on regarde et ce qui se reconnaît facilement, pas tout ce qui vit à Luynes. Une espèce absente de la liste n'est pas absente de la commune.
+        </span>
+      </p>
+    </aside>
+    <div class="mt-8 grid gap-6 md:grid-cols-2">
+      <div class={carte}>
+        <h3 class="flex items-center gap-2 font-display text-xl font-bold">Par grand groupe <InfoTip methode={methode('nature_groupes')} label="Groupes observés" /></h3>
+        <p class="mt-1 text-sm text-ink-2">Part des observations ({pourcent(b.plantes_pct)} de plantes, {pourcent(b.animaux_pct)} d'animaux).</p>
+        <ul class="mt-5 space-y-3">
+          {
+            groupesVivants.map((g) => (
+              <li>
+                <p class="flex items-baseline justify-between gap-3 text-sm">
+                  <span class="font-semibold">{g.groupe}</span>
+                  <span class="tabular-nums text-ink-2">{formatNumber(g.observations)} · {pourcent(g.part_pct)}</span>
+                </p>
+                <span class="mt-1 block h-2.5 rounded-full bg-line" aria-hidden="true">
+                  <span class:list={['block h-full rounded-full', regnes[g.regne]]} style={`width: ${largeur(g.observations, maxGroupe)}`}></span>
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="mt-4 flex flex-wrap gap-x-4 text-xs text-ink-2">
+          <span><span class="mr-1 inline-block size-2.5 rounded-full bg-loire align-middle" aria-hidden="true"></span>plantes</span>
+          <span><span class="mr-1 inline-block size-2.5 rounded-full bg-accent align-middle" aria-hidden="true"></span>animaux</span>
+        </p>
+      </div>
+      <div class={carte}>
+        <h3 class="flex items-center gap-2 font-display text-xl font-bold">Les plus observées <InfoTip methode={methode('nature_top')} label="Espèces les plus observées" /></h3>
+        <p class="mt-1 text-sm text-ink-2">Noms scientifiques, par nombre d'observations.</p>
+        <ol class="mt-5 space-y-3">
+          {
+            especesTop.map((e, i) => (
+              <li>
+                <p class="flex items-baseline justify-between gap-3 text-sm">
+                  <span><span class="mr-2 text-ink-2 tabular-nums">{i + 1}.</span><i class="font-semibold">{e.espece}</i></span>
+                  <span class="tabular-nums text-ink-2">{formatNumber(e.observations)}</span>
+                </p>
+                <span class="mt-1 block h-2.5 rounded-full bg-line" aria-hidden="true">
+                  <span class="block h-full rounded-full bg-loire" style={`width: ${largeur(e.observations, maxEspece)}`}></span>
+                </span>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </div>
+    {
+      especesMenacees.length > 0 && (
+        <div class:list={['mt-6', carte]}>
+          <h3 class="flex items-center gap-2 font-display text-xl font-bold">Sur la liste rouge mondiale <InfoTip methode={methode('nature_menacees')} label="Espèces classées sur la liste rouge mondiale" /></h3>
+          <p class="mt-1 max-w-2xl text-sm text-ink-2">
+            {formatNumber(b.especes_menacees)} espèce{b.especes_menacees > 1 ? 's' : ''} observée{b.especes_menacees > 1 ? 's' : ''} à Luynes {b.especes_menacees > 1 ? 'sont classées' : 'est classée'} « vulnérable », « en danger » ou « en danger critique » par l'UICN à l'échelle du monde.
+            Ce statut mondial ne dit rien de leur situation locale : certaines peuvent y être courantes, d'autres y avoir été plantées.
+          </p>
+          <ul class="mt-4 grid gap-x-6 gap-y-1 text-sm min-[460px]:grid-cols-2 sm:grid-cols-3">
+            {especesMenacees.map((e) => <li class="flex justify-between gap-3 border-b border-line/60 py-1"><i>{e.espece}</i><span class="tabular-nums text-ink-2">{formatNumber(e.observations)}</span></li>)}
+          </ul>
+        </div>
+      )
+    }
+  </section>
+
+  <FunFacts facts={faitsNature()} id="saviez-vous-nature" />
+  <SourcesMethode page="nature" />
+</Base>

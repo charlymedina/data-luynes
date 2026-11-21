@@ -29,5 +29,6 @@ export const THEMES: readonly Theme[] = [
   { slug: 'construction', titre: 'Construction & logement social', court: 'Construction', icon: 'grue', resume: 'Logements autorisés et construits, logements sociaux.' },
   { slug: 'transparence', titre: 'Transparence', court: 'Transparence', icon: 'mairie', resume: 'Dépenses, indemnités des élus, subventions, marchés publics, conseil municipal.' },
   { slug: 'sport', titre: 'Sport', court: 'Sport', icon: 'ballon', resume: 'Licences par fédération, équipements, carte.' },
+  { slug: 'nature', titre: 'Nature & paysages', court: 'Nature', icon: 'feuille', resume: 'Zones protégées, cultures, vignobles, espèces observées.' },
   { slug: 'rues', titre: 'Les rues de Luynes', court: 'Rues & lieux-dits', icon: 'panneau', resume: 'Noms de voies et de lieux-dits, personnes honorées, villes jumelles.' },
 ];

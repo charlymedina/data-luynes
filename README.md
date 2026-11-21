@@ -3,7 +3,7 @@
 Site de **données ouvertes sur Luynes** (Indre-et-Loire, code INSEE `37139`) : rassembler, vérifier et présenter
 simplement les données publiques de la commune.
 
-Site en ligne : **https://luynes.pages.dev** — 16 thèmes + une page d'accueil, reconstruits chaque lundi (et à chaque
+Site en ligne : **https://luynes.pages.dev** — 17 thèmes + une page d'accueil, reconstruits chaque lundi (et à chaque
 modification) à partir des dernières données publiées.
 
 ---
@@ -36,6 +36,7 @@ modification) à partir des dernières données publiées.
 | Construction & logement social | `/construction` | SDES (Sitadel, RPLS) |
 | Transparence | `/transparence` | DGFiP (balances comptables), DECP, BOAMP, répertoire national des élus |
 | Sport | `/sport` | INJEP (licences par commune), ministère des Sports (recensement des équipements, RES) |
+| Nature & paysages | `/nature` | INPN (ZNIEFF, Natura 2000), RPG (IGN), AOC viticoles (INAO), GBIF (observations d'espèces) |
 | Les rues de Luynes | `/rues` | Base Adresse Nationale (IGN / DINUM), table de correspondance des noms écrite à la main |
 
 Le détail (producteur, licence, fréquence de mise à jour) est dans [`docs/sources.md`](docs/sources.md) ;

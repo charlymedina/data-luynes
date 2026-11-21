@@ -211,6 +211,31 @@ const BAN: FooterSource = {
   detail: 'adresses, noms de voies et de lieux-dits — Licence Ouverte 2.0',
 };
 
+const INPN_ZONAGES: FooterSource = {
+  nom: 'INPN / MNHN — espaces protégés et inventoriés (via API Carto IGN)',
+  url: 'https://inpn.mnhn.fr',
+  detail: 'ZNIEFF et sites Natura 2000 — Licence Ouverte 2.0',
+};
+
+const RPG_IGN: FooterSource = {
+  nom: 'IGN — registre parcellaire graphique (RPG)',
+  url: 'https://geoservices.ign.fr/rpg',
+  detail: 'parcelles agricoles déclarées et cultures — Licence Ouverte 2.0',
+};
+
+const INAO_AIRES: FooterSource = {
+  nom: 'INAO — délimitation parcellaire des AOC viticoles',
+  url: 'https://www.data.gouv.fr/datasets/delimitation-parcellaire-des-aoc-viticoles-de-linao/',
+  detail: 'parcelles délimitées pour produire une appellation, via la Géoplateforme de l\'IGN — Licence Ouverte',
+};
+
+const GBIF_OBSERVATIONS: FooterSource = {
+  nom: 'GBIF — Global Biodiversity Information Facility',
+  url: 'https://www.gbif.org',
+  detail: 'observations d\'espèces, comptages seulement (jeux de données sous licences CC0 ou CC BY ; citation : GBIF.org)',
+};
+
+export const CREDITS_NATURE: readonly FooterSource[] = [INPN_ZONAGES, RPG_IGN, INAO_AIRES, GBIF_OBSERVATIONS, API_GEO, OPENFREEMAP];
 export const CREDITS_RUES: readonly FooterSource[] = [BAN, API_GEO, OPENFREEMAP];
 export const CREDITS_SPORT: readonly FooterSource[] = [INJEP_LICENCES, RES_SPORT, API_GEO, OPENFREEMAP];
 export const CREDITS_TRANSPARENCE: readonly FooterSource[] = [DGFIP_BALANCES, DGFIP_COMPTES, DECP, BOAMP, RNE, INSEE_RECENSEMENT, API_GEO];
@@ -249,6 +274,7 @@ export const CREDITS_ACCUEIL: readonly FooterSource[] = [
     CREDITS_CONSTRUCTION,
     CREDITS_TRANSPARENCE,
     CREDITS_SPORT,
+    CREDITS_NATURE,
     CREDITS_RUES,
   ].flat()),
 ].filter((source) => source !== OPENFREEMAP);

@@ -19,6 +19,7 @@ import { resumeConstruction } from './construction';
 import { appelsOffres, comparaison, conseil, derniereAnnee as derniereAnneeBalance, premiereAnnee as premiereAnneeBalance, premiereNotification, premierePublication } from './transparence';
 import { periodesEquipements, resumeSport } from './sport';
 import { resumeRues } from './rues';
+import { resumeBiodiversite, resumeNature } from './nature';
 import { formatCommunes, formatMonthYear, formatNumber } from '../lib/format';
 
 export interface Methode {
@@ -51,6 +52,11 @@ const INJEP = 'INJEP / ministère des Sports, recensement des licences auprès d
 const RES = 'ministère des Sports, recensement des équipements sportifs (RES, « Data ES »)';
 const BAN = 'Base Adresse Nationale (BAN, IGN / DINUM), adresses du code INSEE 37139';
 const REFERENCE_RUES = 'table de correspondance écrite à la main (data/reference/noms-de-rues.csv), limitée aux cas certains';
+const INPN = 'MNHN / INPN (inventaire national du patrimoine naturel), via l\'API Carto « nature » de l\'IGN';
+const RPG = 'IGN, registre parcellaire graphique (RPG : parcelles agricoles déclarées par les exploitants, Géoplateforme)';
+const INAO_AOC = 'INAO, délimitation parcellaire des AOC viticoles, diffusée par la Géoplateforme de l\'IGN';
+const GBIF = 'GBIF (Global Biodiversity Information Facility) : observations d\'espèces partagées par des naturalistes, associations et programmes de sciences participatives';
+const DECOUPE = 'toutes les formes sont découpées au contour exact de la commune (calcul géographique DuckDB, projection Lambert 93) ; les terrains relevant de plusieurs zonages ne sont comptés qu\'une fois';
 const licencesAnnees = `${resumeSport.annee_debut}-${resumeSport.annee_fin}`;
 const POPULATION_DGFIP = `population retenue par la DGFiP (${formatNumber(resumeBudget.population)} habitants, population légale « totale »)`;
 
@@ -680,6 +686,66 @@ const METHODES = {
     calcul: "un point par équipement localisé ; les équipements sans coordonnées figurent dans la liste",
     millesime: `recensement consulté en ${formatMonthYear(generatedAt)}`,
   },
+  nature_protege: {
+    titre: 'Part de la commune classée ou inventoriée',
+    source: INPN,
+    calcul: `hectares de Luynes situés dans au moins une ZNIEFF (inventaire scientifique, sans valeur réglementaire) ou un site Natura 2000 (réseau européen de sites gérés par contrat), divisés par la surface de la commune (${formatNumber(resumeNature.surface_commune_ha)} ha) ; ${DECOUPE}`,
+    millesime: `zonages consultés en ${formatMonthYear(generatedAt)}`,
+  },
+  nature_zonages: {
+    titre: 'Zones naturelles de Luynes',
+    source: INPN,
+    calcul: `pour chaque zone qui touche la commune : hectares situés à Luynes (et non la surface totale de la zone, qui déborde sur d'autres communes) et part de la commune ; les zones de moins d'un hectare à Luynes sont écartées ; ${DECOUPE}`,
+    millesime: `zonages consultés en ${formatMonthYear(generatedAt)}`,
+  },
+  nature_agricole: {
+    titre: 'Terres agricoles déclarées',
+    source: RPG,
+    calcul: `surface des parcelles déclarées à Luynes (parcelles découpées au contour de la commune), divisée par la surface de la commune ; seules les parcelles déclarées par les exploitants au titre des aides agricoles sont connues : le registre ne couvre pas toutes les terres cultivées. Comparaison avec ${resumeNature.annee_rpg_ancienne}`,
+    millesime: String(resumeNature.annee_rpg),
+  },
+  nature_cultures: {
+    titre: 'Cultures déclarées',
+    source: RPG,
+    calcul: `surface de chaque famille de cultures (nomenclature du RPG) à Luynes ; part de la surface agricole déclarée. Les cultures tournent d'une année sur l'autre : comparer ${resumeNature.annee_rpg_ancienne} et ${resumeNature.annee_rpg} montre des équilibres, pas des choix individuels`,
+    millesime: `${resumeNature.annee_rpg_ancienne} et ${resumeNature.annee_rpg}`,
+  },
+  nature_aoc: {
+    titre: 'Vignobles AOC',
+    source: INAO_AOC,
+    calcul: `hectares de Luynes situés dans les parcelles délimitées pour produire l'appellation (découpés au contour de la commune) ; cela désigne un droit de produire, pas des vignes plantées (voir les vignes déclarées au RPG) ; une même parcelle peut porter plusieurs appellations`,
+    millesime: `délimitation consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  nature_especes: {
+    titre: 'Espèces observées',
+    source: GBIF,
+    calcul: `espèces différentes observées dans le contour de la commune (simplifié à ≈ 20 m près) ; ce sont des observations rapportées, qui reflètent surtout les lieux fréquentés et les observateurs actifs, pas un inventaire complet. ${formatNumber(resumeBiodiversite.observations)} observations au total, dont ${formatNumber(resumeBiodiversite.observations_humaines_pct, 1)} % par des personnes (le reste : spécimens de collections, capteurs…)`,
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  nature_groupes: {
+    titre: 'Groupes observés',
+    source: GBIF,
+    calcul: 'observations regroupées par classe taxonomique (oiseaux, insectes, plantes à fleurs…) ; une observation = un signalement, pas un individu ; les plantes sont davantage observées car elles ne bougent pas',
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  nature_top: {
+    titre: 'Espèces les plus observées',
+    source: GBIF,
+    calcul: 'espèces classées par nombre d\'observations (noms scientifiques, sans le nom de l\'auteur) : les plus fréquentes sont les plus faciles à voir ou à reconnaître',
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  nature_menacees: {
+    titre: 'Espèces classées sur la liste rouge mondiale',
+    source: GBIF + ' ; statut : liste rouge mondiale de l\'UICN',
+    calcul: 'espèces observées à Luynes et classées vulnérables, en danger ou en danger critique à l\'échelle du monde ; ce statut mondial ne dit rien de leur situation locale (une espèce peut être courante à Luynes), ni du statut en France',
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  nature_carte: {
+    titre: 'Carte de la nature',
+    source: INPN + ' ; ' + RPG + ' ; ' + INAO_AOC + ' ; fond de carte OpenFreeMap (© OpenStreetMap)',
+    calcul: 'formes découpées à la limite de la commune et légèrement allégées (≈ 5 m) pour la carte ; prairies = prairies permanentes du RPG',
+    millesime: `zonages et délimitation consultés en ${formatMonthYear(generatedAt)} ; cultures ${resumeNature.annee_rpg}`,
+  },
   rues_noms: {
     titre: 'Voies, lieux-dits et adresses',
     source: BAN,
@@ -738,7 +804,7 @@ export function methode(cle: CleMethode): Methode {
 
 /** Méthodes affichées dans la section « Sources et méthode » de chaque page (dans l'ordre des chiffres clés). */
 const PAR_PAGE: Record<string, readonly CleMethode[]> = {
-  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences', 'elus_indemnites', 'conseil_parite', 'sport_licences', 'sport_equipements', 'rues_noms'],
+  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences', 'elus_indemnites', 'conseil_parite', 'sport_licences', 'sport_equipements', 'nature_protege', 'nature_especes', 'rues_noms'],
   population: ['population', 'multiplie_1968', 'age_median', 'part_65', 'naissances'],
   territoire: ['superficie', 'densite'],
   'patrimoine-risques': ['monuments', 'objets_proteges', 'objets_siecles', 'objets_liste', 'cavites', 'catnat', 'mouvements'],
@@ -753,6 +819,7 @@ const PAR_PAGE: Record<string, readonly CleMethode[]> = {
   eau: ['eau_conformite', 'eau_physico', 'eau_prelevements', 'eau_nitrates', 'eau_durete', 'eau_pompage', 'eau_pompage_piscines', 'eau_pompage_ouvrages'],
   construction: ['logements_commences', 'logements_sociaux'],
   sport: ['sport_licences', 'sport_federations', 'sport_parite', 'sport_ages', 'sport_evolution', 'sport_equipements', 'sport_types', 'sport_frise', 'sport_carte'],
+  nature: ['nature_protege', 'nature_agricole', 'nature_aoc', 'nature_especes', 'nature_zonages', 'nature_cultures', 'nature_groupes', 'nature_top', 'nature_menacees', 'nature_carte'],
   rues: ['rues_noms', 'rues_femmes', 'rues_types', 'rues_classement', 'rues_personnes', 'rues_jumelage', 'rues_curiosites', 'rues_carte'],
   transparence: ['depenses_postes', 'elus_indemnites', 'subventions_associations', 'marches_plafonds', 'appels_offres', 'conseil_parite', 'conseil_ages', 'conseil_professions'],
 };

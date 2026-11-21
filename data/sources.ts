@@ -16,6 +16,7 @@ import { SOURCES_TRANSPARENCE } from './sources-transparence.ts';
 import { SOURCES_SPORT } from './sources-sport.ts';
 import { SOURCES_RUES } from './sources-rues.ts';
 import { SOURCES_PATRIMOINE } from './sources-patrimoine.ts';
+import { SOURCES_NATURE } from './sources-nature.ts';
 
 export interface Source {
   /** Nom du fichier produit dans data/raw/ (sans extension) */
@@ -399,4 +400,7 @@ export const SOURCES: readonly Source[] = [
   // — Les rues : Base Adresse Nationale (voir data/sources-rues.ts) —
   ...SOURCES_RUES,
   ...SOURCES_PATRIMOINE,
+
+  // — Nature & paysages : espaces protégés, cultures, AOC, biodiversité (voir data/sources-nature.ts) —
+  ...SOURCES_NATURE,
 ];

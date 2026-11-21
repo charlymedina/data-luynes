@@ -40,12 +40,14 @@ import { resumeSport } from '../data/sport';
 import { faitsSport } from '../lib/faits-sport';
 import { resumeRues } from '../data/rues';
 import { faitsRues } from '../lib/faits-rues';
+import { resumeBiodiversite, resumeNature } from '../data/nature';
+import { faitsNature } from '../lib/faits-nature';
 
 const luynes = agesDe('Luynes');
 const france = agesDe('France');
 
 // Mélange des anecdotes des différents thèmes (une de chaque à tour de rôle).
-const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie(), faitsElections(), faitsDelinquance(), faitsEau(), faitsConstruction(), faitsTransparence(), faitsSport(), faitsRues()];
+const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie(), faitsElections(), faitsDelinquance(), faitsEau(), faitsConstruction(), faitsTransparence(), faitsSport(), faitsNature(), faitsRues()];
 const longueurMax = Math.max(...sources.map((s) => s.length));
 const faits = Array.from({ length: longueurMax }, (_, i) => sources.flatMap((s) => (s[i] ? [s[i]] : []))).flat();
 
@@ -287,6 +289,12 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
       <KeyFigure class="sm:col-span-3" href="/sport#equipements" icon="ballon" label="Équipements sportifs pour 1 000 habitants" value={resumeSport.equipements_pour_1000} decimals={1} info={methode('sport_equipements')}>
         <MiniCompare items={duo(resumeSport.equipements_pour_1000, [['Indre-et-Loire', resumeSport.equipements_pour_1000_37]], (v) => formatOneDecimal(v))} />
         <p class="mt-2 text-xs text-ink-2">{formatNumber(resumeSport.equipements)} équipements dans {formatNumber(resumeSport.installations)} installations.</p>
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" tone="loire" href="/nature" icon="feuille" label="De la commune en ZNIEFF ou Natura 2000" value={resumeNature.zonee_pct} decimals={1} unit="%" info={methode('nature_protege')}>
+        <p class="mt-2 text-xs opacity-85">{formatNumber(resumeNature.zonee_ha)} hectares ; {formatOneDecimal(resumeNature.agricole_pct)} % de terres agricoles déclarées.</p>
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" href="/nature#biodiversite" icon="graphique" label="Espèces observées à Luynes" value={resumeBiodiversite.especes} info={methode('nature_especes')}>
+        <p class="mt-2 text-xs text-ink-2">{formatNumber(resumeBiodiversite.observations)} observations partagées (GBIF).</p>
       </KeyFigure>
       <KeyFigure class="sm:col-span-3" tone="accent" href="/rues" icon="panneau" label="Noms de voies et de lieux-dits" value={resumeRues.noms} info={methode('rues_noms')}>
         <p class="mt-2 text-xs text-ink-2">{formatNumber(resumeRues.voies)} voies, {formatNumber(resumeRues.lieux_dits)} lieux-dits et {formatNumber(resumeRues.adresses)} adresses.</p>
