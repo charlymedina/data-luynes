@@ -1,7 +1,7 @@
 # Projet data-luynes — « Luynes en chiffres », site de données ouvertes sur Luynes (37)
 
 Site web présentant des données publiques sur la commune de **Luynes (Indre-et-Loire, code INSEE 37139)**.
-En ligne : https://luynes.pages.dev (16 thèmes + accueil). Fonctionnement détaillé : `README.md`.
+En ligne : https://luynes.pages.dev (17 thèmes + accueil). Fonctionnement détaillé : `README.md`.
 
 ## Rôles
 - Charly : idées, choix éditoriaux, maîtrise du **SQL** → il doit pouvoir lire/modifier les requêtes de données.

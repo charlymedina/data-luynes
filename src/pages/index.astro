@@ -10,7 +10,7 @@ import MiniColumns from '../components/charts/MiniColumns.astro';
 import { commune, rang } from '../data/commune';
 import { agesDe, derniereAnneeEtatCivil, historique } from '../data/population';
 import { CREDITS_ACCUEIL } from '../data/credits';
-import { formatNumber, formatOneDecimal } from '../lib/format';
+import { formatNumber, formatOneDecimal, formatRankOf } from '../lib/format';
 import { faitsCommune, faitsImmobilier, faitsPatrimoine, faitsPopulation } from '../lib/faits';
 import { resumeRisques } from '../data/patrimoine';
 import { annees as anneesImmobilier, resumeImmobilier } from '../data/immobilier';
@@ -41,12 +41,14 @@ import { resumeRues } from '../data/rues';
 import { faitsRues } from '../lib/faits-rues';
 import { resumeBiodiversite, resumeNature } from '../data/nature';
 import { faitsNature } from '../lib/faits-nature';
+import { derniereAnneeCovoiturage, dernierTrimestreFibre, resumeDae, resumeFibre } from '../data/quotidien';
+import { faitsQuotidien } from '../lib/faits-quotidien';
 
 const luynes = agesDe('Luynes');
 const france = agesDe('France');
 
 // Mélange des anecdotes des différents thèmes (une de chaque à tour de rôle).
-const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie(), faitsElections(), faitsDelinquance(), faitsEau(), faitsConstruction(), faitsSport(), faitsNature(), faitsRues()];
+const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie(), faitsElections(), faitsDelinquance(), faitsEau(), faitsConstruction(), faitsSport(), faitsNature(), faitsRues(), faitsQuotidien()];
 const longueurMax = Math.max(...sources.map((s) => s.length));
 const faits = Array.from({ length: longueurMax }, (_, i) => sources.flatMap((s) => (s[i] ? [s[i]] : []))).flat();
 
@@ -297,6 +299,14 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
       </KeyFigure>
       <KeyFigure class="sm:col-span-3" tone="accent" href="/rues" icon="panneau" label="Noms de voies et de lieux-dits" value={resumeRues.noms} info={methode('rues_noms')}>
         <p class="mt-2 text-xs text-ink-2">{formatNumber(resumeRues.voies)} voies, {formatNumber(resumeRues.lieux_dits)} lieux-dits et {formatNumber(resumeRues.adresses)} adresses.</p>
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" tone="loire" href="/quotidien" icon="wifi" label={`Locaux raccordables à la fibre (${dernierTrimestreFibre})`} value={resumeFibre.fibre_pct} decimals={1} unit="%" info={methode('quotidien_fibre')}>
+        <MiniCompare onDark items={duo(resumeFibre.fibre_pct, [['Indre-et-Loire', resumeFibre.fibre_pct_37]], (v) => `${formatOneDecimal(v)} %`)} />
+        <p class="mt-2 text-xs opacity-85">{formatRankOf(resumeFibre.rang, resumeFibre.nb_communes)}.</p>
+      </KeyFigure>
+      <KeyFigure class="sm:col-span-3" href="/quotidien#secours" icon="sante" label="Défibrillateurs pour 1 000 habitants" value={resumeDae.pour_1000} decimals={1} info={methode('quotidien_dae')}>
+        <MiniCompare items={duo(resumeDae.pour_1000, [['Indre-et-Loire', resumeDae.pour_1000_37]], (v) => formatOneDecimal(v))} />
+        <p class="mt-2 text-xs text-ink-2">{formatNumber(resumeDae.defibrillateurs)} appareils ; {formatNumber(derniereAnneeCovoiturage.trajets)} trajets de covoiturage partis de Luynes en {derniereAnneeCovoiturage.annee}.</p>
       </KeyFigure>
     </div>
   </section>

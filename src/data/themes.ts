@@ -30,4 +30,5 @@ export const THEMES: readonly Theme[] = [
   { slug: 'sport', titre: 'Sport', court: 'Sport', icon: 'ballon', resume: 'Licences par fédération, équipements, carte.' },
   { slug: 'nature', titre: 'Nature & paysages', court: 'Nature', icon: 'feuille', resume: 'Zones protégées, cultures, vignobles, espèces observées.' },
   { slug: 'rues', titre: 'Les rues de Luynes', court: 'Rues & lieux-dits', icon: 'panneau', resume: 'Noms de voies et de lieux-dits, personnes honorées, villes jumelles.' },
+  { slug: 'quotidien', titre: 'Vie quotidienne', court: 'Quotidien', icon: 'tasse', resume: 'Fibre, défibrillateurs, covoiturage, tri du verre et mobilier urbain.' },
 ];

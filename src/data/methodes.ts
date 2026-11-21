@@ -20,6 +20,7 @@ import { appelsOffres, comparaison, conseil, premiereNotification, premierePubli
 import { periodesEquipements, resumeSport } from './sport';
 import { resumeRues } from './rues';
 import { resumeBiodiversite, resumeNature } from './nature';
+import { derniereAnneeCovoiturage, dernierTrimestreFibre, premierTrimestreFibre, resumeDae, resumeFibre, resumeMobilier } from './quotidien';
 import { formatCommunes, formatMonthYear, formatNumber } from '../lib/format';
 
 export interface Methode {
@@ -57,6 +58,10 @@ const INAO_AOC = 'INAO, délimitation parcellaire des AOC viticoles, diffusée p
 const GBIF = 'GBIF (Global Biodiversity Information Facility) : observations d\'espèces partagées par des naturalistes, associations et programmes de sciences participatives';
 const DECOUPE = 'toutes les formes sont découpées au contour exact de la commune (calcul géographique DuckDB, projection Lambert 93) ; les terrains relevant de plusieurs zonages ne sont comptés qu\'une fois';
 const licencesAnnees = `${resumeSport.annee_debut}-${resumeSport.annee_fin}`;
+const ARCEP = 'ARCEP, « Ma connexion internet » (éligibilité des locaux aux technologies fixes, par commune et par trimestre)';
+const GEODAE = "ministère de la Santé, Géo'DAE (base nationale des défibrillateurs automatisés externes, déclarés par leurs exploitants)";
+const RPC = 'Registre de preuve de covoiturage, via le tableau de bord des mobilités durables (trajets de covoiturage intermédié par plateforme)';
+const TOURS_OPEN_DATA = 'Tours Métropole Val de Loire, portail open data (inventaires de la métropole)';
 const POPULATION_DGFIP = `population retenue par la DGFiP (${formatNumber(resumeBudget.population)} habitants, population légale « totale »)`;
 
 const METHODES = {
@@ -787,6 +792,54 @@ const METHODES = {
     calcul: "un point par nom de voie ou de lieu-dit, placé sur l'adresse la plus proche du milieu de ses adresses (le tracé exact des voies n'est pas dans la base)",
     millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
   },
+  quotidien_fibre: {
+    titre: 'Locaux raccordables à la fibre',
+    source: ARCEP,
+    calcul: `locaux (logements, entreprises, équipements…) que l'ARCEP recense à Luynes et qui peuvent être raccordés à la fibre jusqu'au domicile (FttH), divisés par l'ensemble des locaux recensés (${formatNumber(resumeFibre.locaux)}) ; « raccordable » ne veut pas dire « raccordé » : l'abonnement reste un choix de chaque occupant. Même calcul pour l'Indre-et-Loire (somme des communes) et rang parmi les ${formatNumber(resumeFibre.nb_communes)} communes`,
+    millesime: dernierTrimestreFibre + ' (état au ' + resumeFibre.date_fin.split('-').reverse().join('/') + ')',
+  },
+  quotidien_fibre_evolution: {
+    titre: 'Évolution de la fibre',
+    source: ARCEP,
+    calcul: 'part de locaux raccordables à la fibre à chaque publication : le même trimestre chaque année au début de la série, puis chaque trimestre ; une part qui recule d\'une publication à l\'autre peut venir de la mise à jour du recensement des locaux',
+    millesime: `${premierTrimestreFibre} à ${dernierTrimestreFibre}`,
+  },
+  quotidien_dae: {
+    titre: 'Défibrillateurs',
+    source: GEODAE,
+    calcul: `défibrillateurs fixes en fonctionnement situés à Luynes (doublons signalés par la base et appareils mobiles écartés), pour 1 000 habitants (population légale) ; les communes sans défibrillateur comptent pour 0 dans le classement parmi les ${formatNumber(resumeDae.nb_communes)} communes. La base dépend des déclarations des exploitants : un appareil non déclaré n'y figure pas, et inversement un appareil retiré peut y rester`,
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  quotidien_dae_acces: {
+    titre: 'Accès aux défibrillateurs',
+    source: GEODAE,
+    calcul: 'position « extérieur » ou « intérieur » déclarée par l\'exploitant ; accès 24 h/24 quand les horaires de la base valent « 24/7 » (l\'autre valeur courante, « off », signifie que l\'accès permanent n\'est pas déclaré : ce n\'est pas la preuve que l\'appareil est inaccessible)',
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  quotidien_covoiturage: {
+    titre: 'Covoiturage',
+    source: RPC,
+    calcul: `trajets effectués en covoiturage par l'intermédiaire de plateformes numériques (couples conducteur/passager enregistrés au registre) dont Luynes est la commune de départ ; ne comprend pas le covoiturage organisé entre connaissances. Les volumes varient beaucoup d'une année à l'autre selon les opérateurs et les incitations : à lire comme un ordre de grandeur. Pour 1 000 habitants : population légale actuelle (${formatNumber(derniereAnneeCovoiturage.trajets_37)} trajets dans le département en ${derniereAnneeCovoiturage.annee})`,
+    millesime: `${derniereAnneeCovoiturage.annee} (série depuis 2022)`,
+  },
+  quotidien_verre: {
+    titre: 'Points d\'apport volontaire du verre',
+    source: TOURS_OPEN_DATA,
+    calcul: `conteneurs à verre recensés à Luynes ; habitants par point = population légale ÷ nombre de points, comparé à l'ensemble des ${formatNumber(resumeMobilier.verre_nb_communes)} communes de la métropole recensées (${formatNumber(resumeMobilier.verre_points_metropole)} points). Un point peut compter plusieurs conteneurs ; le dernier ramassage ou la taille des conteneurs ne sont pas connus`,
+    millesime: `inventaire consulté en ${formatMonthYear(generatedAt)}`,
+  },
+  quotidien_mobilier: {
+    titre: 'Bancs et autres équipements',
+    source: TOURS_OPEN_DATA,
+    calcul: 'bancs publics et point d\'apport volontaire du textile recensés à Luynes ; pas de comparaison : l\'inventaire des bancs est très inégal d\'une commune à l\'autre de la métropole (certaines en comptent quelques unités), il ne dit donc pas combien de bancs existent réellement',
+    millesime: `inventaire consulté en ${formatMonthYear(generatedAt)}`,
+  },
+  quotidien_carte: {
+    titre: 'Carte de la vie quotidienne',
+    source: GEODAE + ' ; ' + TOURS_OPEN_DATA + ' ; fond de carte OpenFreeMap (© OpenStreetMap)',
+    calcul: 'un point par défibrillateur, point d\'apport volontaire ou banc recensé ; positions telles que publiées par les producteurs',
+    millesime: `bases consultées en ${formatMonthYear(generatedAt)}`,
+  },
 } as const satisfies Record<string, Methode>;
 
 export type CleMethode = keyof typeof METHODES;
@@ -797,7 +850,7 @@ export function methode(cle: CleMethode): Methode {
 
 /** Méthodes affichées dans la section « Sources et méthode » de chaque page (dans l'ordre des chiffres clés). */
 const PAR_PAGE: Record<string, readonly CleMethode[]> = {
-  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences', 'elus_indemnites', 'conseil_parite', 'sport_licences', 'sport_equipements', 'nature_protege', 'nature_especes', 'rues_noms'],
+  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences', 'elus_indemnites', 'conseil_parite', 'sport_licences', 'sport_equipements', 'nature_protege', 'nature_especes', 'rues_noms', 'quotidien_fibre', 'quotidien_dae'],
   population: ['population', 'multiplie_1968', 'age_median', 'part_65', 'naissances'],
   territoire: ['superficie', 'densite'],
   'patrimoine-risques': ['monuments', 'objets_proteges', 'objets_siecles', 'objets_liste', 'cavites', 'catnat', 'mouvements'],
@@ -813,6 +866,7 @@ const PAR_PAGE: Record<string, readonly CleMethode[]> = {
   construction: ['logements_commences', 'logements_sociaux'],
   sport: ['sport_licences', 'sport_federations', 'sport_parite', 'sport_ages', 'sport_evolution', 'sport_equipements', 'sport_types', 'sport_frise', 'sport_carte'],
   nature: ['nature_protege', 'nature_agricole', 'nature_aoc', 'nature_especes', 'nature_zonages', 'nature_cultures', 'nature_groupes', 'nature_top', 'nature_menacees', 'nature_carte'],
+  quotidien: ['quotidien_fibre', 'quotidien_fibre_evolution', 'quotidien_dae', 'quotidien_dae_acces', 'quotidien_covoiturage', 'quotidien_verre', 'quotidien_mobilier', 'quotidien_carte'],
   rues: ['rues_noms', 'rues_femmes', 'rues_types', 'rues_classement', 'rues_personnes', 'rues_jumelage', 'rues_curiosites', 'rues_carte'],
 };
 

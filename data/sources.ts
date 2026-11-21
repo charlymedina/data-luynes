@@ -16,6 +16,7 @@ import { SOURCES_SPORT } from './sources-sport.ts';
 import { SOURCES_RUES } from './sources-rues.ts';
 import { SOURCES_PATRIMOINE } from './sources-patrimoine.ts';
 import { SOURCES_NATURE } from './sources-nature.ts';
+import { SOURCES_QUOTIDIEN } from './sources-quotidien.ts';
 
 export interface Source {
   /** Nom du fichier produit dans data/raw/ (sans extension) */
@@ -399,4 +400,7 @@ export const SOURCES: readonly Source[] = [
 
   // — Nature & paysages : espaces protégés, cultures, AOC, biodiversité (voir data/sources-nature.ts) —
   ...SOURCES_NATURE,
+
+  // — Vie quotidienne : fibre, défibrillateurs, covoiturage, mobilier urbain (voir data/sources-quotidien.ts) —
+  ...SOURCES_QUOTIDIEN,
 ];

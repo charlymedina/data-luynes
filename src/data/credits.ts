@@ -235,6 +235,31 @@ const GBIF_OBSERVATIONS: FooterSource = {
   detail: 'observations d\'espèces, comptages seulement (jeux de données sous licences CC0 ou CC BY ; citation : GBIF.org)',
 };
 
+const ARCEP_FIBRE: FooterSource = {
+  nom: 'ARCEP — Ma connexion internet',
+  url: 'https://www.data.gouv.fr/datasets/ma-connexion-internet',
+  detail: 'locaux éligibles à la fibre par commune et par trimestre — Licence Ouverte 2.0',
+};
+
+const GEODAE: FooterSource = {
+  nom: 'Géo’DAE — base nationale des défibrillateurs (ministère de la Santé)',
+  url: 'https://www.data.gouv.fr/datasets/geodae-base-nationale-des-defibrillateurs-automatises-externes-dae',
+  detail: 'défibrillateurs automatisés externes déclarés par leurs exploitants — Licence Ouverte',
+};
+
+const COVOITURAGE_RPC: FooterSource = {
+  nom: 'Registre de preuve de covoiturage (tableau de bord des mobilités durables)',
+  url: 'https://www.data.gouv.fr/datasets/nombre-de-trajets-realises-en-covoiturage-intermedie',
+  detail: 'trajets de covoiturage intermédié par commune de départ — ODbL (Open Database License)',
+};
+
+const TOURS_MOBILIER: FooterSource = {
+  nom: 'Tours Métropole Val de Loire — open data',
+  url: 'https://data.tours-metropole.fr',
+  detail: 'points d’apport volontaire (verre, textile), bancs publics — Licence Ouverte 2.0',
+};
+
+export const CREDITS_QUOTIDIEN: readonly FooterSource[] = [ARCEP_FIBRE, GEODAE, COVOITURAGE_RPC, TOURS_MOBILIER, API_GEO, OPENFREEMAP];
 export const CREDITS_NATURE: readonly FooterSource[] = [INPN_ZONAGES, RPG_IGN, INAO_AIRES, GBIF_OBSERVATIONS, API_GEO, OPENFREEMAP];
 export const CREDITS_RUES: readonly FooterSource[] = [BAN, API_GEO, OPENFREEMAP];
 export const CREDITS_SPORT: readonly FooterSource[] = [INJEP_LICENCES, RES_SPORT, API_GEO, OPENFREEMAP];
@@ -274,5 +299,6 @@ export const CREDITS_ACCUEIL: readonly FooterSource[] = [
     CREDITS_SPORT,
     CREDITS_NATURE,
     CREDITS_RUES,
+    CREDITS_QUOTIDIEN,
   ].flat()),
 ].filter((source) => source !== OPENFREEMAP);
