@@ -12,7 +12,6 @@ import { SOURCES_ELECTIONS } from './sources-elections.ts';
 import { SOURCES_DELINQUANCE } from './sources-delinquance.ts';
 import { SOURCES_EAU } from './sources-eau.ts';
 import { SOURCES_CONSTRUCTION } from './sources-construction.ts';
-import { SOURCES_TRANSPARENCE } from './sources-transparence.ts';
 import { SOURCES_SPORT } from './sources-sport.ts';
 import { SOURCES_RUES } from './sources-rues.ts';
 import { SOURCES_PATRIMOINE } from './sources-patrimoine.ts';
@@ -367,7 +366,7 @@ export const SOURCES: readonly Source[] = [
     url: async () => `${DATAGOUV}/datasets/${(await jeuLoyersRecent()).id}/`,
   },
 
-  // — Budget de la commune (voir data/sources-budget.ts) —
+  // — Budget & vie municipale (voir data/sources-budget.ts) —
   ...SOURCES_BUDGET,
 
   // — Revenus & emploi (voir data/sources-revenus.ts) —
@@ -390,9 +389,6 @@ export const SOURCES: readonly Source[] = [
 
   // — Construction et logements sociaux (voir data/sources-construction.ts) —
   ...SOURCES_CONSTRUCTION,
-
-  // — Transparence (voir data/sources-transparence.ts) —
-  ...SOURCES_TRANSPARENCE,
 
   // — Sport : licences INJEP et équipements RES (voir data/sources-sport.ts) —
   ...SOURCES_SPORT,

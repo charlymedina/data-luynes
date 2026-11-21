@@ -1,6 +1,6 @@
 -- Le conseil municipal en chiffres : nombre d'élus, parité, âge moyen, exécutif (maire et adjoints),
 -- comparés à la population de Luynes (dernier recensement) : part des femmes et âge moyen des habitants de 18 ans et plus.
--- Aucun nom, aucune date de naissance. Résultat : src/data/generated/transparence_conseil_resume.json (une ligne).
+-- Aucun nom, aucune date de naissance. Résultat : src/data/generated/budget_conseil_resume.json (une ligne).
 WITH population AS (
   SELECT
     annee,

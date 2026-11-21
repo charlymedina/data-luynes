@@ -2,7 +2,7 @@
 --  - aux associations : compte 6574 (M14) puis 65748 (M57) ;
 --  - au CCAS (centre communal d'action sociale) : compte 657362 (M14) puis 657363 (M57).
 -- Une année sans écriture sur le compte du CCAS vaut 0 (aucun versement enregistré cette année-là).
--- Résultat : src/data/generated/transparence_subventions.json
+-- Résultat : src/data/generated/budget_subventions.json
 SELECT
   p.annee,
   round(coalesce(sum(depense_nette) FILTER (compte IN ('6574', '65748')), 0))::INTEGER                      AS associations,

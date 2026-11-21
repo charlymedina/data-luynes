@@ -3,7 +3,7 @@
 Site de **données ouvertes sur Luynes** (Indre-et-Loire, code INSEE `37139`) : rassembler, vérifier et présenter
 simplement les données publiques de la commune.
 
-Site en ligne : **https://luynes.pages.dev** — 17 thèmes + une page d'accueil, reconstruits chaque lundi (et à chaque
+Site en ligne : **https://luynes.pages.dev** — 16 thèmes + une page d'accueil, reconstruits chaque lundi (et à chaque
 modification) à partir des dernières données publiées.
 
 ---
@@ -25,7 +25,7 @@ modification) à partir des dernières données publiées.
 | Territoire | `/territoire` | IGN / API Géo |
 | Patrimoine & risques | `/patrimoine-risques` | Base Mérimée, Géorisques (BRGM, GASPAR, zones inondables) |
 | Immobilier | `/immobilier` | DVF (DGFiP), carte des loyers, DPE (ADEME) |
-| Budget communal | `/budget` | DGFiP, comptes individuels des communes |
+| Budget & vie municipale | `/budget` | DGFiP (comptes individuels, balances comptables), DECP, BOAMP, répertoire national des élus |
 | Revenus & emploi | `/revenus-emploi` | INSEE (Filosofi, recensement, base Tous salariés, SIDE) |
 | Accidents de la route | `/accidents` | ONISR (fichiers BAAC) |
 | Écoles, santé & services | `/equipements` | INSEE (BPE), Éducation nationale |
@@ -34,7 +34,6 @@ modification) à partir des dernières données publiées.
 | Délinquance | `/delinquance` | SSMSI (ministère de l'Intérieur) |
 | Eau du robinet | `/eau` | Hub'eau (contrôle sanitaire des ARS) |
 | Construction & logement social | `/construction` | SDES (Sitadel, RPLS) |
-| Transparence | `/transparence` | DGFiP (balances comptables), DECP, BOAMP, répertoire national des élus |
 | Sport | `/sport` | INJEP (licences par commune), ministère des Sports (recensement des équipements, RES) |
 | Nature & paysages | `/nature` | INPN (ZNIEFF, Natura 2000), RPG (IGN), AOC viticoles (INAO), GBIF (observations d'espèces) |
 | Les rues de Luynes | `/rues` | Base Adresse Nationale (IGN / DINUM), table de correspondance des noms écrite à la main |
@@ -117,6 +116,8 @@ volontairement, ou les annuler (`git checkout data/archive`), pour ne pas entrer
 6. **Registre et documentation** : une ligne dans `src/data/themes.ts` (menu), un chiffre clé sur l'accueil, les sources
    dans `src/data/credits.ts`, les méthodes dans `src/data/methodes.ts`, une section dans `docs/sources.md`.
 7. `npm run build && npm test` : les tests signalent un lien cassé, un chiffre sans bulle ou un thème oublié.
+
+> L'ancienne page `/transparence` a été fusionnée dans `/budget` ; `public/_redirects` la redirige (301).
 
 ## 🌐 Publication
 

@@ -34,8 +34,7 @@ import { resumeEau } from '../data/eau';
 import { faitsEau } from '../lib/faits-eau';
 import { anneesConstruction, resumeConstruction } from '../data/construction';
 import { faitsConstruction } from '../lib/faits-construction';
-import { faitsTransparence } from '../lib/faits-transparence';
-import { comparaison, conseil } from '../data/transparence';
+import { comparaison, conseil } from '../data/budget-vie-municipale';
 import { resumeSport } from '../data/sport';
 import { faitsSport } from '../lib/faits-sport';
 import { resumeRues } from '../data/rues';
@@ -47,7 +46,7 @@ const luynes = agesDe('Luynes');
 const france = agesDe('France');
 
 // Mélange des anecdotes des différents thèmes (une de chaque à tour de rôle).
-const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie(), faitsElections(), faitsDelinquance(), faitsEau(), faitsConstruction(), faitsTransparence(), faitsSport(), faitsNature(), faitsRues()];
+const sources = [faitsPopulation(), faitsCommune(), faitsPatrimoine(), faitsImmobilier(), faitsBudget(), faitsRevenus(), faitsAccidents(), faitsEquipements(), faitsEnergie(), faitsElections(), faitsDelinquance(), faitsEau(), faitsConstruction(), faitsSport(), faitsNature(), faitsRues()];
 const longueurMax = Math.max(...sources.map((s) => s.length));
 const faits = Array.from({ length: longueurMax }, (_, i) => sources.flatMap((s) => (s[i] ? [s[i]] : []))).flat();
 
@@ -276,10 +275,10 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
         <MiniColumns values={anneesConstruction.map((a) => ({ label: String(a.annee), value: a.commences }))} ariaLabel={`Logements commencés à Luynes par année, ${resumeConstruction.annee_debut} à ${resumeConstruction.annee_fin}`} />
         <p class="mt-2 text-xs text-ink-2">Et {formatNumber(resumeConstruction.logements_sociaux)} logements sociaux aujourd'hui.</p>
       </KeyFigure>
-      <KeyFigure class="sm:col-span-3" tone="loire" href="/transparence#elus" icon="mairie" label={`Indemnités des élus (${indemnitesElus.annee})`} value={indemnitesElus.luynes_par_habitant} decimals={1} unit="€/hab." info={methode('elus_indemnites')}>
+      <KeyFigure class="sm:col-span-3" tone="loire" href="/budget#elus" icon="mairie" label={`Indemnités des élus (${indemnitesElus.annee})`} value={indemnitesElus.luynes_par_habitant} decimals={1} unit="€/hab." info={methode('elus_indemnites')}>
         <MiniCompare onDark items={duo(indemnitesElus.luynes_par_habitant, [['Même taille', indemnitesElus.strate_par_habitant], ['Médiane 37', indemnitesElus.mediane_37]], (v) => `${formatNumber(v, 1)} €`)} />
       </KeyFigure>
-      <KeyFigure class="sm:col-span-3" href="/transparence#conseil" icon="personnes" label="Conseil municipal" value={conseil.nb_elus} unit="élus" info={methode('conseil_parite')}>
+      <KeyFigure class="sm:col-span-3" href="/budget#conseil" icon="personnes" label="Conseil municipal" value={conseil.nb_elus} unit="élus" info={methode('conseil_parite')}>
         <MiniCompare items={duo(conseil.part_femmes, [['Habitants', conseil.part_femmes_population]], (v) => `${formatNumber(v, 1)} % de femmes`)} />
       </KeyFigure>
       <KeyFigure class="sm:col-span-3" tone="loire" href="/sport" icon="medaille" label={`Licences sportives pour 100 habitants (${resumeSport.annee_fin})`} value={resumeSport.licences_pour_100} decimals={1} info={methode('sport_licences')}>

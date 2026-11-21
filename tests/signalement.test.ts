@@ -10,11 +10,11 @@ test('adressePage : retire .html et le slash final', () => {
 });
 
 test('urlSignalement : ouvre une issue GitHub avec la page, le titre et le modèle encodés', () => {
-  const url = new URL(urlSignalement('/transparence.html', SITE));
+  const url = new URL(urlSignalement('/sport.html', SITE));
   assert.equal(url.origin + url.pathname, 'https://github.com/charlymedina/data-luynes/issues/new');
-  assert.match(url.searchParams.get('title') ?? '', /\/transparence$/);
+  assert.match(url.searchParams.get('title') ?? '', /\/sport$/);
   const corps = url.searchParams.get('body') ?? '';
-  assert.match(corps, /^Page : https:\/\/luynes\.pages\.dev\/transparence/);
+  assert.match(corps, /^Page : https:\/\/luynes\.pages\.dev\/sport/);
   assert.match(corps, /Chiffre concerné/);
   assert.match(corps, /Ce qui ne va pas ou idée/);
 });

@@ -69,19 +69,27 @@ Notes :
 - Les ventes de Luynes sont aussi publiées en `/donnees/ventes-immobilieres.json` (fichier lu par la carte).
 - Requêtes : `data/sql/_dvf.sql` et `data/sql/immobilier_*.sql`.
 
-## Thème Budget de la commune
+## Thème Budget & vie municipale (page `/budget`)
 
 | Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
 |---|---|---|---|---|---|
 | [Comptes individuels des communes](https://data.economie.gouv.fr/explore/?q=comptes-individuels-des-communes) (data.economie.gouv.fr) | Comptes de Luynes 2000 → dernière année (fonctionnement, investissement, dette, autofinancement, taux de taxe foncière), par habitant et moyenne de la strate | DGFiP (ministère de l'Économie) | Licence Ouverte 2.0 | Annuelle (un jeu par année ou groupe d'années ; 2025 publié en 2026) | `data/raw/budget_luynes/` |
 | idem, dernière année, filtre `dep = 037` | Dépenses, dette, équipement par habitant et taux de taxe foncière des 272 communes d'Indre-et-Loire (classements, médianes) | DGFiP | Licence Ouverte 2.0 | Annuelle | `data/raw/budget_communes_37/` |
+| [Balances comptables des communes](https://data.economie.gouv.fr/explore/?q=balances-comptables-des-communes) (un jeu par année, 2010 → dernière année) | Solde de chaque compte du budget principal de Luynes (SIREN 213701394) : indemnités des élus (6531 puis 65311), subventions (6574 puis 65748 ; CCAS 657362 puis 657363) | DGFiP (ministère de l'Économie) | Licence Ouverte 2.0 | Annuelle | `data/raw/balances_luynes/` |
+| Idem, toutes les communes de France | Seuls les comptes d'indemnités et de subventions, dernière année : moyenne des communes de même taille et médiane d'Indre-et-Loire | DGFiP | Licence Ouverte 2.0 | Annuelle | `data/raw/balances_communes_france/` |
+| Comptes individuels des communes (population et strate) | Population retenue par la DGFiP et strate de chaque commune | DGFiP | Licence Ouverte 2.0 | Annuelle | `data/raw/populations_communes_france/` |
+| [Données essentielles de la commande publique consolidées](https://www.data.gouv.fr/datasets/donnees-essentielles-de-la-commande-publique-consolidees-format-tabulaire/) | Marchés attribués par la mairie (SIRET 21370139400016) : objet, titulaire, date, plafond du contrat | data.gouv.fr (consolidation des DECP) | Licence Ouverte 2.0 | Quotidienne | `data/raw/decp_luynes.parquet` |
+| [BOAMP](https://boamp-datadila.opendatasoft.com/explore/dataset/boamp/) | Avis d'appel d'offres publiés par « Mairie Luynes » | DILA | Licence Ouverte 2.0 | Quotidienne | `data/raw/boamp_luynes/` |
+| [Répertoire national des élus](https://www.data.gouv.fr/datasets/repertoire-national-des-elus-1/) | Conseillers municipaux : sexe, date de naissance (utilisée seulement pour l'âge), catégorie socioprofessionnelle, fonction ; nom et prénom du **maire seul** | Ministère de l'Intérieur | Licence Ouverte 2.0 | Quotidienne | `data/raw/rne_conseil.json`, `rne_maire.json` |
 
 Notes :
 - La DGFiP publie un jeu par année ou paire d'années, aux noms irréguliers (`…-2008` contient 2000-2008, `…-20090` contient 2009, `…-2023-2024`) : la liste est retrouvée à chaque build via le catalogue du portail (`data/sources-budget.ts`), rien n'est codé en dur.
 - Montants DGFiP en milliers d'euros ; colonnes `f…` = euros par habitant, `m…` = moyenne de la strate (communes de même taille en France : 3 500-5 000 habitants jusqu'en 2005, 5 000-10 000 ensuite).
 - Taxe foncière : depuis 2021, le taux communal inclut l'ancienne part départementale (réforme de la taxe d'habitation) → saut de série en 2021 qui n'est pas une hausse votée.
 - « Médiane 37 » = médiane des 272 communes du département (non pondérée par la population).
-- Requêtes : `data/sql/_budget.sql` et `data/sql/budget_*.sql`.
+- Dépenses de fonctionnement : une seule version sur la page, celle des comptes individuels (charges DGFiP, amortissements compris), car c'est la seule qui se compare aux communes de même taille. Les balances comptables ne servent qu'aux indemnités des élus et aux subventions (dépenses payées sur des comptes précis).
+- Vie municipale : plan comptable M14 jusqu'en 2023, M57 depuis 2024 : les comptes sont rapprochés par leurs premiers chiffres (6531 → 65311, 6574 → 65748, 657362 → 657363) ; **Les montants des marchés sont des plafonds de contrat, jamais des dépenses : ils ne sont pas additionnés.** La commune ne publie ses marchés dans la base nationale que depuis fin 2025. Le fichier des élus est téléchargé sans nom ni prénom (colonnes choisies dans l'adresse de l'API) ; seule la fonction « Maire » est téléchargée avec son nom ; aucun PDF de la commune n'est utilisé. Le gros fichier DECP (≈ 280 Mo) n'est pas téléchargé : DuckDB n'en lit à distance que les lignes de Luynes (source de type « parquet-extrait »).
+- Requêtes : `data/sql/_budget.sql` et `data/sql/budget_*.sql` (comptes individuels : `budget_annees`, `budget_resume` ; vie municipale : `budget_elus`, `budget_subventions`, `budget_comparaison`, `budget_marches`, `budget_appels_offres`, `budget_conseil_*`, `budget_maire`).
 
 ## Thème Revenus & emploi
 
@@ -201,19 +209,6 @@ Eau puisée (BNPE) : volumes déclarés par les préleveurs, pas forcément cons
 | [RPLS — répertoire des logements locatifs des bailleurs sociaux](https://www.statistiques.developpement-durable.gouv.fr/catalogue?page=datafile&datafileRid=f3c2f2cb-8fb1-40fd-8733-964247744c9a) | Logements sociaux de Luynes : pièces, surface, année de construction, DPE (sans l'adresse) | SDES | Licence Ouverte 2.0 | Annuelle (1er janvier) | `data/raw/rpls_luynes.json` |
 
 Notes : l'API DiDo du SDES est lente (≈ 20 s par page de 100 lignes) : seuls Luynes et deux types de logements (total, collectif) sont téléchargés, d'où l'absence de comparaison départementale. Sitadel est en date de prise en compte administrative (pas la date réelle du chantier) ; l'année en cours, incomplète, n'est pas affichée. Requêtes : `data/sql/_construction.sql`, `data/sql/construction_*.sql`.
-
-## Thème Transparence
-
-| Source | Contenu utilisé | Producteur | Licence | Mise à jour | Fichier |
-|---|---|---|---|---|---|
-| [Balances comptables des communes](https://data.economie.gouv.fr/explore/?q=balances-comptables-des-communes) (un jeu par année, 2010 → dernière année) | Solde de chaque compte du budget principal de Luynes (SIREN 213701394) : dépenses par nature, indemnités des élus (6531 puis 65311), subventions (6574 puis 65748 ; CCAS 657362 puis 657363) | DGFiP (ministère de l'Économie) | Licence Ouverte 2.0 | Annuelle | `data/raw/balances_luynes/` |
-| Idem, toutes les communes de France | Seuls les comptes d'indemnités et de subventions, dernière année : moyenne des communes de même taille et médiane d'Indre-et-Loire | DGFiP | Licence Ouverte 2.0 | Annuelle | `data/raw/balances_communes_france/` |
-| Comptes individuels des communes (population et strate) | Population retenue par la DGFiP et strate de chaque commune | DGFiP | Licence Ouverte 2.0 | Annuelle | `data/raw/populations_communes_france/` |
-| [Données essentielles de la commande publique consolidées](https://www.data.gouv.fr/datasets/donnees-essentielles-de-la-commande-publique-consolidees-format-tabulaire/) | Marchés attribués par la mairie (SIRET 21370139400016) : objet, titulaire, date, plafond du contrat | data.gouv.fr (consolidation des DECP) | Licence Ouverte 2.0 | Quotidienne | `data/raw/decp_luynes.parquet` |
-| [BOAMP](https://boamp-datadila.opendatasoft.com/explore/dataset/boamp/) | Avis d'appel d'offres publiés par « Mairie Luynes » | DILA | Licence Ouverte 2.0 | Quotidienne | `data/raw/boamp_luynes/` |
-| [Répertoire national des élus](https://www.data.gouv.fr/datasets/repertoire-national-des-elus-1/) | Conseillers municipaux : sexe, date de naissance (utilisée seulement pour l'âge), catégorie socioprofessionnelle, fonction ; nom et prénom du **maire seul** | Ministère de l'Intérieur | Licence Ouverte 2.0 | Quotidienne | `data/raw/rne_conseil.json`, `rne_maire.json` |
-
-Notes : plan comptable M14 jusqu'en 2023, M57 depuis 2024 : les comptes sont rapprochés par leurs premiers chiffres (6531 → 65311, 6574 → 65748, 657362 → 657363) ; les amortissements et provisions (68) et les cessions (675, 676) sont écartés, ce sont des écritures sans sortie d'argent. **Les montants des marchés sont des plafonds de contrat, jamais des dépenses : ils ne sont pas additionnés.** La commune ne publie ses marchés dans la base nationale que depuis fin 2025. Le fichier des élus est téléchargé sans nom ni prénom (colonnes choisies dans l'adresse de l'API) ; seule la fonction « Maire » est téléchargée avec son nom ; aucun PDF de la commune n'est utilisé. Le gros fichier DECP (≈ 280 Mo) n'est pas téléchargé : DuckDB n'en lit à distance que les lignes de Luynes (source de type « parquet-extrait »). Requêtes : `data/sql/_transparence.sql`, `data/sql/transparence_*.sql`.
 
 ## Thème Sport
 

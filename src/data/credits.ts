@@ -238,7 +238,6 @@ const GBIF_OBSERVATIONS: FooterSource = {
 export const CREDITS_NATURE: readonly FooterSource[] = [INPN_ZONAGES, RPG_IGN, INAO_AIRES, GBIF_OBSERVATIONS, API_GEO, OPENFREEMAP];
 export const CREDITS_RUES: readonly FooterSource[] = [BAN, API_GEO, OPENFREEMAP];
 export const CREDITS_SPORT: readonly FooterSource[] = [INJEP_LICENCES, RES_SPORT, API_GEO, OPENFREEMAP];
-export const CREDITS_TRANSPARENCE: readonly FooterSource[] = [DGFIP_BALANCES, DGFIP_COMPTES, DECP, BOAMP, RNE, INSEE_RECENSEMENT, API_GEO];
 export const CREDITS_EAU: readonly FooterSource[] = [HUBEAU_EAU, HUBEAU_PRELEVEMENTS];
 export const CREDITS_CONSTRUCTION: readonly FooterSource[] = [SDES_SITADEL, SDES_RPLS];
 export const CREDITS_ELECTIONS: readonly FooterSource[] = [ELECTIONS_AGREGEES, MUNICIPALES_2026];
@@ -246,7 +245,7 @@ export const CREDITS_DELINQUANCE: readonly FooterSource[] = [SSMSI];
 export const CREDITS_EQUIPEMENTS: readonly FooterSource[] = [INSEE_BPE, EDUCATION_NATIONALE, BIBLIOTHEQUES, MA_CANTINE, API_GEO];
 export const CREDITS_ENERGIE: readonly FooterSource[] = [AGENCE_ORE, ODRE_SOLAIRE, SDES_PARC, IRVE, API_GEO];
 export const CREDITS_ACCIDENTS: readonly FooterSource[] = [ONISR_BAAC, API_GEO, OPENFREEMAP];
-export const CREDITS_BUDGET: readonly FooterSource[] = [DGFIP_COMPTES];
+export const CREDITS_BUDGET: readonly FooterSource[] = [DGFIP_COMPTES, DGFIP_BALANCES, DECP, BOAMP, RNE, INSEE_RECENSEMENT, API_GEO];
 export const CREDITS_REVENUS: readonly FooterSource[] = [INSEE_REVENUS_EMPLOI, API_GEO];
 export const CREDITS_IMMOBILIER: readonly FooterSource[] = [DVF, CARTE_LOYERS, ADEME_DPE, API_GEO, OPENFREEMAP];
 export const CREDITS_PATRIMOINE: readonly FooterSource[] = [MERIMEE, PALISSY, GEORISQUES, API_GEO, OPENFREEMAP];
@@ -272,7 +271,6 @@ export const CREDITS_ACCUEIL: readonly FooterSource[] = [
     CREDITS_DELINQUANCE,
     CREDITS_EAU,
     CREDITS_CONSTRUCTION,
-    CREDITS_TRANSPARENCE,
     CREDITS_SPORT,
     CREDITS_NATURE,
     CREDITS_RUES,

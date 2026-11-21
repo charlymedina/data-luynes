@@ -1,6 +1,6 @@
 -- Âge des élus par tranche, comparé aux habitants de 18 ans et plus (dernier recensement), en % de chaque ensemble.
 -- Trois tranches seulement : jamais de date de naissance ni d'âge individuel.
--- Résultat : src/data/generated/transparence_conseil_ages.json (une ligne par tranche)
+-- Résultat : src/data/generated/budget_conseil_ages.json (une ligne par tranche)
 WITH tranches(ordre, libelle, age_min, age_max) AS (
   VALUES (1, '18 à 39 ans', 18, 39), (2, '40 à 59 ans', 40, 59), (3, '60 ans et plus', 60, 200)
 ),

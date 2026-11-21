@@ -16,7 +16,7 @@ import { dernierDe, participations, resumeElections } from './elections';
 import { periodeDelinquance } from './delinquance';
 import { resumeEau, resumePompage } from './eau';
 import { resumeConstruction } from './construction';
-import { appelsOffres, comparaison, conseil, derniereAnnee as derniereAnneeBalance, premiereAnnee as premiereAnneeBalance, premiereNotification, premierePublication } from './transparence';
+import { appelsOffres, comparaison, conseil, premiereNotification, premierePublication } from './budget-vie-municipale';
 import { periodesEquipements, resumeSport } from './sport';
 import { resumeRues } from './rues';
 import { resumeBiodiversite, resumeNature } from './nature';
@@ -47,7 +47,6 @@ const MA_CANTINE_SOURCE = 'ministère de l\'Agriculture, Ma Cantine (télédécl
 const BNPE = "Banque nationale des prélèvements en eau (BNPE, OFB), via l'API Hub'eau « prélèvements »";
 const BALANCES = 'DGFiP, balances comptables des communes (budget principal)';
 const RNE = 'ministère de l\'Intérieur, répertoire national des élus (conseillers municipaux)';
-const balances = `${premiereAnneeBalance}-${derniereAnneeBalance}`;
 const INJEP = 'INJEP / ministère des Sports, recensement des licences auprès des fédérations sportives agréées (par commune de résidence)';
 const RES = 'ministère des Sports, recensement des équipements sportifs (RES, « Data ES »)';
 const BAN = 'Base Adresse Nationale (BAN, IGN / DINUM), adresses du code INSEE 37139';
@@ -584,16 +583,10 @@ const METHODES = {
     calcul: "une ligne par cantine de Luynes ayant télédéclaré ; une cantine servie par une cuisine centrale déclare les chiffres de cette cuisine, d'où des valeurs identiques pour plusieurs sites",
     millesime: `télédéclaration ${cantinesEcoles?.annee ?? 'la plus récente'}`,
   },
-  depenses_postes: {
-    titre: 'Où vont 100 € de dépenses',
-    source: BALANCES,
-    calcul: `dépenses de fonctionnement payées dans l'année, regroupées par grandes natures de dépenses (comptes 60 à 67, hors amortissements et provisions, qui n'impliquent aucune sortie d'argent), ramenées à 100 € ; plan comptable M14 jusqu'en 2023, M57 ensuite, rapprochés par leurs premiers chiffres`,
-    millesime: balances,
-  },
   elus_indemnites: {
     titre: 'Indemnités des élus',
     source: BALANCES + ', compte 6531 (M14) puis 65311 (M57)',
-    calcul: `indemnités versées aux élus dans l'année, divisées par la population retenue par la DGFiP (${formatNumber(resumeBudget.population)} habitants) ; comparaison : total des indemnités des communes de même taille (strate DGFiP, toute la France) divisé par leur population, et médiane des communes d'Indre-et-Loire (communes ayant une écriture sur ce compte)`,
+    calcul: `indemnités versées aux élus dans l'année, divisées par la ${POPULATION_DGFIP} ; comparaison : total des indemnités des communes de même taille (strate DGFiP, toute la France) divisé par leur population, et médiane des communes d'Indre-et-Loire (communes ayant une écriture sur ce compte)`,
     millesime: String(comparaison('indemnites').annee),
   },
   subventions_associations: {
@@ -809,7 +802,7 @@ const PAR_PAGE: Record<string, readonly CleMethode[]> = {
   territoire: ['superficie', 'densite'],
   'patrimoine-risques': ['monuments', 'objets_proteges', 'objets_siecles', 'objets_liste', 'cavites', 'catnat', 'mouvements'],
   immobilier: ['prix_m2_maison', 'prix_maison', 'ventes', 'loyer_maison'],
-  budget: ['depenses', 'dette', 'taxe_fonciere', 'equipement'],
+  budget: ['depenses', 'budget_flux', 'budget_series', 'dette', 'equipement', 'taxe_fonciere', 'subventions_associations', 'elus_indemnites', 'marches_plafonds', 'appels_offres', 'conseil_parite', 'conseil_ages', 'conseil_professions'],
   'revenus-emploi': ['niveau_vie', 'pauvrete', 'chomage', 'salaire'],
   accidents: ['accidents', 'accidents_taux', 'accidents_annees_sans'],
   equipements: ['equipements', 'medecins', 'eleves', 'etablissements', 'mediatheque_prets', 'mediatheque_collections', 'cantines_bio', 'cantines_liste'],
@@ -821,7 +814,6 @@ const PAR_PAGE: Record<string, readonly CleMethode[]> = {
   sport: ['sport_licences', 'sport_federations', 'sport_parite', 'sport_ages', 'sport_evolution', 'sport_equipements', 'sport_types', 'sport_frise', 'sport_carte'],
   nature: ['nature_protege', 'nature_agricole', 'nature_aoc', 'nature_especes', 'nature_zonages', 'nature_cultures', 'nature_groupes', 'nature_top', 'nature_menacees', 'nature_carte'],
   rues: ['rues_noms', 'rues_femmes', 'rues_types', 'rues_classement', 'rues_personnes', 'rues_jumelage', 'rues_curiosites', 'rues_carte'],
-  transparence: ['depenses_postes', 'elus_indemnites', 'subventions_associations', 'marches_plafonds', 'appels_offres', 'conseil_parite', 'conseil_ages', 'conseil_professions'],
 };
 
 export function methodesDePage(page: string): Methode[] {

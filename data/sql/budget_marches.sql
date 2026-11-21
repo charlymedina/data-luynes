@@ -1,7 +1,7 @@
 -- Marchés publics attribués par la mairie (données essentielles de la commande publique), du plus récent au plus ancien.
 -- ⚠️ « plafond » est le montant maximum du contrat (souvent une valeur technique d'accord-cadre), PAS une dépense :
 -- ces montants ne doivent jamais être additionnés.
--- Résultat : src/data/generated/transparence_marches.json
+-- Résultat : src/data/generated/budget_marches.json
 SELECT
   id,
   objet,

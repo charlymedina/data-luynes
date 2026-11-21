@@ -1,8 +1,19 @@
 /**
- * Anecdotes « Le saviez-vous ? » du thème Budget, calculées à partir des comptes DGFiP
- * (aucun chiffre écrit à la main). Ton neutre : on décrit, on ne juge pas.
+ * Anecdotes « Le saviez-vous ? » de la page Budget & vie municipale, calculées à partir des comptes DGFiP et des
+ * données publiques sur les élus et les marchés (aucun chiffre écrit à la main). Ton strictement neutre : on décrit, on ne juge pas.
  */
 import { anneeTauxStable, resumeBudget } from '../data/budget';
+import {
+  anneesElus,
+  anneesSubventions,
+  appelsOffres,
+  comparaison,
+  conseil,
+  derniereAnnee,
+  marches,
+  premiereAnnee,
+  professions,
+} from '../data/budget-vie-municipale';
 import { formatCommunes, formatNumber, formatRank } from './format';
 
 /** Montant en millions d'euros, une décimale : 5 457 310 → « 5,5 millions d'euros ». */
@@ -25,5 +36,39 @@ export function faitsBudget(): string[] {
       `Hors réforme de 2021 (la part de taxe foncière du département a été transférée aux communes), le taux de taxe foncière voté par Luynes n'a pas changé depuis ${stable}.`,
     );
   }
+  liste.push(...faitsVieMunicipale());
   return liste;
+}
+
+/** Indemnités des élus, subventions, conseil municipal, appels d'offres et marchés. */
+function faitsVieMunicipale(): string[] {
+  const elus = anneesElus.find((a) => a.annee === derniereAnnee);
+  const elusDebut = anneesElus.find((a) => a.annee === premiereAnnee);
+  const asso = anneesSubventions.find((a) => a.annee === derniereAnnee);
+  const premiereProfession = professions[0];
+  const faits: string[] = [];
+
+  if (elus && elusDebut) {
+    faits.push(
+      `En ${derniereAnnee}, les indemnités des élus représentent ${formatNumber(elus.indemnites_par_habitant, 1)} € par habitant, contre ${formatNumber(comparaison('indemnites').strate_par_habitant, 1)} € en moyenne dans les communes de même taille.`,
+      `Les indemnités des élus de Luynes étaient de ${formatNumber(elusDebut.indemnites)} € en ${premiereAnnee} et de ${formatNumber(elus.indemnites)} € en ${derniereAnnee}.`,
+    );
+  }
+  if (asso) {
+    faits.push(
+      `Les subventions aux associations représentent ${formatNumber(asso.associations_par_habitant, 1)} € par habitant en ${derniereAnnee}, contre ${formatNumber(comparaison('associations').strate_par_habitant, 1)} € dans les communes de même taille.`,
+    );
+  }
+  faits.push(`Le conseil municipal compte ${formatNumber(conseil.femmes)} femmes et ${formatNumber(conseil.hommes)} hommes, pour ${formatNumber(conseil.nb_elus)} élus.`);
+  if (premiereProfession) {
+    faits.push(`Parmi les élus, la catégorie professionnelle la plus représentée est « ${premiereProfession.categorie.toLowerCase()} » (${formatNumber(premiereProfession.elus)} élus sur ${formatNumber(conseil.nb_elus)}).`);
+  }
+  if (appelsOffres.length > 0) {
+    const annees = new Set(appelsOffres.map((a) => a.annee));
+    faits.push(`La mairie a publié ${formatNumber(appelsOffres.length)} appels d'offres au bulletin officiel (BOAMP) sur ${formatNumber(annees.size)} années différentes.`);
+  }
+  if (marches.length > 0) {
+    faits.push(`Les marchés publics de la commune ne figurent dans la base nationale que depuis que la mairie a commencé à y publier ses données : ${formatNumber(marches.length)} marchés à ce jour.`);
+  }
+  return faits;
 }

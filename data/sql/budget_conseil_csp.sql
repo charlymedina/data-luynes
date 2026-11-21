@@ -1,6 +1,6 @@
 -- Professions des élus, regroupées en grandes catégories socioprofessionnelles de l'INSEE (premier chiffre du code).
 -- Les « anciens » (anciens cadres, anciens employés…) sont classés par l'INSEE avec les retraités.
--- Résultat : src/data/generated/transparence_conseil_csp.json (une ligne par catégorie présente, de la plus fréquente à la moins fréquente)
+-- Résultat : src/data/generated/budget_conseil_csp.json (une ligne par catégorie présente, de la plus fréquente à la moins fréquente)
 SELECT
   CASE groupe_csp
     WHEN 1 THEN 'Agriculteurs exploitants'

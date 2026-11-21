@@ -1,7 +1,7 @@
 # Projet data-luynes — « Luynes en chiffres », site de données ouvertes sur Luynes (37)
 
 Site web présentant des données publiques sur la commune de **Luynes (Indre-et-Loire, code INSEE 37139)**.
-En ligne : https://luynes.pages.dev (17 thèmes + accueil). Fonctionnement détaillé : `README.md`.
+En ligne : https://luynes.pages.dev (16 thèmes + accueil). Fonctionnement détaillé : `README.md`.
 
 ## Rôles
 - Charly : idées, choix éditoriaux, maîtrise du **SQL** → il doit pouvoir lire/modifier les requêtes de données.
@@ -33,7 +33,9 @@ En ligne : https://luynes.pages.dev (17 thèmes + accueil). Fonctionnement déta
 
 ## Publication
 - Tant que le site n'a pas de public : on publie **directement sur `main`**.
-- Le `git push` (= mise en ligne) reste **validé par Charly** à chaque fois.
+- Le `git push origin main` (= mise en ligne) est **automatique** (décision de Charly du 2026-11-21) : Claude publie
+  dès que `npx astro build`, `npx astro check` et `npm test` passent, puis surveille le run GitHub Actions.
+  À rediscuter dès que le site aura un public.
 
 ## Sources de données
 - MCP **datagouv** en priorité (data.gouv.fr) ; aussi INSEE (Melodi), API Géo, Géorisques, etc. Inventaire : `docs/catalogue-donnees.md`.

@@ -2,7 +2,7 @@
 --  - indemnités : compte 6531 (M14) puis 65311 (M57) ;
 --  - frais et cotisations : tous les autres comptes 653… (frais de mission, cotisations de retraite et de sécurité
 --    sociale, formation) ; 65312 à 65315 depuis 2024.
--- Résultat : src/data/generated/transparence_elus.json
+-- Résultat : src/data/generated/budget_elus.json
 SELECT
   b.annee,
   round(sum(depense_nette) FILTER (compte IN ('6531', '65311')))::INTEGER                       AS indemnites,

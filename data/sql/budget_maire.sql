@@ -1,5 +1,5 @@
 -- Le maire (information publique du répertoire national des élus) : prénom, nom, début du mandat.
--- Résultat : src/data/generated/transparence_maire.json (une ligne)
+-- Résultat : src/data/generated/budget_maire.json (une ligne)
 SELECT
   "Prénom de l'élu"                    AS prenom,
   "Nom de l'élu"                       AS nom,

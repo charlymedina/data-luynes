@@ -1,0 +1,5 @@
+# Ancienne page « Transparence » fusionnée dans « Budget et vie municipale » (301 = définitif).
+# Les ancres (#elus, #subventions, #marches, #conseil) sont conservées par le navigateur.
+/transparence /budget 301
+/transparence.html /budget 301
+/transparence/ /budget 301

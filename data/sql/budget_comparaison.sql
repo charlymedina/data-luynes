@@ -4,7 +4,7 @@
 --  - « médiane 37 » : la moitié des communes du département est au-dessus, la moitié en dessous ;
 --  - rang 1 = la valeur la plus élevée du département.
 -- Seules les communes qui ont une écriture sur le compte sont comparées (une commune sans écriture n'est pas un « 0 »).
--- Résultat : src/data/generated/transparence_comparaison.json (une ligne par indicateur).
+-- Résultat : src/data/generated/budget_comparaison.json (une ligne par indicateur).
 WITH luynes AS (
   SELECT * FROM communes_france WHERE dep = '037' AND icom = '139'
 ),
