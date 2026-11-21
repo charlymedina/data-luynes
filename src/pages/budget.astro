@@ -141,7 +141,7 @@ const sommaire: { id: string; label: string }[] = [
     <p class="mt-4 max-w-2xl rounded-2xl bg-loire-soft p-4 text-sm leading-relaxed text-ink">
       Les montants « par habitant » sont divisés par la population retenue par les Finances publiques
       ({formatNumber(r.population)} habitants : population légale « totale », qui ajoute à la population municipale les personnes
-      « comptées à part », par exemple des étudiants ou des résidents d'établissements). Elle est un peu plus élevée que les
+      « comptées à part », par exemple des étudiants ou des résidents d'établissements). Elle est un peu plus élevée que les{' '}
       {formatNumber(commune.population)} habitants affichés ailleurs sur le site, mais c'est elle qui sert à calculer les moyennes
       des communes de même taille ({strateCourte}) : la comparaison reste exacte. Selon le sujet, ces communes peuvent être au-dessus ou en dessous de Luynes.
     </p>
@@ -255,11 +255,13 @@ const sommaire: { id: string; label: string }[] = [
       <div class="flex flex-col justify-between rounded-[1.5rem] bg-loire p-6 text-bg sm:p-8">
         <Icon name="outils" class="h-9 w-9 opacity-85" />
         <p class="mt-6 font-display text-5xl font-extrabold tracking-tight sm:text-6xl">{formatNumber(r.equipement_10_ans / 1_000_000, 1)} M€</p>
-        <p class="mt-3 opacity-85">consacrés aux équipements de {r.annee - 9} à {r.annee} : travaux, bâtiments, voirie, matériel.</p>
+        <p class="mt-3 opacity-85">consacrés aux équipements de {r.annee - 9} à {r.annee} : acquisitions et travaux d'équipement, y compris les subventions d'équipement versées à d'autres organismes.</p>
       </div>
       <div class={carte}>
         <p class="mb-4 text-sm text-ink-2">
           Par habitant et par an : les montants suivent le rythme des chantiers. En moyenne {euros(Math.round(equipementMoyen10Ans))} par habitant et par an sur {r.annee - 9}-{r.annee}.
+          En {r.annee}, {euros(r.equipement_subventions)} sur {euros(r.equipement)} sont des subventions d'équipement versées à d'autres organismes :
+          hors ces subventions, {euros(r.equipement_hors_subventions_hab)} par habitant au lieu de {euros(r.equipement_hab)}.
         </p>
         <LineChart info={methode('equipement')}
           xs={xs}
@@ -416,7 +418,7 @@ const sommaire: { id: string; label: string }[] = [
                 </p>
               </div>
               <p class="tabular text-sm text-ink-2 sm:text-right">
-                {m.plafond !== null ? <>Plafond du contrat :<br class="hidden sm:block" /> <strong class="text-ink">{euros(m.plafond)}</strong></> : 'Plafond non renseigné'}
+                {m.plafond !== null ? <>{m.plafond_technique ? 'Plafond technique du contrat :' : 'Plafond du contrat :'}<br class="hidden sm:block" />{' '}<strong class="text-ink">{euros(m.plafond)}</strong>{m.plafond_technique && <span class="block text-xs">valeur technique de plafond, sans lien avec la dépense réelle</span>}</> : 'Plafond non renseigné'}
               </p>
             </li>
           ))
@@ -472,7 +474,7 @@ const sommaire: { id: string; label: string }[] = [
           }
         </ul>
         <p class="mt-4 text-sm text-ink-2">
-          Âge moyen : {formatNumber(conseil.age_moyen, 1)} ans pour les élus, {formatNumber(conseil.age_moyen_population, 1)} ans pour les habitants de 18 ans et plus (recensement {conseil.annee_recensement}).
+          Âge moyen : {formatNumber(conseil.age_moyen, 1)} ans pour les élus, {formatNumber(conseil.age_moyen_population, 1)} ans pour les habitants de 18 ans et plus. Les âges des élus sont ceux de l'année en cours, ceux des habitants sont issus du recensement {conseil.annee_recensement} : les deux moyennes se comparent avec cet écart de dates.
         </p>
       </div>
     </div>

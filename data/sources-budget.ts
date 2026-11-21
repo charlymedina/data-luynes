@@ -140,7 +140,7 @@ const SOURCES_VIE_MUNICIPALE: readonly Source[] = [
     id: 'balances_luynes',
     description: 'Balances comptables de Luynes année par année depuis 2010 (DGFiP, compte par compte)',
     url: async () =>
-      (await jeuxBalances()).map((id) => exportCsvBalances(id, `siren="${SIREN_LUYNES}"`, 'exer,compte,sd,sc')),
+      (await jeuxBalances()).map((id) => exportCsvBalances(id, `siren="${SIREN_LUYNES}"`, 'exer,compte,sd,sc,obnetdeb,obnetcre')),
     format: 'fichiers',
   },
   {

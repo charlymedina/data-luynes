@@ -13,6 +13,8 @@ export const SOURCES_PATRIMOINE: readonly Source[] = [
     url: 'https://ministere-culture.s3.sbg.io.cloud.ovh.net/POP/palissy.csv',
     format: 'csv-extrait',
     separateur: '|',
-    filtre: `(Code_INSEE_commune_actuelle = '37139' OR COG_Insee = '37139')`,
+    // On filtre sur COG_Insee (commune d'origine de la notice) et PAS sur Code_INSEE_commune_actuelle :
+    // ce second champ est erroné pour 2 notices du château de Condé-en-Brie (Aisne, 02209), qui y portent 37139.
+    filtre: `COG_Insee = '37139'`,
   },
 ];

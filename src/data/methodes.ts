@@ -3,7 +3,7 @@
  * Affiché dans la bulle ⓘ des chiffres clés (KeyFigure) et dans la section « Sources et méthode » en bas de page.
  * Les années sont toujours lues dans les données (jamais écrites à la main) : elles suivent les mises à jour.
  */
-import { generatedAt, rang } from './commune';
+import { commune, generatedAt, rang } from './commune';
 import { agesDe, derniereAnneeEtatCivil, evolutionAges, faits, historique } from './population';
 import { resumeObjets, resumeRisques } from './patrimoine';
 import { loyerMaison, resumeImmobilier } from './immobilier';
@@ -21,7 +21,7 @@ import { periodesEquipements, resumeSport } from './sport';
 import { resumeRues } from './rues';
 import { resumeBiodiversite, resumeNature } from './nature';
 import { derniereAnneeCovoiturage, dernierTrimestreFibre, premierTrimestreFibre, resumeDae, resumeFibre, resumeMobilier } from './quotidien';
-import { formatCommunes, formatMonthYear, formatNumber } from '../lib/format';
+import { formatCommunes, formatMonthYear, formatNumber, formatOneDecimal } from '../lib/format';
 
 export interface Methode {
   /** Nom court du chiffre, ex. « Habitants » */
@@ -31,6 +31,11 @@ export interface Methode {
   millesime: string;
 }
 
+/** « de mars 2026 » / « d'avril 2026 » (élision devant une voyelle). */
+const deMois = (date: Date): string => {
+  const mois = formatMonthYear(date);
+  return /^[aeiouyéèêô]/i.test(mois) ? `d'${mois}` : `de ${mois}`;
+};
 const extraction = `extraction de ${formatMonthYear(generatedAt)}`;
 const premiere = (annees: readonly number[]): number => Math.min(...annees);
 const derniere = (annees: readonly number[]): number => Math.max(...annees);
@@ -182,7 +187,7 @@ const METHODES = {
   equipement: {
     titre: 'Équipements par habitant',
     source: DGFIP,
-    calcul: `dépenses d'équipement de l'année (travaux, bâtiments, voirie, matériel) divisées par la ${POPULATION_DGFIP}`,
+    calcul: `dépenses d'équipement de l'année (acquisitions et travaux d'équipement, y compris les subventions d'équipement versées à d'autres organismes, comptes 204) divisées par la ${POPULATION_DGFIP}. En ${resumeBudget.annee} : ${formatNumber(resumeBudget.equipement_subventions)} € de subventions d'équipement versées sur ${formatNumber(resumeBudget.equipement)} € ; hors subventions, ${resumeBudget.equipement_hors_subventions_hab} € par habitant (au lieu de ${resumeBudget.equipement_hab} €). La moyenne des communes de même taille suit la même définition`,
     millesime: String(resumeBudget.annee),
   },
   niveau_vie: {
@@ -466,7 +471,7 @@ const METHODES = {
     titre: 'Logements sociaux',
     source: 'SDES, répertoire des logements locatifs des bailleurs sociaux (RPLS)',
     calcul: 'logements des bailleurs sociaux situés dans la commune au 1er janvier du dernier millésime publié',
-    millesime: extraction,
+    millesime: `1er janvier ${resumeConstruction.annee_rpls} (extraction de ${formatMonthYear(generatedAt)})`,
   },
   evolution_ages: {
     titre: 'Évolution des âges',
@@ -501,7 +506,7 @@ const METHODES = {
   eau_conformite: {
     titre: 'Conformité bactériologique',
     source: HUBEAU,
-    calcul: "part des prélèvements d'eau du robinet conformes aux limites sanitaires pour les bactéries, parmi ceux où elles ont été contrôlées ; comparaison : analyses E. coli de tout le département",
+    calcul: "part des prélèvements d'eau du robinet conformes aux limites sanitaires pour les bactéries, parmi ceux dont la bactériologie a été évaluée (${resumeEau.evalues_bact} sur ${resumeEau.prelevements} prélèvements ; les autres n'ont pas de conclusion bactériologique) ; comparaison : analyses E. coli de tout le département",
     millesime: `${resumeEau.annee_debut}-${resumeEau.annee_fin} (comparaison ${resumeEau.fenetre_debut}-${resumeEau.fenetre_fin})`,
   },
   eau_physico: {
@@ -549,7 +554,7 @@ const METHODES = {
   objets_proteges: {
     titre: 'Objets mobiliers protégés',
     source: PALISSY,
-    calcul: "nombre de notices de la base Palissy rattachées à Luynes (code INSEE 37139, commune actuelle ou lors de la protection) ; une notice décrit un objet ou un ensemble (ex. « quinze verrières ») : ce n'est donc pas un compte de pièces",
+    calcul: "nombre de notices de la base Palissy rattachées à Luynes (code INSEE 37139 de la commune d'origine de la notice) ; une notice décrit un objet ou un ensemble (ex. « quinze verrières ») : ce n'est donc pas un compte de pièces",
     millesime: `protections de ${resumeObjets.premiere_protection} à ${resumeObjets.derniere_protection} ; base consultée en ${formatMonthYear(generatedAt)}`,
   },
   objets_siecles: {
@@ -603,7 +608,7 @@ const METHODES = {
   marches_plafonds: {
     titre: 'Marchés publics attribués',
     source: 'données essentielles de la commande publique consolidées (DECP, data.gouv.fr), marchés dont l\'acheteur est la mairie de Luynes',
-    calcul: `nombre de marchés publiés (version à jour de chaque marché). Le montant affiché est le plafond du contrat : jamais une dépense, jamais additionné. La base ne contient que les marchés dont la commune a publié les données, à partir de ${formatMonthYear(new Date(premierePublication))} : les marchés plus anciens n'y figurent pas`,
+    calcul: `nombre de marchés publiés (version à jour de chaque marché). Le montant affiché est le plafond du contrat : jamais une dépense, jamais additionné. Certains plafonds sont des valeurs techniques d'accord-cadre (nombre composé uniquement de 9, ou un million divisé par 1,1), sans lien avec la dépense réelle. La base ne contient que les marchés dont la commune a publié les données, à partir ${deMois(new Date(premierePublication))} : les marchés plus anciens n'y figurent pas`,
     millesime: `marchés notifiés depuis ${formatMonthYear(new Date(premiereNotification))}`,
   },
   appels_offres: {
@@ -621,7 +626,7 @@ const METHODES = {
   conseil_ages: {
     titre: 'Âge des élus',
     source: RNE + ' ; INSEE, recensement (population par âge)',
-    calcul: `âge des élus à la date de construction du site (la date de naissance n'est jamais publiée), regroupé en trois tranches ; comparaison : habitants de 18 ans et plus (recensement ${conseil.annee_recensement})`,
+    calcul: `âge des élus à la date de construction du site (la date de naissance n'est jamais publiée), regroupé en trois tranches ; comparaison : habitants de 18 ans et plus (recensement ${conseil.annee_recensement}, âge en années entières comme pour les élus ; les élus sont donc plus récents de quelques années)`,
     millesime: extraction,
   },
   conseil_professions: {
@@ -687,7 +692,7 @@ const METHODES = {
   nature_protege: {
     titre: 'Part de la commune classée ou inventoriée',
     source: INPN,
-    calcul: `hectares de Luynes situés dans au moins une ZNIEFF (inventaire scientifique, sans valeur réglementaire) ou un site Natura 2000 (réseau européen de sites gérés par contrat), divisés par la surface de la commune (${formatNumber(resumeNature.surface_commune_ha)} ha) ; ${DECOUPE}`,
+    calcul: `hectares de Luynes situés dans au moins une ZNIEFF (inventaire scientifique, sans valeur réglementaire) ou un site Natura 2000 (réseau européen de sites gérés par contrat), divisés par la surface de la commune (${formatNumber(resumeNature.surface_commune_ha)} ha, calculés en projection Lambert 93 ; l'API Géo indique ${formatOneDecimal(commune.surface_km2)} km², arrondi à l'hectomètre carré) ; ${DECOUPE}`,
     millesime: `zonages consultés en ${formatMonthYear(generatedAt)}`,
   },
   nature_zonages: {
@@ -705,7 +710,7 @@ const METHODES = {
   nature_cultures: {
     titre: 'Cultures déclarées',
     source: RPG,
-    calcul: `surface de chaque famille de cultures (nomenclature du RPG) à Luynes ; part de la surface agricole déclarée. Les cultures tournent d'une année sur l'autre : comparer ${resumeNature.annee_rpg_ancienne} et ${resumeNature.annee_rpg} montre des équilibres, pas des choix individuels`,
+    calcul: `surface de chaque famille de cultures (nomenclature du RPG) à Luynes ; part de la surface agricole déclarée. Les cultures tournent d'une année sur l'autre : comparer ${resumeNature.annee_rpg_ancienne} et ${resumeNature.annee_rpg} montre des équilibres, pas des choix individuels. La surface totale déclarée varie surtout avec les surfaces gelées (jachères, famille « Gel ») : ${resumeNature.gel_ancienne_ha} ha en ${resumeNature.annee_rpg_ancienne}, ${resumeNature.gel_ha} ha en ${resumeNature.annee_rpg} ; hors gel, la surface déclarée passe de ${resumeNature.agricole_hors_gel_ancienne_ha} à ${resumeNature.agricole_hors_gel_ha} ha`,
     millesime: `${resumeNature.annee_rpg_ancienne} et ${resumeNature.annee_rpg}`,
   },
   nature_aoc: {
@@ -717,7 +722,7 @@ const METHODES = {
   nature_especes: {
     titre: 'Espèces observées',
     source: GBIF,
-    calcul: `espèces différentes observées dans le contour de la commune (simplifié à ≈ 20 m près) ; ce sont des observations rapportées, qui reflètent surtout les lieux fréquentés et les observateurs actifs, pas un inventaire complet. ${formatNumber(resumeBiodiversite.observations)} observations au total, dont ${formatNumber(resumeBiodiversite.observations_humaines_pct, 1)} % par des personnes (le reste : spécimens de collections, capteurs…)`,
+    calcul: `espèces différentes observées dans le contour de la commune (simplifié à ≈ 20 m près) ; ce sont des observations rapportées, qui reflètent surtout les lieux fréquentés et les observateurs actifs, pas un inventaire complet. ${formatNumber(resumeBiodiversite.observations)} observations au total (les enregistrements GBIF d'« absence », où l'espèce a été cherchée sans être retrouvée, sont écartés), dont ${formatNumber(resumeBiodiversite.observations_humaines_pct, 1)} % par des personnes (le reste : spécimens de collections, capteurs…)`,
     millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
   },
   nature_groupes: {

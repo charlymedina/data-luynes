@@ -143,8 +143,8 @@ const legende: MapLegendItem[] = couches
   <section id="personnes" aria-labelledby="personnes-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
     <h2 id="personnes-titre" class={titreH2}>Qui est honoré ?</h2>
     <p class="mt-4 max-w-2xl text-ink-2">
-      {formatNumber(r.voies_de_personnes)} voies portent le nom d'une personne ({formatNumber(r.personnes_distinctes)} personnes différentes). Le sexe et la
-      catégorie ne sont indiqués que lorsqu'ils sont certains ; les autres cas sont classés « {CATEGORIE_INCONNUE} ».
+      {formatNumber(r.voies_de_personnes)} voies portent le nom d'une personne ({formatNumber(r.personnes_distinctes)} personnes différentes). Le sexe est déduit
+      du prénom ; la catégorie n'est indiquée que lorsqu'elle est certaine ; les autres cas sont classés « {CATEGORIE_INCONNUE} ».
     </p>
     <div class:list={['mt-8', carte]}>
       <p class="flex items-center gap-2 text-sm font-semibold">Une silhouette par voie <InfoTip methode={methode('rues_femmes')} label="Voies de femmes et d'hommes" /></p>
@@ -211,7 +211,7 @@ const legende: MapLegendItem[] = couches
 
   <section id="ailleurs" aria-labelledby="ailleurs-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
     <h2 id="ailleurs-titre" class={titreH2}>Ailleurs, sur les panneaux</h2>
-    <p class="mt-4 max-w-2xl text-ink-2">Des voies rappellent les villes jumelées avec Luynes{homonymes.length > 0 ? ' et une autre commune qui porte le même nom' : ''}.</p>
+    <p class="mt-4 max-w-2xl text-ink-2">Des voies rappellent les villes jumelées avec Luynes{homonymes.length > 0 ? ' et un quartier d’Aix-en-Provence qui porte le même nom que la commune' : ''}.</p>
     <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {
         [...jumelles, ...homonymes].map((v) => (

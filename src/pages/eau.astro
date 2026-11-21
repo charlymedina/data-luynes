@@ -68,7 +68,7 @@ const pctLimite = (v: number): number => Math.min(100, (100 * v) / LIMITE_NITRAT
 
   <section aria-label="Chiffres clés de l'eau" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     <KeyFigure tone="loire" icon="goutte" label="Prélèvements conformes (bactéries)" value={r.conformes_bact} decimals={1} unit="%" info={methode('eau_conformite')}>
-      <p class="mt-4 text-sm opacity-90">{formatNumber(r.prelevements)} prélèvements depuis {r.annee_debut}, dont {formatNumber(r.non_conformes_bact)} non conforme{r.non_conformes_bact > 1 ? 's' : ''} pour les bactéries.</p>
+      <p class="mt-4 text-sm opacity-90">{formatNumber(r.evalues_bact)} prélèvements évalués pour les bactéries ({formatNumber(r.prelevements)} depuis {r.annee_debut}, dont {formatNumber(r.prelevements - r.evalues_bact)} sans conclusion bactériologique), dont {formatNumber(r.non_conformes_bact)} non conforme{r.non_conformes_bact > 1 ? 's' : ''}.</p>
     </KeyFigure>
     <KeyFigure tone="accent" icon="feuille" label={`Nitrates (moyenne ${fenetre})`} value={r.nitrates_luynes} decimals={1} unit="mg/L" info={methode('eau_nitrates')}>
       <MiniCompare items={versus(r.nitrates_luynes, r.nitrates_37, mgL)} />

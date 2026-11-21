@@ -16,6 +16,14 @@ UNION ALL
 SELECT 'palissy : doublon de référence ' || reference FROM patrimoine_objets GROUP BY reference HAVING count(*) > 1
 
 UNION ALL
+-- Les 2 notices du château de Condé-en-Brie (Aisne) portent à tort le code 37139 en « commune actuelle » : elles ne doivent jamais revenir
+SELECT 'palissy : notice d''une autre commune (' || Reference || ', ' || Commune_forme_editoriale || ')'
+FROM read_parquet('data/raw/palissy_luynes.parquet') WHERE COG_Insee IS DISTINCT FROM '37139'
+
+UNION ALL
+SELECT 'palissy : notice de Condé-en-Brie retenue (' || reference || ')' FROM patrimoine_objets WHERE reference IN ('PM02000303', 'PM02000307')
+
+UNION ALL
 SELECT 'palissy : somme des siècles (' || s.n || ') > objets (' || r.objets || ')'
 FROM patrimoine_objets_resume r, (SELECT coalesce(sum(objets), 0) AS n FROM patrimoine_objets_siecles) s
 WHERE s.n > r.objets;

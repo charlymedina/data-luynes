@@ -5,7 +5,8 @@ WITH population AS (
   SELECT
     annee,
     round(100 * sum(habitants) FILTER (sexe = 'F') / sum(habitants), 1)::DOUBLE AS part_femmes_population,
-    round(sum(habitants * (age + 0.5)) / sum(habitants), 1)::DOUBLE             AS age_moyen_population
+    -- âge révolu (en années entières), comme pour les élus : les deux moyennes se comparent à définition égale
+    round(sum(habitants * age) / sum(habitants), 1)::DOUBLE                     AS age_moyen_population
   FROM age_sexe
   WHERE territoire = 'Luynes' AND annee = (SELECT max(annee) FROM age_sexe WHERE territoire = 'Luynes') AND age >= 18
   GROUP BY annee

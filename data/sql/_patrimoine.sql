@@ -16,4 +16,7 @@ SELECT
   TRY_CAST(left(Date_et_typologie_de_la_protection, 4) AS INTEGER) AS annee_protection,
   CASE WHEN Typologie_de_la_protection LIKE 'classé%' THEN 'classé' ELSE 'inscrit' END AS protection,
   Statut_juridique_du_proprietaire                             AS proprietaire
-FROM read_parquet('data/raw/palissy_luynes.parquet');
+FROM read_parquet('data/raw/palissy_luynes.parquet')
+-- Refiltre ici aussi : la base Palissy donne à tort le code 37139 en « commune actuelle » à 2 notices
+-- du château de Condé-en-Brie (Aisne, 02209) ; seul COG_Insee (commune d'origine) est fiable.
+WHERE COG_Insee = '37139';

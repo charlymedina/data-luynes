@@ -47,6 +47,11 @@ const lignesCultures = [
 ];
 const maxCulture = Math.max(...lignesCultures.map((l) => Math.max(l.ha, l.ancien)));
 const evolutionAgricole = r.agricole_ha - r.agricole_ancienne_ha;
+/** Vrai quand la baisse des surfaces gelées explique plus de la moitié de la baisse totale : seul cas où on le dit. */
+const baisseVientDuGel = evolutionAgricole < 0 && r.gel_ancienne_ha - r.gel_ha > Math.abs(evolutionAgricole) / 2;
+const evolutionHorsGel = r.agricole_hors_gel_ha - r.agricole_hors_gel_ancienne_ha;
+/** « +12 » ou « -12 » : le signe « + » n'est pas fourni par formatNumber pour les positifs. */
+const signe = (v: number): string => `${v > 0 ? '+' : ''}${formatNumber(v)}`;
 
 // — Biodiversité —
 const maxGroupe = Math.max(...groupesVivants.map((g) => g.observations));
@@ -112,6 +117,7 @@ const zonesCarte: MapAreaLegendItem[] = couchesCarte.map((c) => {
         info={methode('nature_protege')}
         title="Sur 100 hectares de Luynes"
         unit="ha"
+        decimals={1}
         colors={['var(--chart-3)', 'var(--bar)']}
         items={[
           { label: 'En ZNIEFF ou Natura 2000', value: r.zonee_pct },
@@ -147,7 +153,7 @@ const zonesCarte: MapAreaLegendItem[] = couchesCarte.map((c) => {
   <section id="champs" aria-labelledby="champs-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
     <h2 id="champs-titre" class={titreH2}>Dans les champs</h2>
     <p class="mt-4 max-w-2xl text-ink-2">
-      Les parcelles déclarées par les exploitants au registre parcellaire graphique : {formatNumber(r.agricole_ha)} hectares en {r.annee_rpg}
+      Les parcelles déclarées par les exploitants au registre parcellaire graphique : {formatNumber(r.agricole_ha)} hectares en {r.annee_rpg}{' '}
       ({formatOneDecimal(r.agricole_pct)} % de la commune). Ce registre ne couvre que les parcelles déclarées au titre des aides agricoles.
     </p>
     <div class:list={['mt-8', carte]}>
@@ -176,9 +182,11 @@ const zonesCarte: MapAreaLegendItem[] = couchesCarte.map((c) => {
         }
       </ul>
       <p class="mt-6 border-t border-line pt-4 text-sm text-ink-2">
-        De {formatNumber(r.agricole_ancienne_ha)} hectares déclarés en {r.annee_rpg_ancienne} à {formatNumber(r.agricole_ha)} en {r.annee_rpg}
-        ({evolutionAgricole > 0 ? '+' : ''}{formatNumber(evolutionAgricole)} ha). Les cultures tournent d'une année sur l'autre (colza, blé, orge…) :
-        seuls les grands équilibres, comme les prairies, se comparent de façon fiable.
+        De {formatNumber(r.agricole_ancienne_ha)} hectares déclarés en {r.annee_rpg_ancienne} à {formatNumber(r.agricole_ha)} en {r.annee_rpg}{' '}
+        ({signe(evolutionAgricole)} ha).{baisseVientDuGel ? ' Cette baisse vient surtout des surfaces gelées déclarées (jachères) :' : ' Surfaces gelées déclarées (jachères) :'}{' '}
+        {formatNumber(r.gel_ancienne_ha)} hectares en {r.annee_rpg_ancienne}, {formatNumber(r.gel_ha)} en {r.annee_rpg}. Hors surfaces gelées, la surface déclarée passe de{' '}
+        {formatNumber(r.agricole_hors_gel_ancienne_ha)} à {formatNumber(r.agricole_hors_gel_ha)} hectares ({signe(evolutionHorsGel)} ha).
+        Les cultures tournent d'une année sur l'autre (colza, blé, orge…) : seuls les grands équilibres, comme les prairies, se comparent de façon fiable.
       </p>
       <details class="mt-4">
         <summary class="cursor-pointer text-sm font-semibold hover:text-loire">Les cultures les plus étendues, au détail</summary>

@@ -378,7 +378,7 @@ const niveauxCollege = college
         </div>
         <div class:list={['mt-6', carte]}>
           <h3 class="flex items-center gap-2 font-display text-xl font-bold">Les cantines de Luynes <InfoTip methode={methode('cantines_liste')} label="Liste des cantines" /></h3>
-          <p class="mt-1 text-sm text-ink-2">Une cantine servie par une cuisine centrale déclare les chiffres de cette cuisine : plusieurs sites affichent donc les mêmes valeurs.</p>
+          <p class="mt-1 text-sm text-ink-2">Une cantine servie par une cuisine centrale déclare les chiffres de cette cuisine : plusieurs sites affichent donc les mêmes valeurs{cantinesEcoles.cuisines === 1 ? ' (ici, une seule cuisine centrale, celle du prestataire, dont les chiffres sont repris)' : ''}. Les noms des établissements sont ceux de la plateforme Ma Cantine : ils peuvent différer de ceux de l'Éducation nationale.</p>
           <ul class="mt-4 grid gap-3 sm:grid-cols-2">
             {cantines.map((c) => (
               <li class="rounded-xl border border-line p-4">

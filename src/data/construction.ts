@@ -18,6 +18,7 @@ export interface ResumeConstruction {
   annee_record: number;
   commences_record: number;
   logements_sociaux: number;
+  annee_rpls: number;
   surface_moyenne_sociaux: number;
   sociaux_recents: number;
   part_passoires_sociaux: number | null;

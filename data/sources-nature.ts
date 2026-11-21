@@ -92,7 +92,9 @@ function gbif(facettes: readonly string[], limite: number, filtres = ''): () => 
   return async () => {
     const wkt = encodeURIComponent(await contourPourGbif());
     const facets = facettes.map((f) => `facet=${f}`).join('&');
-    return `${GBIF}?geometry=${wkt}&limit=0&${facets}&facetLimit=${limite}${filtres}`;
+    // occurrenceStatus=PRESENT : on ne garde que les espèces effectivement vues (GBIF contient aussi des « absences » :
+    // espèce recherchée et non retrouvée), qui ne sont pas des observations.
+    return `${GBIF}?geometry=${wkt}&limit=0&occurrenceStatus=PRESENT&${facets}&facetLimit=${limite}${filtres}`;
   };
 }
 

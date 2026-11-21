@@ -59,6 +59,8 @@ export interface Marche {
   date_publication: string | null;
   /** Montant maximum du contrat (plafond), JAMAIS une dépense : ne pas additionner. */
   plafond: number | null;
+  /** Valeur technique de plafond (999 999 €, 909 090 €…) : sans lien avec la dépense réelle. */
+  plafond_technique: boolean | null;
   duree_mois: number | null;
 }
 

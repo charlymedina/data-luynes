@@ -22,6 +22,10 @@ agricole AS (
   SELECT
     sum(surface_ha) FILTER (WHERE periode = 'recent')                         AS declaree_ha,
     sum(surface_ha) FILTER (WHERE periode = 'ancien')                         AS declaree_ancienne_ha,
+    -- Surfaces gelées (jachères, groupe 11 du RPG) : déclarées en nombre très variable d'une année à l'autre,
+    -- elles expliquent l'essentiel de l'évolution de la surface totale déclarée. On calcule donc aussi « hors gel ».
+    sum(surface_ha) FILTER (WHERE periode = 'recent' AND code_groupe = '11')  AS gel_ha,
+    sum(surface_ha) FILTER (WHERE periode = 'ancien' AND code_groupe = '11')  AS gel_ancien_ha,
     sum(surface_ha) FILTER (WHERE periode = 'recent' AND code_groupe = '18')  AS prairies_permanentes_ha,
     sum(surface_ha) FILTER (WHERE periode = 'recent' AND code_groupe = '21')  AS vignes_ha,
     sum(surface_ha) FILTER (WHERE periode = 'ancien' AND code_groupe = '21')  AS vignes_ancien_ha,
@@ -48,6 +52,10 @@ SELECT
   round(100 * a.declaree_ha / c.surface_ha, 1)::DOUBLE                      AS agricole_pct,
   round(a.declaree_ancienne_ha)::INTEGER                                    AS agricole_ancienne_ha,
   round(100 * a.declaree_ancienne_ha / c.surface_ha, 1)::DOUBLE             AS agricole_ancienne_pct,
+  round(a.gel_ha)::INTEGER                                                  AS gel_ha,
+  round(a.gel_ancien_ha)::INTEGER                                           AS gel_ancienne_ha,
+  round(a.declaree_ha - a.gel_ha)::INTEGER                                  AS agricole_hors_gel_ha,
+  round(a.declaree_ancienne_ha - a.gel_ancien_ha)::INTEGER                  AS agricole_hors_gel_ancienne_ha,
   round(a.prairies_permanentes_ha)::INTEGER                                 AS prairies_ha,
   round(100 * a.prairies_permanentes_ha / a.declaree_ha, 1)::DOUBLE         AS prairies_part_agricole_pct,
   round(a.vignes_ha, 1)::DOUBLE                                             AS vignes_ha,

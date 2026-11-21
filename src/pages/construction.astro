@@ -41,7 +41,7 @@ const epoques = sociauxParEpoque.filter((g) => g.logements > 0);
     </h1>
     <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
       Les logements autorisés par un permis puis mis en chantier à Luynes depuis {r.annee_debut}, et le parc de logements
-      sociaux d'aujourd'hui.
+      sociaux au 1ᵉʳ janvier {r.annee_rpls}.
     </p>
   </section>
 
@@ -76,7 +76,7 @@ const epoques = sociauxParEpoque.filter((g) => g.logements > 0);
   <section id="social" aria-labelledby="social-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
     <h2 id="social-titre" class={titreH2}>Le logement social</h2>
     <p class="mt-4 max-w-2xl text-ink-2">
-      Les {formatNumber(r.logements_sociaux)} logements des bailleurs sociaux à Luynes : leur taille et l'époque de leur construction.
+      Les {formatNumber(r.logements_sociaux)} logements des bailleurs sociaux à Luynes au 1ᵉʳ janvier {r.annee_rpls} : leur taille et l'époque de leur construction.
     </p>
     <div class="mt-8 grid gap-6 lg:grid-cols-2">
       <div class={carte}>

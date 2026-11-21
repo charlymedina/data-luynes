@@ -275,7 +275,7 @@ const niveauVieMois = (v: number): number => Math.round(v / 12 / 10) * 10;
         info={methode('logements_commences')}
       >
         <MiniColumns values={anneesConstruction.map((a) => ({ label: String(a.annee), value: a.commences }))} ariaLabel={`Logements commencés à Luynes par année, ${resumeConstruction.annee_debut} à ${resumeConstruction.annee_fin}`} />
-        <p class="mt-2 text-xs text-ink-2">Et {formatNumber(resumeConstruction.logements_sociaux)} logements sociaux aujourd'hui.</p>
+        <p class="mt-2 text-xs text-ink-2">Et {formatNumber(resumeConstruction.logements_sociaux)} logements sociaux au 1ᵉʳ janvier {resumeConstruction.annee_rpls}.</p>
       </KeyFigure>
       <KeyFigure class="sm:col-span-3" tone="loire" href="/budget#elus" icon="mairie" label={`Indemnités des élus (${indemnitesElus.annee})`} value={indemnitesElus.luynes_par_habitant} decimals={1} unit="€/hab." info={methode('elus_indemnites')}>
         <MiniCompare onDark items={duo(indemnitesElus.luynes_par_habitant, [['Même taille', indemnitesElus.strate_par_habitant], ['Médiane 37', indemnitesElus.mediane_37]], (v) => `${formatNumber(v, 1)} €`)} />

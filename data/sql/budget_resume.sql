@@ -28,6 +28,14 @@ departement AS (
   FROM budget_communes_37
 ),
 
+-- Part des dépenses d'équipement qui sont des subventions d'équipement versées à d'autres organismes
+-- (comptes 204…, ex. 2046 : mouvement de l'année). La définition DGFiP de « dépenses d'équipement » les inclut.
+subventions_equipement AS (
+  SELECT coalesce(sum(mouvement_net), 0) AS euros
+  FROM balance_luynes
+  WHERE compte LIKE '204%' AND annee = (SELECT an FROM derniere)
+),
+
 -- Sur les 10 dernières années : total investi en équipements, et pic de la dette par habitant
 historique AS (
   SELECT
@@ -41,12 +49,15 @@ historique AS (
 SELECT
   d.an::INTEGER                                      AS annee,
   d.pop1::INTEGER                                    AS population,
-  d.nomsst1                                          AS strate,
+  -- « 5000 à 10 000 hab » → « 5 000 à 10 000 hab » (la DGFiP n'écrit pas l'espace de « 5000 »)
+  regexp_replace(d.nomsst1, '\b(\d)(\d{3})\b', '\1 \2', 'g') AS strate,
   -- Montants totaux en euros (la DGFiP les donne en milliers d'euros)
   round(d.prod * 1000)::INTEGER                      AS recettes,
   round(d.charge * 1000)::INTEGER                    AS depenses,
   round(d.depinv * 1000)::INTEGER                    AS investissement,
   round(d.equip * 1000)::INTEGER                     AS equipement,
+  round(se.euros)::INTEGER                           AS equipement_subventions,
+  round((d.equip * 1000 - se.euros) / d.pop1)::INTEGER AS equipement_hors_subventions_hab,
   round(d.caf * 1000)::INTEGER                       AS caf,
   round(d.dette * 1000)::INTEGER                     AS dette,
   round(d.annu * 1000)::INTEGER                      AS annuite,
@@ -90,4 +101,5 @@ SELECT
 FROM derniere d
 CROSS JOIN departement dep
 CROSS JOIN historique h
+CROSS JOIN subventions_equipement se
 JOIN classement k ON k.icom = 139;

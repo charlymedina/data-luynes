@@ -49,4 +49,10 @@ export const SOURCES_CONSTRUCTION: readonly Source[] = [
     url: rplsLuynes,
     pagination: 'dido',
   },
+  {
+    // Fiche descriptive du jeu RPLS : sert uniquement à connaître son millésime (1er janvier de quelle année).
+    id: 'rpls_millesime',
+    description: 'Millésime du répertoire RPLS (date du stock de logements sociaux), SDES',
+    url: `${DIDO}/${RPLS}`,
+  },
 ];

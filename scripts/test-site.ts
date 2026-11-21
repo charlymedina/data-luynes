@@ -3,7 +3,9 @@
  *  - chaque lien interne mène à une page ou un fichier qui existe ;
  *  - aucun « NaN », « undefined » ou « null » n'apparaît dans le texte des pages ;
  *  - chaque thème du registre a sa page, figure dans le menu de l'accueil, et chaque page cite ses sources ;
- *  - chaque chiffre clé a sa bulle « Source · Calcul · Année ».
+ *  - chaque chiffre clé a sa bulle « Source · Calcul · Année » ;
+ *  - aucun chiffre n'est collé à un mot ou à une parenthèse (« les5 062 », « à97,3 % », « 2025(27,8 % ») : signe d'un espace
+ *    perdu entre un texte et une expression {…} dans une page Astro (la compression du HTML supprime les espaces en bout de ligne).
  */
 import { existsSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
@@ -18,6 +20,18 @@ function texteVisible(html: string): string {
     .replace(/<script[\s\S]*?<\/script>/g, ' ')
     .replace(/<style[\s\S]*?<\/style>/g, ' ')
     .replace(/<[^>]+>/g, ' ');
+}
+
+/**
+ * Chiffres collés à du texte : une minuscule (ou « ; : ) ») juste avant un chiffre, ou un chiffre juste avant « ( ».
+ * Les sigles légitimes (T2, D952, COVID-19…) sont en majuscules et ne sont pas concernés ; les entités HTML (&lt;90)
+ * sont neutralisées avant le test.
+ */
+function chiffresCollesAuTexte(html: string): string[] {
+  const texte = texteVisible(html).replace(/&[a-z#0-9]+;/gi, ' ');
+  const trouves = new Set<string>();
+  for (const [extrait] of texte.matchAll(/.{0,15}(?:[a-zà-ÿ;:)]\d|\d\().{0,10}/g)) trouves.add(extrait.replace(/\s+/g, ' ').trim());
+  return [...trouves];
 }
 
 /** « /population#ages » → dist/population.html ; « /donnees/x.json » → dist/donnees/x.json ; « / » → dist/index.html. */
@@ -40,6 +54,7 @@ async function main(): Promise<void> {
     }
     const mots = texteVisible(html).match(/\b(NaN|undefined|null)\b/g);
     if (mots) erreurs.push(`${page} : texte suspect (${[...new Set(mots)].join(', ')})`);
+    for (const extrait of chiffresCollesAuTexte(html)) erreurs.push(`${page} : chiffre collé au texte (espace manquant ?) « ${extrait} »`);
     if (page !== '404.html' && !html.includes('>Sources<')) erreurs.push(`${page} : pas de sources en pied de page`);
     // Politique de sécurité (public/_headers, script-src 'self') : aucun script exécutable intégré dans la page.
     for (const [balise] of html.matchAll(/<script\b[^>]*>/g)) {

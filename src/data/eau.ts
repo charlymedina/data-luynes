@@ -14,6 +14,7 @@ export interface ResumeEau {
   annee_fin: number;
   prelevements: number;
   conformes_bact: number;
+  evalues_bact: number;
   conformes_pc: number;
   non_conformes_bact: number;
   non_conformes_pc: number;

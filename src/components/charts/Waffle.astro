@@ -24,9 +24,11 @@ interface Props {
   ariaLabel: string;
   /** Couleurs imposées (ex. garder la couleur d'une entité déjà vue sur une carte). Par défaut : ordre catégoriel validé. */
   colors?: readonly string[];
+  /** Décimales de la légende (0 par défaut ; 1 quand deux valeurs arrondies à l'unité ne feraient plus 100). */
+  decimals?: 0 | 1;
 }
 
-const { title, items, unit, ariaLabel, colors, info } = Astro.props;
+const { title, items, unit, ariaLabel, colors, info, decimals = 0 } = Astro.props;
 /** Ordre catégoriel validé (orange, sarcelle, bleu, or). Au-delà de 4 catégories, regrouper en « Autres ». */
 const COLORS: readonly string[] = colors ?? ['var(--chart-2)', 'var(--chart-1)', 'var(--chart-3)', 'var(--chart-4)'];
 
@@ -70,7 +72,7 @@ const tip = (item: WaffleItem, index: number): string =>
           <li class="flex items-baseline gap-2.5" data-tip={tip(item, index)}>
             <span class="inline-block h-3 w-3 shrink-0 translate-y-0.5 rounded-[3px]" style={`background:${COLORS[index]}`} aria-hidden="true" />
             <span class="text-ink">{item.label}</span>
-            <span class="tabular ml-auto font-semibold whitespace-nowrap text-ink">{formatNumber(item.value, 0)} {unit}</span>
+            <span class="tabular ml-auto font-semibold whitespace-nowrap text-ink">{formatNumber(item.value, decimals)} {unit}</span>
           </li>
         ))
       }

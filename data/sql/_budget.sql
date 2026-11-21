@@ -39,7 +39,10 @@ CREATE OR REPLACE VIEW balance_luynes AS
 SELECT
   exer::INTEGER                    AS annee,
   compte,
-  sum(sd::DOUBLE - sc::DOUBLE)     AS depense_nette
+  sum(sd::DOUBLE - sc::DOUBLE)     AS depense_nette,
+  -- Mouvements de l'année (opérations budgétaires nettes) : pour les comptes d'investissement (classe 2), c'est ce qui a été
+  -- dépensé dans l'année (« sd » y est le cumul depuis l'origine). Exemple : compte 2046 = subventions d'équipement versées.
+  sum(obnetdeb::DOUBLE - obnetcre::DOUBLE) AS mouvement_net
 FROM read_csv('data/raw/balances_luynes/*', delim = ';', header = true, all_varchar = true, union_by_name = true)
 GROUP BY ALL;
 

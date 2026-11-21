@@ -10,6 +10,7 @@ luynes AS (
     -- part des prélèvements conformes, parmi ceux où la conformité a été évaluée (C ou N)
     100 * count(*) FILTER (bact = 'C') / count(*) FILTER (bact IN ('C', 'N'))  AS conformes_bact,
     100 * count(*) FILTER (physico_chimie = 'C') / count(*) FILTER (physico_chimie IN ('C', 'N')) AS conformes_pc,
+    count(*) FILTER (bact IN ('C', 'N'))                                        AS evalues_bact,   -- dénominateur du taux (les autres n'ont pas de conclusion)
     count(*) FILTER (bact = 'N')                                                AS non_conformes_bact,
     count(*) FILTER (physico_chimie = 'N')                                      AS non_conformes_pc
   FROM eau_prelevements
@@ -60,6 +61,7 @@ SELECT
   l.prelevements::INTEGER                                       AS prelevements,
   round(l.conformes_bact, 1)::DOUBLE                            AS conformes_bact,
   round(l.conformes_pc, 1)::DOUBLE                              AS conformes_pc,
+  l.evalues_bact::INTEGER                                       AS evalues_bact,
   l.non_conformes_bact::INTEGER                                 AS non_conformes_bact,
   l.non_conformes_pc::INTEGER                                   AS non_conformes_pc,
   f.annee_debut                                                 AS fenetre_debut,

@@ -32,6 +32,10 @@ export interface ResumeNature {
   agricole_pct: number;
   agricole_ancienne_ha: number;
   agricole_ancienne_pct: number;
+  gel_ha: number;
+  gel_ancienne_ha: number;
+  agricole_hors_gel_ha: number;
+  agricole_hors_gel_ancienne_ha: number;
   prairies_ha: number;
   prairies_part_agricole_pct: number;
   vignes_ha: number;

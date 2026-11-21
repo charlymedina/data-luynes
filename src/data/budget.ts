@@ -31,6 +31,8 @@ export interface ResumeBudget {
   depenses: number;
   investissement: number;
   equipement: number;
+  equipement_subventions: number;
+  equipement_hors_subventions_hab: number;
   caf: number;
   dette: number;
   annuite: number;

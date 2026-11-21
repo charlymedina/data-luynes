@@ -37,6 +37,8 @@ SELECT
   (SELECT annee FROM record)::INTEGER                             AS annee_record,
   (SELECT commences FROM record)::INTEGER                         AS commences_record,
   s.logements_sociaux::INTEGER                                    AS logements_sociaux,
+  -- Le RPLS décrit le parc au 1er janvier de l'année du millésime (« 2025-01 » → 1er janvier 2025)
+  (SELECT left(millesime, 4) FROM read_json('data/raw/rpls_millesime.json'))::INTEGER AS annee_rpls,
   s.surface_moyenne::INTEGER                                      AS surface_moyenne_sociaux,
   s.sociaux_recents::INTEGER                                      AS sociaux_recents,
   round(100 * s.sociaux_passoires / nullif(s.sociaux_avec_dpe, 0), 1)::DOUBLE AS part_passoires_sociaux
