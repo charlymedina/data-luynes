@@ -8,13 +8,19 @@ import MiniRank from '../components/charts/MiniRank.astro';
 import MiniColumns from '../components/charts/MiniColumns.astro';
 import RankGauge from '../components/charts/RankGauge.astro';
 import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
+import InfoTip from '../components/InfoTip.astro';
 import {
+  cantines,
+  cantinesEcoles,
   domainesEquipements,
   effectifsCollege,
   effectifsEcoles,
   etablissementsScolaires,
   ipsEtablissements,
+  mediatheque,
   nombreDe,
+  OBJECTIF_BIO,
+  OBJECTIF_DURABLE,
   resumeEquipements as r,
   typeEquipement,
 } from '../data/equipements';
@@ -309,6 +315,80 @@ const niveauxCollege = college
             </li>
           ))}
         </ul>
+      </section>
+    )
+  }
+
+  {
+    mediatheque && (
+      <section id="mediatheque" aria-labelledby="mediatheque-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+        <h2 id="mediatheque-titre" class={titreH2}>La médiathèque</h2>
+        <p class="mt-4 max-w-2xl text-ink-2">
+          Chaque année, le ministère de la Culture interroge les bibliothèques des communes. Voici ce que la médiathèque
+          de Luynes a déclaré pour {mediatheque.annee}.
+        </p>
+        <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {mediatheque.prets !== null && (
+            <KeyFigure tone="loire" icon="livre" label={`Prêts en ${mediatheque.annee}`} value={mediatheque.prets} info={methode('mediatheque_prets')}>
+              {mediatheque.prets_par_habitant !== null && <p class="mt-4 text-sm opacity-90">Soit {unDecimal(mediatheque.prets_par_habitant)} prêts par habitant et par an.</p>}
+            </KeyFigure>
+          )}
+          {mediatheque.emprunteurs !== null && (
+            <KeyFigure icon="personnes" label="Emprunteurs actifs" value={mediatheque.emprunteurs} info={methode('mediatheque_prets')}>
+              {mediatheque.emprunteurs_pct_population !== null && <p class="mt-4 text-sm text-ink-2">Soit {unDecimal(mediatheque.emprunteurs_pct_population)} % de la population.</p>}
+            </KeyFigure>
+          )}
+          {mediatheque.livres !== null && (
+            <KeyFigure icon="livre" label="Livres en rayon" value={mediatheque.livres} info={methode('mediatheque_collections')}>
+              <p class="mt-4 text-sm text-ink-2">
+                {[mediatheque.cd !== null && `${formatNumber(mediatheque.cd)} CD`, mediatheque.dvd !== null && `${formatNumber(mediatheque.dvd)} DVD`].filter(Boolean).join(' et ')}
+              </p>
+            </KeyFigure>
+          )}
+        </div>
+        <div class:list={['mt-6', carte]}>
+          <h3 class="flex items-center gap-2 font-display text-xl font-bold">{mediatheque.nom} <InfoTip methode={methode('mediatheque_collections')} label="Collections et accueil" /></h3>
+          <p class="mt-1 text-sm text-ink-2">{mediatheque.adresse}</p>
+          <ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {mediatheque.heures_par_semaine !== null && <li class="rounded-xl border border-line p-4"><p class="tabular font-display text-2xl font-bold">{unDecimal(mediatheque.heures_par_semaine)} h</p><p class="text-xs text-ink-2">d'ouverture par semaine{mediatheque.ouverte_dimanche === false ? ', fermée le dimanche' : ''}</p></li>}
+            {mediatheque.surface_m2 !== null && <li class="rounded-xl border border-line p-4"><p class="tabular font-display text-2xl font-bold">{formatNumber(mediatheque.surface_m2)} m²</p><p class="text-xs text-ink-2">de surface</p></li>}
+            {mediatheque.places !== null && <li class="rounded-xl border border-line p-4"><p class="tabular font-display text-2xl font-bold">{formatNumber(mediatheque.places)}</p><p class="text-xs text-ink-2">places assises{mediatheque.postes_informatiques ? `, ${formatNumber(mediatheque.postes_informatiques)} postes informatiques` : ''}{mediatheque.wifi ? ', wifi' : ''}</p></li>}
+            {mediatheque.actions_culturelles !== null && mediatheque.personnes_touchees !== null && <li class="rounded-xl border border-line p-4"><p class="tabular font-display text-2xl font-bold">{formatNumber(mediatheque.actions_culturelles)}</p><p class="text-xs text-ink-2">actions culturelles, {formatNumber(mediatheque.personnes_touchees)} personnes touchées</p></li>}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    cantinesEcoles && (
+      <section id="cantines" aria-labelledby="cantines-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+        <h2 id="cantines-titre" class={titreH2}>Dans l'assiette des écoles</h2>
+        <p class="mt-4 max-w-2xl text-ink-2">
+          La loi EGalim fixe aux cantines publiques un objectif de {OBJECTIF_DURABLE} % de produits durables et de qualité, dont {OBJECTIF_BIO} % de bio.
+          Les cantines déclarent chaque année leurs achats sur la plateforme « Ma Cantine » (déclarations {cantinesEcoles.annee}).
+        </p>
+        <div class="mt-8 grid gap-4 sm:grid-cols-2">
+          <KeyFigure tone="loire" icon="feuille" label="Produits bio (cantines des écoles)" value={cantinesEcoles.bio_pct} decimals={1} unit="%" info={methode('cantines_bio')}>
+            <MiniCompare onDark items={[{ label: 'Luynes', value: cantinesEcoles.bio_pct, display: `${unDecimal(cantinesEcoles.bio_pct)} %`, highlight: true }, { label: 'Objectif EGalim', value: OBJECTIF_BIO, display: `${OBJECTIF_BIO} %` }]} />
+          </KeyFigure>
+          <KeyFigure icon="feuille" label="Produits durables et de qualité (dont bio)" value={cantinesEcoles.durable_pct} decimals={1} unit="%" info={methode('cantines_bio')}>
+            <MiniCompare items={[{ label: 'Luynes', value: cantinesEcoles.durable_pct, display: `${unDecimal(cantinesEcoles.durable_pct)} %`, highlight: true }, { label: 'Objectif EGalim', value: OBJECTIF_DURABLE, display: `${OBJECTIF_DURABLE} %` }]} />
+          </KeyFigure>
+        </div>
+        <div class:list={['mt-6', carte]}>
+          <h3 class="flex items-center gap-2 font-display text-xl font-bold">Les cantines de Luynes <InfoTip methode={methode('cantines_liste')} label="Liste des cantines" /></h3>
+          <p class="mt-1 text-sm text-ink-2">Une cantine servie par une cuisine centrale déclare les chiffres de cette cuisine : plusieurs sites affichent donc les mêmes valeurs.</p>
+          <ul class="mt-4 grid gap-3 sm:grid-cols-2">
+            {cantines.map((c) => (
+              <li class="rounded-xl border border-line p-4">
+                <p class="font-semibold">{c.nom.replace(/\s+/g, ' ')}</p>
+                <p class="text-xs text-ink-2">{c.secteur ?? 'Secteur non précisé'} · {c.annee}</p>
+                <p class="tabular mt-2 text-sm">{unDecimal(c.bio_pct)} % de bio · {unDecimal(c.durable_pct)} % durables et de qualité</p>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
     )
   }

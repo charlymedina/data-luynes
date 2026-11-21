@@ -1,7 +1,7 @@
 /**
  * Anecdotes « Le saviez-vous ? » du thème Eau potable, calculées à partir des données (jamais écrites à la main).
  */
-import { LIMITE_NITRATES, resumeEau } from '../data/eau';
+import { LIMITE_NITRATES, resumeEau, resumePompage } from '../data/eau';
 import { formatNumber, formatOneDecimal, formatRankOf } from './format';
 
 export function faitsEau(): string[] {
@@ -20,6 +20,14 @@ export function faitsEau(): string[] {
   );
   if (r.non_conformes_pc === 0) {
     liste.push(`Aucun prélèvement à Luynes n'a dépassé une limite sanitaire physico-chimique (nitrates, métaux, pesticides…) depuis ${r.annee_debut}.`);
+  }
+  const p = resumePompage;
+  const piscines = Math.round(p.potable_m3 / p.m3_piscine_olympique);
+  liste.push(
+    `En ${p.annee}, ${formatNumber(p.potable_m3)} m³ d'eau potable ont été puisés dans le sous-sol de Luynes, soit l'équivalent de ${formatNumber(piscines)} piscines olympiques.`,
+  );
+  if (p.potable_m3 > p.potable_m3_debut) {
+    liste.push(`Le volume d'eau potable puisé à Luynes est passé de ${formatNumber(p.potable_m3_debut)} m³ en ${p.annee_debut} à ${formatNumber(p.potable_m3)} m³ en ${p.annee}.`);
   }
   return liste;
 }

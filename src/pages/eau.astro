@@ -8,7 +8,7 @@ import RankGauge from '../components/charts/RankGauge.astro';
 import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
 import InfoTip from '../components/InfoTip.astro';
 import SourcesMethode from '../components/SourcesMethode.astro';
-import { anneesEau, LIMITE_NITRATES, resumeEau as r } from '../data/eau';
+import { anneesEau, anneesPompage, LIMITE_NITRATES, ouvragesPompage, resumeEau as r, resumePompage as p } from '../data/eau';
 import { CREDITS_EAU } from '../data/credits';
 import { methode } from '../data/methodes';
 import { formatNumber, formatOneDecimal } from '../lib/format';
@@ -35,6 +35,16 @@ const colonnes: Column[] = anneesEau.map((a) => ({
   display: formatNumber(a.prelevements),
   highlight: a.non_conformes_bact + a.non_conformes_pc > 0,
 }));
+const piscines = Math.round(p.potable_m3 / p.m3_piscine_olympique);
+const colonnesPompage: Column[] = anneesPompage
+  .filter((a) => a.potable_m3 !== null)
+  .map((a) => ({
+    label: `’${String(a.annee).slice(2)}`,
+    fullLabel: String(a.annee),
+    value: a.potable_m3 ?? 0,
+    display: formatNumber((a.potable_m3 ?? 0) / 1000),
+    highlight: a.annee === p.annee,
+  }));
 const anneesNonConformes = anneesEau.filter((a) => a.non_conformes_bact + a.non_conformes_pc > 0).map((a) => a.annee);
 // Jauge des nitrates : position de la moyenne de Luynes et du département sur l'échelle 0 → limite de 50 mg/L
 const pctLimite = (v: number): number => Math.min(100, (100 * v) / LIMITE_NITRATES);
@@ -124,6 +134,46 @@ const pctLimite = (v: number): number => Math.min(100, (100 * v) / LIMITE_NITRAT
       Calcaire : la dureté se mesure en degrés français (°f) ; plus le chiffre est élevé, plus l'eau est calcaire. Elle n'a pas de
       limite sanitaire. Le classement du calcaire ne porte que sur les communes où il a été mesuré sur la période.
     </p>
+  </section>
+
+  <section id="eau-puisee" aria-labelledby="puisee-titre" class="reveal mt-20 scroll-mt-24 sm:mt-28">
+    <h2 id="puisee-titre" class={titreH2}>L'eau puisée sous Luynes</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Le contrôle sanitaire suit l'eau qui sort du robinet ; la base nationale des prélèvements recense celle qui est pompée dans le sous-sol.
+      Les volumes sont déclarés chaque année par les exploitants des ouvrages situés sur la commune. Cette eau n'est pas forcément
+      consommée à Luynes : le réseau dessert aussi d'autres communes.
+    </p>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2">
+      <KeyFigure tone="loire" icon="goutte" label={`Eau potable puisée en ${p.annee}`} value={p.potable_m3} unit="m³" info={methode('eau_pompage')}>
+        <p class="mt-4 text-sm opacity-90">{formatNumber(p.ouvrages_potable)} forage{p.ouvrages_potable > 1 ? 's' : ''} d'eau potable en service sur la commune.</p>
+      </KeyFigure>
+      <KeyFigure icon="nage" label="En piscines olympiques" value={piscines} unit={piscines > 1 ? 'piscines' : 'piscine'} info={methode('eau_pompage_piscines')}>
+        <p class="mt-4 text-sm text-ink-2">Une piscine olympique contient {formatNumber(p.m3_piscine_olympique)} m³ (50 m × 25 m × 2 m).</p>
+      </KeyFigure>
+    </div>
+    <div class:list={['mt-6', carte]}>
+      <p class="text-sm font-semibold">Eau potable puisée par année (milliers de m³)</p>
+      <ColumnChart info={methode('eau_pompage')}
+        columns={colonnesPompage}
+        unit="milliers de m³"
+        headers={['Année', 'Eau potable puisée (m³)']}
+        ariaLabel={`Eau potable puisée à Luynes de ${p.annee_debut} à ${p.annee} : ${formatNumber(p.potable_m3)} m³ en ${p.annee}.`}
+        tableCaption="Volumes d'eau potable puisés à Luynes par année, en m³"
+      />
+    </div>
+    <div class:list={['mt-6', carte]}>
+      <h3 class="flex items-center gap-2 font-display text-xl font-bold">Les ouvrages de la commune <InfoTip methode={methode('eau_pompage_ouvrages')} label="Ouvrages de prélèvement" /></h3>
+      <p class="mt-1 text-sm text-ink-2">Dernier volume déclaré par ouvrage. L'irrigation (arrosage agricole) a représenté {formatNumber(p.autres_usages_m3)} m³ en {p.annee}.</p>
+      <ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {ouvragesPompage.map((o) => (
+          <li class="rounded-xl border border-line p-4">
+            <p class="font-semibold">{nomPropre(o.nom_ouvrage)}</p>
+            <p class="text-xs text-ink-2">{o.usage === 'potable' ? 'Eau potable' : o.usage === 'irrigation' ? 'Irrigation' : 'Autre usage'} · {o.annee}</p>
+            <p class="tabular mt-2 font-display text-xl font-bold">{formatNumber(o.volume_m3)} m³</p>
+          </li>
+        ))}
+      </ul>
+    </div>
   </section>
 
   <FunFacts facts={faitsEau()} id="saviez-vous-eau" />

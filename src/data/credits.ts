@@ -25,6 +25,12 @@ const MERIMEE: FooterSource = {
   detail: 'via l’API tabulaire de data.gouv.fr — Licence Ouverte 2.0',
 };
 
+const PALISSY: FooterSource = {
+  nom: 'Ministère de la Culture — base Palissy (objets mobiliers protégés)',
+  url: 'https://www.pop.culture.gouv.fr/search/list?base=%5B%22Patrimoine%20mobilier%20%28Palissy%29%22%5D',
+  detail: 'plateforme ouverte du patrimoine (POP) — Licence Ouverte 2.0',
+};
+
 const GEORISQUES: FooterSource = {
   nom: 'Géorisques (ministère de la Transition écologique, BRGM)',
   url: 'https://www.georisques.gouv.fr',
@@ -133,6 +139,24 @@ const HUBEAU_EAU: FooterSource = {
   detail: 'contrôle sanitaire de l’eau distribuée, 2016 → aujourd’hui — Licence Ouverte 2.0',
 };
 
+const HUBEAU_PRELEVEMENTS: FooterSource = {
+  nom: "Hub'eau — prélèvements en eau (BNPE, OFB)",
+  url: 'https://hubeau.eaufrance.fr/page/api-prelevements-eau',
+  detail: 'volumes prélevés par ouvrage et par an, 2008 → dernière année déclarée — Licence Ouverte 2.0',
+};
+
+const MA_CANTINE: FooterSource = {
+  nom: 'Ministère de l’Agriculture — Ma Cantine (télédéclarations EGalim)',
+  url: 'https://ma-cantine.agriculture.gouv.fr/',
+  detail: 'résultats des campagnes de télédéclaration des cantines — Licence Ouverte 2.0',
+};
+
+const BIBLIOTHEQUES: FooterSource = {
+  nom: 'Ministère de la Culture — bibliothèques des collectivités territoriales',
+  url: 'https://www.data.gouv.fr/datasets/5c3538da9ce2e7459c6d765a/',
+  detail: 'enquête annuelle du Service du livre et de la lecture (adresses et données d’activité) — Licence Ouverte 2.0',
+};
+
 const SDES_SITADEL: FooterSource = {
   nom: 'SDES — Sitadel (logements autorisés et commencés)',
   url: 'https://www.statistiques.developpement-durable.gouv.fr/catalogue?page=dataset&datasetId=660432ce0b8987ef5dd9465d',
@@ -190,17 +214,17 @@ const BAN: FooterSource = {
 export const CREDITS_RUES: readonly FooterSource[] = [BAN, API_GEO, OPENFREEMAP];
 export const CREDITS_SPORT: readonly FooterSource[] = [INJEP_LICENCES, RES_SPORT, API_GEO, OPENFREEMAP];
 export const CREDITS_TRANSPARENCE: readonly FooterSource[] = [DGFIP_BALANCES, DGFIP_COMPTES, DECP, BOAMP, RNE, INSEE_RECENSEMENT, API_GEO];
-export const CREDITS_EAU: readonly FooterSource[] = [HUBEAU_EAU];
+export const CREDITS_EAU: readonly FooterSource[] = [HUBEAU_EAU, HUBEAU_PRELEVEMENTS];
 export const CREDITS_CONSTRUCTION: readonly FooterSource[] = [SDES_SITADEL, SDES_RPLS];
 export const CREDITS_ELECTIONS: readonly FooterSource[] = [ELECTIONS_AGREGEES, MUNICIPALES_2026];
 export const CREDITS_DELINQUANCE: readonly FooterSource[] = [SSMSI];
-export const CREDITS_EQUIPEMENTS: readonly FooterSource[] = [INSEE_BPE, EDUCATION_NATIONALE, API_GEO];
+export const CREDITS_EQUIPEMENTS: readonly FooterSource[] = [INSEE_BPE, EDUCATION_NATIONALE, BIBLIOTHEQUES, MA_CANTINE, API_GEO];
 export const CREDITS_ENERGIE: readonly FooterSource[] = [AGENCE_ORE, ODRE_SOLAIRE, SDES_PARC, IRVE, API_GEO];
 export const CREDITS_ACCIDENTS: readonly FooterSource[] = [ONISR_BAAC, API_GEO, OPENFREEMAP];
 export const CREDITS_BUDGET: readonly FooterSource[] = [DGFIP_COMPTES];
 export const CREDITS_REVENUS: readonly FooterSource[] = [INSEE_REVENUS_EMPLOI, API_GEO];
 export const CREDITS_IMMOBILIER: readonly FooterSource[] = [DVF, CARTE_LOYERS, ADEME_DPE, API_GEO, OPENFREEMAP];
-export const CREDITS_PATRIMOINE: readonly FooterSource[] = [MERIMEE, GEORISQUES, API_GEO, OPENFREEMAP];
+export const CREDITS_PATRIMOINE: readonly FooterSource[] = [MERIMEE, PALISSY, GEORISQUES, API_GEO, OPENFREEMAP];
 export const CREDITS_TERRITOIRE: readonly FooterSource[] = [API_GEO];
 export const CREDITS_POPULATION: readonly FooterSource[] = [TOURS_METROPOLE, INSEE_RECENSEMENT, API_GEO];
 

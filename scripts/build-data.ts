@@ -183,7 +183,7 @@ async function downloadCsvExtrait(source: Source): Promise<void> {
   try {
     await connection.run('INSTALL httpfs; LOAD httpfs;');
     await connection.run(
-      `COPY (SELECT * FROM read_csv([${urls}], delim = ';', header = true, all_varchar = true, union_by_name = true, filename = 'fichier') WHERE ${source.filtre}) TO '${cible}.tmp' (FORMAT parquet)`,
+      `COPY (SELECT * FROM read_csv([${urls}], delim = '${source.separateur ?? ';'}', header = true, all_varchar = true, union_by_name = true, filename = 'fichier') WHERE ${source.filtre}) TO '${cible}.tmp' (FORMAT parquet)`,
     );
   } finally {
     connection.closeSync();

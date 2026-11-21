@@ -9,6 +9,9 @@ import cavitesRows from './generated/risques_cavites.json';
 import catnatRows from './generated/risques_catnat.json';
 import mouvementsRows from './generated/risques_mouvements.json';
 import zonesInondablesRows from './generated/risques_zones_inondables.json';
+import objetsRows from './generated/patrimoine_objets.json';
+import objetsSiecleRows from './generated/patrimoine_objets_siecles.json';
+import objetsResumeRows from './generated/patrimoine_objets_resume.json';
 import { firstRow } from './rows';
 
 export interface Monument {
@@ -90,3 +93,36 @@ export const arretesCatnat: readonly ArreteCatnat[] = catnatRows as ArreteCatnat
 export const mouvementsTerrain: readonly MouvementTerrain[] = mouvementsRows as MouvementTerrain[];
 export const resumeRisques: ResumePatrimoineRisques = firstRow(resumeRows as ResumePatrimoineRisques[], 'patrimoine_risques_resume');
 export const contourCommune: ContourGeometry = firstRow(contourRows as { contour: ContourGeometry }[], 'patrimoine_contour').contour;
+
+/** Objet mobilier (ou ensemble) protégé au titre des monuments historiques — base Palissy. */
+export interface ObjetProtege {
+  reference: string;
+  nom: string;
+  denomination: string;
+  lieu: string;
+  siecle: number | null;
+  annee_protection: number | null;
+  protection: 'classé' | 'inscrit';
+  proprietaire: string;
+}
+
+export interface SiecleObjets {
+  siecle: number;
+  objets: number;
+}
+
+export interface ResumeObjets {
+  objets: number;
+  classes: number;
+  lieux: number;
+  siecle_min: number;
+  siecle_max: number;
+  premiere_protection: number;
+  derniere_protection: number;
+  lieu_principal: string;
+  objets_lieu_principal: number;
+}
+
+export const objetsProteges: readonly ObjetProtege[] = objetsRows as ObjetProtege[];
+export const objetsParSiecle: readonly SiecleObjets[] = objetsSiecleRows as SiecleObjets[];
+export const resumeObjets: ResumeObjets = firstRow(objetsResumeRows as ResumeObjets[], 'patrimoine_objets_resume');

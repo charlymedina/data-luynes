@@ -1,7 +1,7 @@
 /**
  * Anecdotes « Le saviez-vous ? » du thème Écoles, santé & services (BPE INSEE, Éducation nationale).
  */
-import { effectifsCollege, nombreDe, resumeEquipements } from '../data/equipements';
+import { cantinesEcoles, effectifsCollege, mediatheque, nombreDe, OBJECTIF_BIO, OBJECTIF_DURABLE, resumeEquipements } from '../data/equipements';
 import { formatNumber } from './format';
 
 export function faitsEquipements(): string[] {
@@ -26,6 +26,15 @@ export function faitsEquipements(): string[] {
   const college = effectifsCollege.at(-1);
   if (college) {
     liste.push(`Le collège de Luynes accueille ${formatNumber(college.eleves)} élèves à la rentrée ${college.rentree}, dont ${formatNumber(college.sixiemes)} en 6ᵉ.`);
+  }
+  if (mediatheque?.prets && mediatheque.prets_par_habitant !== null) {
+    liste.push(`La médiathèque de Luynes a prêté ${formatNumber(mediatheque.prets)} documents en ${mediatheque.annee}, soit ${formatNumber(mediatheque.prets_par_habitant, 1)} par habitant.`);
+  }
+  if (cantinesEcoles) {
+    const ecart = cantinesEcoles.bio_pct - OBJECTIF_BIO;
+    liste.push(
+      `Dans les cantines des écoles de Luynes, ${formatNumber(cantinesEcoles.bio_pct, 1)} % des achats sont bio (${cantinesEcoles.annee}) : ${ecart >= 0 ? 'au-dessus' : 'en dessous'} de l'objectif de ${OBJECTIF_BIO} % fixé par la loi EGalim, tandis que la part de produits durables et de qualité (${formatNumber(cantinesEcoles.durable_pct, 1)} %) est ${cantinesEcoles.durable_pct >= OBJECTIF_DURABLE ? 'au-dessus' : 'en dessous'} de l'objectif de ${OBJECTIF_DURABLE} %.`,
+    );
   }
   return liste;
 }

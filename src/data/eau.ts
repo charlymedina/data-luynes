@@ -4,6 +4,9 @@
  */
 import resumeRows from './generated/eau_resume.json';
 import anneesRows from './generated/eau_annees.json';
+import pompageResumeRows from './generated/eau_pompage_resume.json';
+import pompageAnneesRows from './generated/eau_pompage_annees.json';
+import pompageOuvragesRows from './generated/eau_pompage_ouvrages.json';
 import { firstRow } from './rows';
 
 export interface ResumeEau {
@@ -44,3 +47,34 @@ export const anneesEau: readonly AnneeEau[] = anneesRows as AnneeEau[];
 
 /** Limite de qualité réglementaire des nitrates dans l'eau du robinet (mg/L, Code de la santé publique). */
 export const LIMITE_NITRATES = 50;
+
+/** Eau puisée sous Luynes (BNPE via Hub'eau « prélèvements »), voir data/sql/eau_pompage_*.sql. */
+export interface ResumePompage {
+  annee: number;
+  annee_debut: number;
+  m3_piscine_olympique: number;
+  potable_m3: number;
+  potable_m3_debut: number;
+  autres_usages_m3: number;
+  ouvrages_potable: number;
+  ouvrages_total: number;
+  ouvrages_autres_actifs: number;
+}
+
+export interface AnneePompage {
+  annee: number;
+  potable_m3: number | null;
+  irrigation_m3: number | null;
+  autre_m3: number | null;
+}
+
+export interface OuvragePompage {
+  nom_ouvrage: string;
+  usage: 'potable' | 'irrigation' | 'autre';
+  annee: number;
+  volume_m3: number;
+}
+
+export const resumePompage: ResumePompage = firstRow(pompageResumeRows as ResumePompage[], 'eau_pompage_resume');
+export const anneesPompage: readonly AnneePompage[] = pompageAnneesRows as AnneePompage[];
+export const ouvragesPompage: readonly OuvragePompage[] = pompageOuvragesRows as OuvragePompage[];

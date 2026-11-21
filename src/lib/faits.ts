@@ -4,7 +4,7 @@
  */
 import { commune, rang } from '../data/commune';
 import { agesDe, derniereAnneeEtatCivil, faits, pyramide } from '../data/population';
-import { monuments, resumeRisques, zoneInondable } from '../data/patrimoine';
+import { monuments, resumeObjets, resumeRisques, zoneInondable } from '../data/patrimoine';
 import { etiquettesDpe, loyerMaison, resumeImmobilier } from '../data/immobilier';
 import {
   COMMUNES_37_COMPARABLES,
@@ -68,6 +68,11 @@ export function faitsPatrimoine(): string[] {
     `Le plus ancien mouvement de terrain recensé à Luynes date de ${r.mouvement_plus_ancien}.`,
     `${formatPercent(zoneInondable.part_commune_pct)} de la commune (${formatNumber(zoneInondable.surface_ha)} hectares) est en zone inondable de la Loire, entre le coteau et le fleuve.`,
   ];
+  const o = resumeObjets;
+  liste.push(
+    `En plus des édifices, ${formatNumber(o.objets)} objets ou ensembles mobiliers de Luynes sont protégés au titre des monuments historiques, du ${o.siecle_min}ᵉ au ${o.siecle_max}ᵉ siècle.`,
+    `${formatNumber(o.objets_lieu_principal)} des ${formatNumber(o.objets)} objets protégés de Luynes sont conservés dans un même lieu : « ${o.lieu_principal.toLowerCase()} ».`,
+  );
   if (plusAncien) {
     liste.unshift(`« ${plusAncien.nom} » : c'est le premier monument de Luynes protégé au titre des monuments historiques, dès ${plusAncien.annee_protection} !`);
   }

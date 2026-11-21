@@ -5,16 +5,16 @@
  */
 import { generatedAt, rang } from './commune';
 import { agesDe, derniereAnneeEtatCivil, evolutionAges, faits, historique } from './population';
-import { resumeRisques } from './patrimoine';
+import { resumeObjets, resumeRisques } from './patrimoine';
 import { loyerMaison, resumeImmobilier } from './immobilier';
 import { anneesBudget, resumeBudget } from './budget';
 import { creations, resumeRevenus } from './revenus';
 import { resumeAccidents } from './accidents';
-import { ipsEtablissements, resumeEquipements } from './equipements';
+import { cantinesEcoles, ipsEtablissements, mediatheque, resumeEquipements } from './equipements';
 import { anneesEnergie, resumeEnergie } from './energie';
 import { dernierDe, participations, resumeElections } from './elections';
 import { periodeDelinquance } from './delinquance';
-import { resumeEau } from './eau';
+import { resumeEau, resumePompage } from './eau';
 import { resumeConstruction } from './construction';
 import { appelsOffres, comparaison, conseil, derniereAnnee as derniereAnneeBalance, premiereAnnee as premiereAnneeBalance, premiereNotification, premierePublication } from './transparence';
 import { periodesEquipements, resumeSport } from './sport';
@@ -40,6 +40,10 @@ const prix = `${resumeImmobilier.annee_debut_prix}-${resumeImmobilier.annee_fin}
 const DVF = 'DGFiP, demandes de valeurs foncières (DVF), via Etalab';
 const DGFIP = 'DGFiP, comptes individuels des communes';
 const HUBEAU = "contrôle sanitaire des eaux (ARS, ministère de la Santé), via l'API Hub'eau";
+const PALISSY = 'ministère de la Culture, base Palissy (objets mobiliers protégés au titre des monuments historiques), via la plateforme POP';
+const SLL = 'ministère de la Culture, Service du livre et de la lecture (enquête annuelle sur les bibliothèques des collectivités territoriales)';
+const MA_CANTINE_SOURCE = 'ministère de l\'Agriculture, Ma Cantine (télédéclarations des cantines, loi EGalim)';
+const BNPE = "Banque nationale des prélèvements en eau (BNPE, OFB), via l'API Hub'eau « prélèvements »";
 const BALANCES = 'DGFiP, balances comptables des communes (budget principal)';
 const RNE = 'ministère de l\'Intérieur, répertoire national des élus (conseillers municipaux)';
 const balances = `${premiereAnneeBalance}-${derniereAnneeBalance}`;
@@ -514,6 +518,66 @@ const METHODES = {
     calcul: 'moyenne du titre hydrotimétrique (°f, degrés français) mesuré ; département : moyenne de toutes ses analyses',
     millesime: `${resumeEau.fenetre_debut}-${resumeEau.fenetre_fin}`,
   },
+  eau_pompage: {
+    titre: 'Eau puisée sous Luynes',
+    source: BNPE,
+    calcul: "somme des volumes (m³) déclarés par les préleveurs pour les ouvrages situés sur la commune (code INSEE 37139), par année ; seuls les prélèvements « réalisés » sont retenus ; eau potable = ouvrages d'alimentation en eau potable, irrigation = arrosage agricole",
+    millesime: `${resumePompage.annee_debut}-${resumePompage.annee} (dernière année déclarée)`,
+  },
+  eau_pompage_piscines: {
+    titre: "Eau puisée, en piscines olympiques",
+    source: BNPE,
+    calcul: `volume d'eau potable prélevé la dernière année déclarée (${formatNumber(resumePompage.potable_m3)} m³) divisé par ${formatNumber(resumePompage.m3_piscine_olympique)} m³ (une piscine olympique : 50 m × 25 m × 2 m) ; l'eau puisée sous la commune n'est pas forcément consommée à Luynes (réseau partagé avec d'autres communes)`,
+    millesime: String(resumePompage.annee),
+  },
+  eau_pompage_ouvrages: {
+    titre: 'Ouvrages de prélèvement',
+    source: BNPE,
+    calcul: "liste des ouvrages (forages, puits, prises) situés à Luynes ; dernier volume déclaré pour chacun, avec son année (un volume de 0 = ouvrage déclaré mais non utilisé cette année-là)",
+    millesime: `${resumePompage.annee_debut}-${resumePompage.annee}`,
+  },
+  objets_proteges: {
+    titre: 'Objets mobiliers protégés',
+    source: PALISSY,
+    calcul: "nombre de notices de la base Palissy rattachées à Luynes (code INSEE 37139, commune actuelle ou lors de la protection) ; une notice décrit un objet ou un ensemble (ex. « quinze verrières ») : ce n'est donc pas un compte de pièces",
+    millesime: `protections de ${resumeObjets.premiere_protection} à ${resumeObjets.derniere_protection} ; base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  objets_siecles: {
+    titre: 'Siècle de création des objets protégés',
+    source: PALISSY,
+    calcul: "nombre de notices par siècle de création (premier siècle cité quand l'objet en couvre deux) ; les objets sans siècle renseigné ne sont pas comptés",
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  objets_liste: {
+    titre: 'Liste des objets protégés',
+    source: PALISSY,
+    calcul: "une tuile par notice : intitulé, siècle de création, lieu de conservation (édifice) et année de protection (première date citée) ; « classé » = protection la plus forte, « inscrit » = protection moindre",
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  mediatheque_prets: {
+    titre: 'Prêts de la médiathèque',
+    source: SLL,
+    calcul: "prêts de documents de l'année (livres, CD, DVD…) déclarés par la médiathèque municipale ; « par habitant » = prêts divisés par la population légale de Luynes (API Géo) ; emprunteurs en % = emprunteurs actifs divisés par la même population",
+    millesime: `enquête ${mediatheque?.annee ?? 'la plus récente'} (année lue dans la description du jeu)`,
+  },
+  mediatheque_collections: {
+    titre: 'Collections et accueil de la médiathèque',
+    source: SLL,
+    calcul: "nombre de livres, CD et DVD des collections, surface, places assises, postes informatiques et heures d'ouverture hebdomadaires habituelles, tels que déclarés par la médiathèque",
+    millesime: `enquête ${mediatheque?.annee ?? 'la plus récente'}`,
+  },
+  cantines_bio: {
+    titre: 'Cantines : produits bio et durables',
+    source: MA_CANTINE_SOURCE,
+    calcul: "part, dans les achats alimentaires déclarés, des produits bio et des produits « durables et de qualité » (bio + autres labels EGalim), moyenne des cuisines qui servent les écoles de Luynes ; une cuisine centrale qui approvisionne plusieurs écoles compte pour une ; objectifs de la loi EGalim : 50 % de produits durables et de qualité dont 20 % de bio",
+    millesime: `télédéclaration ${cantinesEcoles?.annee ?? 'la plus récente'}`,
+  },
+  cantines_liste: {
+    titre: 'Liste des cantines de Luynes',
+    source: MA_CANTINE_SOURCE,
+    calcul: "une ligne par cantine de Luynes ayant télédéclaré ; une cantine servie par une cuisine centrale déclare les chiffres de cette cuisine, d'où des valeurs identiques pour plusieurs sites",
+    millesime: `télédéclaration ${cantinesEcoles?.annee ?? 'la plus récente'}`,
+  },
   depenses_postes: {
     titre: 'Où vont 100 € de dépenses',
     source: BALANCES,
@@ -677,16 +741,16 @@ const PAR_PAGE: Record<string, readonly CleMethode[]> = {
   accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences', 'elus_indemnites', 'conseil_parite', 'sport_licences', 'sport_equipements', 'rues_noms'],
   population: ['population', 'multiplie_1968', 'age_median', 'part_65', 'naissances'],
   territoire: ['superficie', 'densite'],
-  'patrimoine-risques': ['monuments', 'cavites', 'catnat', 'mouvements'],
+  'patrimoine-risques': ['monuments', 'objets_proteges', 'objets_siecles', 'objets_liste', 'cavites', 'catnat', 'mouvements'],
   immobilier: ['prix_m2_maison', 'prix_maison', 'ventes', 'loyer_maison'],
   budget: ['depenses', 'dette', 'taxe_fonciere', 'equipement'],
   'revenus-emploi': ['niveau_vie', 'pauvrete', 'chomage', 'salaire'],
   accidents: ['accidents', 'accidents_taux', 'accidents_annees_sans'],
-  equipements: ['equipements', 'medecins', 'eleves', 'etablissements'],
+  equipements: ['equipements', 'medecins', 'eleves', 'etablissements', 'mediatheque_prets', 'mediatheque_collections', 'cantines_bio', 'cantines_liste'],
   'energie-mobilite': ['voitures_electriques', 'solaire', 'electricite', 'bornes'],
   elections: ['inscrits', 'participation_pres', 'participation_muni', 'au_dessus_france'],
   delinquance: ['delinquance_bilan', 'delinquance_cambriolages', 'delinquance_degradations'],
-  eau: ['eau_conformite', 'eau_physico', 'eau_prelevements', 'eau_nitrates', 'eau_durete'],
+  eau: ['eau_conformite', 'eau_physico', 'eau_prelevements', 'eau_nitrates', 'eau_durete', 'eau_pompage', 'eau_pompage_piscines', 'eau_pompage_ouvrages'],
   construction: ['logements_commences', 'logements_sociaux'],
   sport: ['sport_licences', 'sport_federations', 'sport_parite', 'sport_ages', 'sport_evolution', 'sport_equipements', 'sport_types', 'sport_frise', 'sport_carte'],
   rues: ['rues_noms', 'rues_femmes', 'rues_types', 'rues_classement', 'rues_personnes', 'rues_jumelage', 'rues_curiosites', 'rues_carte'],

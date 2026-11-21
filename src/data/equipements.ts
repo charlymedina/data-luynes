@@ -10,6 +10,9 @@ import effectifsRows from './generated/ecoles_effectifs.json';
 import ecolesRows from './generated/ecoles_liste.json';
 import ipsRows from './generated/ecoles_ips.json';
 import collegeRows from './generated/ecoles_college.json';
+import mediathequeRows from './generated/equipements_mediatheque.json';
+import cantinesRows from './generated/equipements_cantines.json';
+import cantinesEcolesRows from './generated/equipements_cantines_ecoles.json';
 import { firstRow } from './rows';
 
 export interface ResumeEquipements {
@@ -117,3 +120,53 @@ export function nombreDe(...codes: string[]): number {
 export function typeEquipement(code: string): TypeEquipement | undefined {
   return typesEquipements.find((t) => t.code === code);
 }
+
+/** Médiathèque de Luynes (enquête annuelle du ministère de la Culture), voir data/sql/equipements_mediatheque.sql. */
+export interface Mediatheque {
+  nom: string;
+  adresse: string;
+  annee: number;
+  surface_m2: number | null;
+  places: number | null;
+  postes_informatiques: number | null;
+  heures_par_semaine: number | null;
+  ouverte_dimanche: boolean | null;
+  wifi: boolean | null;
+  livres: number | null;
+  cd: number | null;
+  dvd: number | null;
+  emprunteurs: number | null;
+  prets: number | null;
+  actions_culturelles: number | null;
+  personnes_touchees: number | null;
+  prets_par_habitant: number | null;
+  emprunteurs_pct_population: number | null;
+  livres_par_habitant: number | null;
+}
+
+/** Une cantine de Luynes déclarée sur « Ma Cantine » (parts en %). */
+export interface Cantine {
+  annee: number;
+  nom: string;
+  secteur: string | null;
+  ecole: boolean;
+  bio_pct: number;
+  durable_pct: number;
+}
+
+export interface CantinesEcoles {
+  annee: number;
+  cuisines: number;
+  bio_pct: number;
+  durable_pct: number;
+  cantines_ecoles: number;
+}
+
+/** Vide si Luynes n'est pas dans l'enquête : la page n'affiche alors rien. */
+export const mediatheque: Mediatheque | undefined = (mediathequeRows as Mediatheque[])[0];
+export const cantines: readonly Cantine[] = cantinesRows as Cantine[];
+export const cantinesEcoles: CantinesEcoles | undefined = (cantinesEcolesRows as CantinesEcoles[])[0];
+
+/** Objectifs de la loi EGalim pour la restauration collective publique (part des achats alimentaires, en %). */
+export const OBJECTIF_BIO = 20;
+export const OBJECTIF_DURABLE = 50;

@@ -9,7 +9,9 @@ import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.ast
 import MiniRank from '../components/charts/MiniRank.astro';
 import RankGauge from '../components/charts/RankGauge.astro';
 import Waffle from '../components/charts/Waffle.astro';
-import { arretesCatnat, cavites, contourCommune, monuments, mouvementsTerrain, resumeRisques as r, zoneInondable } from '../data/patrimoine';
+import { arretesCatnat, cavites, contourCommune, monuments, mouvementsTerrain, objetsParSiecle, objetsProteges, resumeObjets as ro, resumeRisques as r, zoneInondable } from '../data/patrimoine';
+import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
+import InfoTip from '../components/InfoTip.astro';
 import { CREDITS_PATRIMOINE } from '../data/credits';
 import { formatCommunes, formatNumber, formatRatio } from '../lib/format';
 import { methode } from '../data/methodes';
@@ -70,6 +72,7 @@ const typesCatnat: MiniItem[] = [
   { label: 'Inondation', value: r.catnat_inondation, display: formatNumber(r.catnat_inondation) },
 ];
 
+const colonnesSiecles: Column[] = objetsParSiecle.map((s) => ({ label: `${s.siecle}ᵉ`, fullLabel: `${s.siecle}ᵉ siècle`, value: s.objets, display: formatNumber(s.objets) }));
 const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
 const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
 ---
@@ -170,6 +173,45 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
         ))
       }
     </ol>
+  </section>
+
+  <section id="tresors" aria-labelledby="tresors-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="tresors-titre" class={titreH2}>Les trésors cachés dans les édifices</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Au-delà des bâtiments, des meubles, statues, tableaux et vitraux sont eux aussi protégés au titre des monuments historiques.
+      {formatNumber(ro.objets)} notices de la base Palissy concernent Luynes, conservées dans {formatNumber(ro.lieux)} lieux
+      et protégées de {ro.premiere_protection} à {ro.derniere_protection}. Une notice décrit un objet ou un ensemble d'objets.
+    </p>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2">
+      <KeyFigure tone="loire" icon="aqueduc" label="Objets mobiliers protégés" value={ro.objets} info={methode('objets_proteges')}>
+        <p class="mt-4 text-sm opacity-90">{formatNumber(ro.classes)} classé{ro.classes > 1 ? 's' : ''} (protection la plus forte), {formatNumber(ro.objets - ro.classes)} inscrit{ro.objets - ro.classes > 1 ? 's' : ''}.</p>
+      </KeyFigure>
+    </div>
+    <div class:list={['mt-6', carte]}>
+      <p class="text-sm font-semibold">Objets protégés selon leur siècle de création</p>
+      <ColumnChart info={methode('objets_siecles')}
+        columns={colonnesSiecles}
+        unit="objets"
+        headers={['Siècle', 'Objets protégés']}
+        ariaLabel={`Objets protégés de Luynes par siècle de création, du ${ro.siecle_min}e au ${ro.siecle_max}e siècle.`}
+        tableCaption="Objets mobiliers protégés à Luynes par siècle de création"
+      />
+    </div>
+    <div class="mt-6">
+      <h3 class="flex items-center gap-2 font-display text-xl font-bold">La liste <InfoTip methode={methode('objets_liste')} label="Liste des objets protégés" /></h3>
+      <ul class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          objetsProteges.map((o) => (
+            <li class="rounded-[1.25rem] border border-line bg-surface p-5">
+              <p class="text-xs font-semibold tracking-wide text-ink-2 uppercase">{o.siecle !== null ? `${o.siecle}ᵉ siècle` : 'Siècle non renseigné'}</p>
+              <h4 class="mt-2 font-display text-lg leading-tight font-bold">{o.nom.charAt(0).toUpperCase() + o.nom.slice(1)}</h4>
+              <p class="mt-2 text-sm text-ink-2">{o.lieu}</p>
+              <p class="mt-3 text-xs font-semibold tracking-wide text-ink-2 uppercase">{o.protection} en {o.annee_protection}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
   </section>
 
   <section id="catastrophes" aria-labelledby="catnat-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">

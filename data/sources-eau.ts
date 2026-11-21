@@ -63,4 +63,10 @@ export const SOURCES_EAU: readonly Source[] = [
     url: departement('1449'),
     pagination: 'hubeau',
   },
+  {
+    id: 'eau_pompage_luynes',
+    description: "Volumes d'eau prélevés chaque année dans les ouvrages situés à Luynes (BNPE, Hub'eau « prélèvements »)",
+    url: 'https://hubeau.eaufrance.fr/api/v1/prelevements/chroniques?code_commune_insee=37139&size=1000',
+    pagination: 'hubeau',
+  },
 ];

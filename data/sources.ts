@@ -15,6 +15,7 @@ import { SOURCES_CONSTRUCTION } from './sources-construction.ts';
 import { SOURCES_TRANSPARENCE } from './sources-transparence.ts';
 import { SOURCES_SPORT } from './sources-sport.ts';
 import { SOURCES_RUES } from './sources-rues.ts';
+import { SOURCES_PATRIMOINE } from './sources-patrimoine.ts';
 
 export interface Source {
   /** Nom du fichier produit dans data/raw/ (sans extension) */
@@ -43,6 +44,8 @@ export interface Source {
   readonly format?: 'json' | 'fichiers' | 'parquet-extrait' | 'csv-extrait';
   /** Format « parquet-extrait » : condition SQL (WHERE) qui garde les lignes de Luynes. */
   readonly filtre?: string;
+  /** Format « csv-extrait » : séparateur de colonnes (« ; » par défaut). */
+  readonly separateur?: string;
   /** Format « parquet-extrait » : colonnes à conserver. */
   readonly colonnes?: readonly string[];
 }
@@ -395,4 +398,5 @@ export const SOURCES: readonly Source[] = [
 
   // — Les rues : Base Adresse Nationale (voir data/sources-rues.ts) —
   ...SOURCES_RUES,
+  ...SOURCES_PATRIMOINE,
 ];
