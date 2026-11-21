@@ -18,6 +18,8 @@ WITH series AS (
   UNION ALL SELECT 'consommation d''énergie', annee_energie, 2 FROM energie_resume
   UNION ALL SELECT 'parc automobile', annee_parc, 1 FROM energie_resume
   UNION ALL SELECT 'délinquance', max(annee_fin), 2 FROM delinquance_indicateurs
+  UNION ALL SELECT 'balances comptables', max(annee), 2 FROM transparence_elus
+  UNION ALL SELECT 'recensement (conseil municipal)', max(annee_recensement), 5 FROM transparence_conseil_resume
 )
 SELECT 'données trop anciennes : ' || serie || ' (dernière année ' || derniere || ', attendue au moins '
        || (year(current_date) - retard_max) || ') — vérifier si le producteur a publié un nouveau jeu' AS probleme

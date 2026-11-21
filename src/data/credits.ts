@@ -145,6 +145,31 @@ const SDES_RPLS: FooterSource = {
   detail: 'logements des bailleurs sociaux au 1er janvier — Licence Ouverte 2.0',
 };
 
+const DGFIP_BALANCES: FooterSource = {
+  nom: 'DGFiP — balances comptables des communes',
+  url: 'https://data.economie.gouv.fr/explore/?q=balances-comptables-des-communes',
+  detail: 'comptes de la commune compte par compte, 2010 → dernière année — Licence Ouverte 2.0',
+};
+
+const DECP: FooterSource = {
+  nom: 'Données essentielles de la commande publique consolidées (data.gouv.fr)',
+  url: 'https://www.data.gouv.fr/datasets/donnees-essentielles-de-la-commande-publique-consolidees-format-tabulaire/',
+  detail: 'marchés publics attribués par la mairie — Licence Ouverte 2.0',
+};
+
+const BOAMP: FooterSource = {
+  nom: 'BOAMP — bulletin officiel des annonces de marchés publics (DILA)',
+  url: 'https://boamp-datadila.opendatasoft.com/explore/dataset/boamp/',
+  detail: "avis d'appel d'offres publiés par la mairie — Licence Ouverte 2.0",
+};
+
+const RNE: FooterSource = {
+  nom: 'Répertoire national des élus (ministère de l’Intérieur)',
+  url: 'https://www.data.gouv.fr/datasets/repertoire-national-des-elus-1/',
+  detail: 'conseillers municipaux : sexe, âge, profession, fonction (sans les noms, hors maire) — Licence Ouverte 2.0',
+};
+
+export const CREDITS_TRANSPARENCE: readonly FooterSource[] = [DGFIP_BALANCES, DGFIP_COMPTES, DECP, BOAMP, RNE, INSEE_RECENSEMENT, API_GEO];
 export const CREDITS_EAU: readonly FooterSource[] = [HUBEAU_EAU];
 export const CREDITS_CONSTRUCTION: readonly FooterSource[] = [SDES_SITADEL, SDES_RPLS];
 export const CREDITS_ELECTIONS: readonly FooterSource[] = [ELECTIONS_AGREGEES, MUNICIPALES_2026];
@@ -178,5 +203,6 @@ export const CREDITS_ACCUEIL: readonly FooterSource[] = [
     CREDITS_DELINQUANCE,
     CREDITS_EAU,
     CREDITS_CONSTRUCTION,
+    CREDITS_TRANSPARENCE,
   ].flat()),
 ].filter((source) => source !== OPENFREEMAP);

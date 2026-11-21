@@ -17,7 +17,7 @@
  * d'une construction à l'autre par le cache GitHub Actions), elle est réutilisée et signalée sur le site
  * (« données non mises à jour depuis le … »). La construction n'échoue que si aucune version n'existe.
  */
-import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -146,7 +146,34 @@ async function downloadFiles(source: Source): Promise<void> {
   for (const file of files) await writeFile(path.join(dir, file.name), file.content);
 }
 
+/**
+ * Source au format « parquet-extrait » : DuckDB lit à distance (extension httpfs) le gros fichier Parquet,
+ * ne transfère que les colonnes et lignes utiles, et les enregistre dans data/raw/<id>.parquet.
+ */
+async function downloadParquetExtrait(source: Source): Promise<void> {
+  if (!source.filtre || !source.colonnes) throw new Error('parquet-extrait demande un filtre et des colonnes');
+  const [url] = await resolveUrls(source);
+  const colonnes = source.colonnes.map((c) => `"${c}"`).join(', ');
+  const instance = await DuckDBInstance.create(':memory:');
+  const connection = await instance.connect();
+  const cible = path.join(RAW_DIR, `${source.id}.parquet`);
+  try {
+    await connection.run('INSTALL httpfs; LOAD httpfs;');
+    await connection.run(
+      `COPY (SELECT ${colonnes} FROM read_parquet('${url}') WHERE ${source.filtre}) TO '${cible}.tmp' (FORMAT parquet)`,
+    );
+  } finally {
+    connection.closeSync();
+    instance.closeSync();
+  }
+  await rename(`${cible}.tmp`, cible);
+}
+
 async function download(source: Source): Promise<void> {
+  if (source.format === 'parquet-extrait') {
+    await downloadParquetExtrait(source);
+    return;
+  }
   if (source.format === 'fichiers') {
     await downloadFiles(source);
     return;
@@ -156,6 +183,7 @@ async function download(source: Source): Promise<void> {
 
 /** Chemin de la version locale d'une source (fichier JSON ou dossier de fichiers). */
 function cheminLocal(source: Source): string {
+  if (source.format === 'parquet-extrait') return path.join(RAW_DIR, `${source.id}.parquet`);
   return source.format === 'fichiers' ? path.join(RAW_DIR, source.id) : path.join(RAW_DIR, `${source.id}.json`);
 }
 

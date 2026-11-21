@@ -1,0 +1,344 @@
+---
+import Base from '../layouts/Base.astro';
+import KeyFigure from '../components/KeyFigure.astro';
+import FunFacts from '../components/FunFacts.astro';
+import Icon from '../components/Icon.astro';
+import InfoTip from '../components/InfoTip.astro';
+import LineChart from '../components/charts/LineChart.astro';
+import Waffle, { type WaffleItem } from '../components/charts/Waffle.astro';
+import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.astro';
+import CompareBars from '../components/charts/CompareBars.astro';
+import PictoGrid from '../components/charts/PictoGrid.astro';
+import AnnualStrip, { type AnneeCompte } from '../components/charts/AnnualStrip.astro';
+import SourcesMethode from '../components/SourcesMethode.astro';
+import { CREDITS_TRANSPARENCE } from '../data/credits';
+import { methode } from '../data/methodes';
+import {
+  GROUPES_POSTES,
+  LIBELLES_COURTS_POSTES,
+  LIBELLES_COURTS_PROFESSIONS,
+  LIBELLES_POSTES,
+  anneesElus,
+  anneesSubventions,
+  appelsOffres,
+  comparaison,
+  conseil,
+  dateLongue,
+  derniereAnnee,
+  maire,
+  marches,
+  partGroupe,
+  postesDe,
+  premiereAnnee,
+  premierePublication,
+  professions,
+  tranchesAge,
+} from '../data/transparence';
+import { faitsTransparence } from '../lib/faits-transparence';
+import { formatCommunes, formatNumber, formatRankOf } from '../lib/format';
+
+const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
+const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
+const euros = (v: number): string => `${formatNumber(v)} €`;
+const eurosHab = (v: number): string => `${formatNumber(v, 1)} €/hab.`;
+const pourcent = (v: number): string => `${formatNumber(v, 1)} %`;
+const ticks = (annees: readonly number[]): number[] => annees.filter((a) => a % 5 === 0 || a === annees.at(-1));
+
+const cElus = comparaison('indemnites');
+const cAsso = comparaison('associations');
+const cCcas = comparaison('ccas');
+const elus = anneesElus.find((a) => a.annee === derniereAnnee) ?? anneesElus[anneesElus.length - 1];
+const asso = anneesSubventions.find((a) => a.annee === derniereAnnee) ?? anneesSubventions[anneesSubventions.length - 1];
+if (!elus || !asso) throw new Error('Données Transparence vides : relancer npm run data.');
+const strateCourte = cElus.strate.replace(/^communes de /, '').replace(/ hab$/, ' habitants');
+
+/** Luynes, communes de même taille (France), médiane des communes d'Indre-et-Loire. */
+const trio = (c: typeof cElus): MiniItem[] => [
+  { label: 'Luynes', value: c.luynes_par_habitant, display: eurosHab(c.luynes_par_habitant), highlight: true },
+  { label: 'Même taille', value: c.strate_par_habitant, display: eurosHab(c.strate_par_habitant) },
+  { label: 'Médiane 37', value: c.mediane_37, display: eurosHab(c.mediane_37) },
+];
+
+const grille = (annee: number): WaffleItem[] => GROUPES_POSTES.map((g) => ({ label: g.label, value: partGroupe(annee, g.postes) }));
+const grilleDerniere = grille(derniereAnnee);
+const grillePremiere = grille(premiereAnnee);
+const ariaGrille = (annee: number, items: WaffleItem[]): string =>
+  `Sur 100 € de dépenses de fonctionnement en ${annee} : ${items.map((i) => `${i.label} ${formatNumber(i.value, 0)} €`).join(', ')}.`;
+
+const postes = postesDe(derniereAnnee);
+const anneesDepenses = anneesElus.map((a) => a.annee);
+const totalParHabitant = anneesDepenses.map((annee) => {
+  const lignes = postesDe(annee);
+  const premier = lignes[0];
+  return premier ? premier.total_annee / premier.population : 0;
+});
+const personnelParHabitant = anneesDepenses.map((annee) => postesDe(annee).find((l) => l.poste === 'personnel')?.euros_par_habitant ?? 0);
+
+const anneesAppels: AnneeCompte[] = (() => {
+  const min = Math.min(...appelsOffres.map((a) => a.annee));
+  const max = Math.max(...appelsOffres.map((a) => a.annee));
+  return Array.from({ length: max - min + 1 }, (_, i) => ({ annee: min + i, nombre: appelsOffres.filter((a) => a.annee === min + i).length }));
+})();
+
+const elusFemmesPop = conseil.part_femmes_population;
+const intitule = (ligne: (typeof marches)[number]): string => ligne.objet;
+---
+
+<Base
+  title="Transparence de la mairie de Luynes — Luynes en chiffres"
+  description={`Dépenses de la commune, indemnités des élus, subventions, marchés publics et conseil municipal de Luynes, à partir des données publiques (${premiereAnnee}-${derniereAnnee}).`}
+  sources={CREDITS_TRANSPARENCE}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
+    <p class="flex items-center gap-2 font-medium text-loire"><Icon name="mairie" class="h-5 w-5" /> Thème · Transparence</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.6rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      La mairie <span class="text-accent">à livre ouvert</span>
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Où va l'argent de la commune, ce que coûtent les indemnités des élus, les subventions, les marchés publics et la composition du conseil municipal :
+      uniquement des données publiées par des organismes publics, en totaux, sans noms ni commentaire.
+    </p>
+    <p class="mt-4 max-w-2xl rounded-2xl bg-loire-soft p-4 text-sm leading-relaxed text-ink">
+      Les montants « par habitant » sont divisés par la population retenue par les Finances publiques ({formatNumber(elus.population)} habitants en {derniereAnnee}).
+      Les comparaisons se font avec les communes de même taille ({strateCourte}) : celles-ci peuvent être au-dessus ou en dessous de Luynes selon le sujet.
+    </p>
+  </section>
+
+  <section aria-label="Chiffres clés de la transparence" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <KeyFigure tone="loire" icon="mairie" label={`Indemnités des élus ${cElus.annee}`} value={cElus.luynes_par_habitant} decimals={1} unit="€/hab." info={methode('elus_indemnites')}>
+      <MiniCompare onDark items={trio(cElus)} />
+    </KeyFigure>
+    <KeyFigure tone="accent" icon="tirelire" label={`Subventions aux associations ${cAsso.annee}`} value={cAsso.luynes_par_habitant} decimals={1} unit="€/hab." info={methode('subventions_associations')}>
+      <MiniCompare items={trio(cAsso)} />
+    </KeyFigure>
+    <KeyFigure icon="livre" label="Marchés publics attribués (base nationale)" value={marches.length} unit="marchés" info={methode('marches_plafonds')}>
+      <p class="mt-2 text-xs text-ink-2">Publiés par la commune depuis {dateLongue(premierePublication)}.</p>
+    </KeyFigure>
+    <KeyFigure icon="personnes" label="Conseil municipal" value={conseil.nb_elus} unit="élus" info={methode('conseil_parite')}>
+      <MiniCompare
+        items={[
+          { label: 'Conseil', value: conseil.part_femmes, display: `${pourcent(conseil.part_femmes)} de femmes`, highlight: true },
+          { label: 'Habitants', value: elusFemmesPop, display: `${pourcent(elusFemmesPop)} de femmes` },
+        ]}
+      />
+    </KeyFigure>
+  </section>
+
+  <section id="depenses" aria-labelledby="depenses-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="depenses-titre" class={titreH2}>Où vont 100 € de dépenses ?</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Les dépenses de fonctionnement payées par la commune en {derniereAnnee}, comparées à {premiereAnnee} : une case = 1 €.
+    </p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      <div class={carte}>
+        <Waffle info={methode('depenses_postes')} title={`Sur 100 € dépensés en ${derniereAnnee}`} unit="€" items={grilleDerniere} ariaLabel={ariaGrille(derniereAnnee, grilleDerniere)} />
+      </div>
+      <div class={carte}>
+        <Waffle info={methode('depenses_postes')} title={`Sur 100 € dépensés en ${premiereAnnee}`} unit="€" items={grillePremiere} ariaLabel={ariaGrille(premiereAnnee, grillePremiere)} />
+      </div>
+    </div>
+    <div class:list={['mt-6', carte]}>
+      <CompareBars
+        info={methode('depenses_postes')}
+        title={`Détail des postes en ${derniereAnnee} (sur 100 €)`}
+        items={postes.map((p) => ({ label: LIBELLES_COURTS_POSTES[p.poste], value: p.pour_100_euros, display: `${formatNumber(p.pour_100_euros, 1)} €`, highlight: true }))}
+      />
+      <details class="mt-4 text-sm text-ink-2">
+        <summary class="cursor-pointer">Que contient chaque poste ?</summary>
+        <ul class="mt-2 space-y-1">
+          {postes.map((p) => <li><strong class="font-medium text-ink">{LIBELLES_COURTS_POSTES[p.poste]}</strong> : {LIBELLES_POSTES[p.poste]} ({formatNumber(p.euros_par_habitant)} €/hab.)</li>)}
+        </ul>
+      </details>
+    </div>
+    <div class:list={['mt-6', carte]}>
+      <p class="mb-4 text-sm font-semibold">Dépenses par habitant et par an</p>
+      <LineChart
+        info={methode('depenses_postes')}
+        xs={anneesDepenses}
+        xTicks={ticks(anneesDepenses)}
+        unit="€/hab."
+        heightClass="h-56 sm:h-64"
+        series={[
+          { name: 'Dépenses de fonctionnement', color: 'var(--chart-2)', values: totalParHabitant.map(Math.round) },
+          { name: 'dont personnel communal', color: 'var(--chart-1)', values: personnelParHabitant.map(Math.round) },
+        ]}
+        ariaLabel={`Dépenses de fonctionnement par habitant de ${premiereAnnee} à ${derniereAnnee}, dont le personnel communal.`}
+        tableCaption="Dépenses de fonctionnement par habitant, total et personnel communal"
+      />
+    </div>
+    <p class="mt-4 max-w-2xl text-sm text-ink-2">
+      Les montants en euros courants ne tiennent pas compte de l'inflation. Les amortissements et provisions, écritures sans sortie d'argent, ne sont pas comptés.
+    </p>
+  </section>
+
+  <section id="elus" aria-labelledby="elus-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="elus-titre" class={titreH2}>Les indemnités des élus</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Total versé par la commune aux élus dans l'année, tel qu'il figure dans ses comptes. Aucun détail individuel n'est repris ici.
+    </p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_2fr]">
+      <div class="flex flex-col justify-between rounded-[1.5rem] bg-loire p-6 text-bg sm:p-8">
+        <Icon name="mairie" class="h-9 w-9 opacity-85" />
+        <p class="mt-6 font-display text-5xl font-extrabold tracking-tight sm:text-6xl">{euros(elus.indemnites)}</p>
+        <p class="mt-3 opacity-85">d'indemnités en {derniereAnnee}, soit {formatNumber(elus.indemnites_par_habitant, 1)} € par habitant. S'y ajoutent {euros(elus.frais_cotisations)} de frais et cotisations (retraite, sécurité sociale, formation, missions).</p>
+      </div>
+      <div class={carte}>
+        <p class="mb-4 text-sm font-semibold">Indemnités par habitant et par an</p>
+        <LineChart
+          info={methode('elus_indemnites')}
+          xs={anneesElus.map((a) => a.annee)}
+          xTicks={ticks(anneesElus.map((a) => a.annee))}
+          unit="€/hab."
+          area
+          heightClass="h-56 sm:h-64"
+          series={[{ name: 'Indemnités des élus', color: 'var(--chart-2)', values: anneesElus.map((a) => a.indemnites_par_habitant) }]}
+          ariaLabel={`Indemnités des élus par habitant de ${premiereAnnee} à ${derniereAnnee} : ${formatNumber(elus.indemnites_par_habitant, 1)} € en ${derniereAnnee}.`}
+          tableCaption="Indemnités des élus par habitant"
+        />
+      </div>
+    </div>
+    <div class:list={['mt-6', carte]}>
+      <MiniCompare info={methode('elus_indemnites')} items={trio(cElus)} />
+      <p class="mt-4 text-sm text-ink-2">
+        {cElus.annee} : en euros par habitant, Luynes se situe {cElus.luynes_par_habitant > cElus.strate_par_habitant ? 'au-dessus' : 'en dessous'} de la moyenne des {formatNumber(cElus.nb_communes_strate)} communes de même taille
+        et {cElus.luynes_par_habitant > cElus.mediane_37 ? 'au-dessus' : 'en dessous'} de la médiane des communes d'Indre-et-Loire
+        ({formatRankOf(cElus.rang, cElus.nb_communes)}, de la valeur la plus élevée à la plus faible). Les indemnités maximales fixées par la loi dépendent de la taille de la commune : les petites communes ont donc des montants par habitant plus élevés.
+      </p>
+    </div>
+  </section>
+
+  <section id="subventions" aria-labelledby="subventions-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="subventions-titre" class={titreH2}>Les subventions</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Ce que la commune verse aux associations et au centre communal d'action sociale (CCAS), en totaux par année.
+    </p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
+      <div class={carte}>
+        <LineChart
+          info={methode('subventions_associations')}
+          xs={anneesSubventions.map((a) => a.annee)}
+          xTicks={ticks(anneesSubventions.map((a) => a.annee))}
+          unit="€/hab."
+          heightClass="h-56 sm:h-64"
+          series={[
+            { name: 'Associations', color: 'var(--chart-2)', values: anneesSubventions.map((a) => a.associations_par_habitant) },
+            { name: 'CCAS', color: 'var(--chart-1)', values: anneesSubventions.map((a) => a.ccas_par_habitant) },
+          ]}
+          ariaLabel={`Subventions par habitant de ${premiereAnnee} à ${derniereAnnee} : ${formatNumber(asso.associations_par_habitant, 1)} € pour les associations et ${formatNumber(asso.ccas_par_habitant, 1)} € pour le CCAS en ${derniereAnnee}.`}
+          tableCaption="Subventions aux associations et au CCAS par habitant"
+        />
+      </div>
+      <div class={carte}>
+        <p class="font-display text-4xl font-extrabold tracking-tight">{euros(asso.associations)}</p>
+        <p class="mt-1 text-sm text-ink-2">versés aux associations en {derniereAnnee}</p>
+        <p class="mt-5 font-display text-3xl font-extrabold tracking-tight">{euros(asso.ccas)}</p>
+        <p class="mt-1 text-sm text-ink-2">versés au CCAS en {derniereAnnee}</p>
+        <div class="mt-5">
+          <p class="mb-1 text-xs font-semibold">Associations, {cAsso.annee}</p>
+          <MiniCompare items={trio(cAsso)} />
+          <p class="mt-4 mb-1 text-xs font-semibold">CCAS, {cCcas.annee}</p>
+          <MiniCompare items={trio(cCcas)} />
+          <p class="mt-2 text-xs text-ink-2">Seules les communes qui versent une subvention à leur CCAS sont comparées ({formatCommunes(cCcas.nb_communes)} sur ce compte).</p>
+        </div>
+      </div>
+    </div>
+    <p class="mt-4 max-w-2xl text-sm text-ink-2">
+      Les comptes ne donnent que le total : le détail association par association n'est pas repris sur ce site.
+      Une année à 0 pour le CCAS signifie qu'aucun versement n'est inscrit à ce compte cette année-là.
+    </p>
+  </section>
+
+  <section id="marches" aria-labelledby="marches-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="marches-titre" class={titreH2}>Marchés publics et appels d'offres</h2>
+    <p class="mt-4 max-w-2xl rounded-2xl bg-accent-soft p-4 text-sm leading-relaxed text-ink">
+      <strong>À lire avant les montants.</strong> Un montant de marché est un <strong>plafond</strong> (le maximum que le contrat peut atteindre), pas une dépense : il ne s'additionne pas.
+      La base nationale ne contient que les marchés publiés par la commune depuis le {dateLongue(premierePublication)} ; les marchés plus anciens n'y figurent pas.
+    </p>
+    <div class:list={['mt-6', carte]}>
+      <h3 class="flex items-center gap-2 font-display text-xl font-bold">
+        Marchés attribués ({formatNumber(marches.length)}) <InfoTip methode={methode('marches_plafonds')} label="Marchés publics attribués" />
+      </h3>
+      <ul class="mt-4 divide-y divide-line">
+        {
+          marches.map((m) => (
+            <li class="grid gap-1 py-3 sm:grid-cols-[1fr_auto] sm:gap-x-6">
+              <div>
+                <p class="text-sm font-semibold text-ink">{intitule(m)}</p>
+                <p class="mt-0.5 text-sm text-ink-2">
+                  {m.titulaire ?? 'Titulaire non renseigné'}{m.ville_titulaire ? ` (${m.ville_titulaire})` : ''} · notifié le {dateLongue(m.date_notification)}{m.procedure ? ` · ${m.procedure}` : ''}
+                </p>
+              </div>
+              <p class="tabular text-sm text-ink-2 sm:text-right">
+                {m.plafond !== null ? <>Plafond du contrat :<br class="hidden sm:block" /> <strong class="text-ink">{euros(m.plafond)}</strong></> : 'Plafond non renseigné'}
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div class:list={['mt-6', carte]}>
+      <AnnualStrip info={methode('appels_offres')} label="Appels d'offres publiés par la mairie au BOAMP, par année" values={anneesAppels} />
+      <details class="mt-4 text-sm text-ink-2">
+        <summary class="cursor-pointer">Voir la liste des {formatNumber(appelsOffres.length)} appels d'offres</summary>
+        <ul class="mt-2 divide-y divide-line">
+          {
+            appelsOffres.map((a) => (
+              <li class="py-2">
+                <span class="text-ink">{a.objet}</span>
+                <span class="block text-xs">{dateLongue(a.date_parution)} · {a.famille}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <section id="conseil" aria-labelledby="conseil-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="conseil-titre" class={titreH2}>Le conseil municipal en chiffres</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      {formatNumber(conseil.nb_elus)} élus depuis le {dateLongue(conseil.debut_mandat)}. Le maire est {maire.prenom} {maire.nom} (fonction publiée par le répertoire national des élus) ;
+      aucun autre nom, aucune date de naissance.
+    </p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      <div class={carte}>
+        <PictoGrid info={methode('conseil_parite')} count={conseil.part_femmes} label={`femmes parmi les élus (${formatNumber(conseil.femmes)} femmes, ${formatNumber(conseil.hommes)} hommes)`} ariaLabel={`${formatNumber(conseil.part_femmes, 1)} élus sur 100 sont des femmes.`} />
+        <p class="mt-4 text-sm text-ink-2">
+          Parmi les habitants de 18 ans et plus : {pourcent(elusFemmesPop)} de femmes. Maire et adjoints : {formatNumber(conseil.femmes_executif)} femmes sur {formatNumber(conseil.nb_executif)}.
+        </p>
+      </div>
+      <div class={carte}>
+        <p class="flex items-center gap-2 text-sm font-semibold">Âge des élus et des habitants <InfoTip methode={methode('conseil_ages')} label="Âge des élus" /></p>
+        <ul class="mt-4 space-y-4">
+          {
+            tranchesAge.map((t) => (
+              <li>
+                <p class="mb-1 text-sm font-semibold text-ink">{t.libelle}</p>
+                <MiniCompare
+                  items={[
+                    { label: 'Conseil', value: t.part_elus, display: `${pourcent(t.part_elus)} (${formatNumber(t.elus)})`, highlight: true },
+                    { label: 'Habitants', value: t.part_habitants, display: pourcent(t.part_habitants) },
+                  ]}
+                />
+              </li>
+            ))
+          }
+        </ul>
+        <p class="mt-4 text-sm text-ink-2">
+          Âge moyen : {formatNumber(conseil.age_moyen, 1)} ans pour les élus, {formatNumber(conseil.age_moyen_population, 1)} ans pour les habitants de 18 ans et plus (recensement {conseil.annee_recensement}).
+        </p>
+      </div>
+    </div>
+    <div class:list={['mt-6', carte]}>
+      <CompareBars
+        info={methode('conseil_professions')}
+        title="Professions des élus (part des élus)"
+        items={professions.map((p) => ({ label: LIBELLES_COURTS_PROFESSIONS[p.groupe_csp] ?? p.categorie, value: p.part, display: `${pourcent(p.part)} (${formatNumber(p.elus)})`, highlight: true }))}
+      />
+      <p class="mt-3 text-xs text-ink-2">Catégories de l'INSEE ; les anciens cadres, anciens employés… sont classés avec les retraités.</p>
+    </div>
+  </section>
+
+  <FunFacts facts={faitsTransparence()} id="saviez-vous-transparence" />
+  <SourcesMethode page="transparence" />
+</Base>

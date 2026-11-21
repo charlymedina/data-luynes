@@ -27,4 +27,5 @@ export const THEMES: readonly Theme[] = [
   { slug: 'delinquance', titre: 'Délinquance', court: 'Délinquance', icon: 'bouclier', resume: 'Faits enregistrés, comparés au département et à la France.' },
   { slug: 'eau', titre: 'Eau du robinet', court: 'Eau', icon: 'goutte', resume: 'Contrôles sanitaires, nitrates, calcaire.' },
   { slug: 'construction', titre: 'Construction & logement social', court: 'Construction', icon: 'grue', resume: 'Logements autorisés et construits, logements sociaux.' },
+  { slug: 'transparence', titre: 'Transparence', court: 'Transparence', icon: 'mairie', resume: 'Dépenses, indemnités des élus, subventions, marchés publics, conseil municipal.' },
 ];

@@ -4,6 +4,7 @@
  * (même contenu que les bulles ⓘ, toujours lisible sans JavaScript).
  */
 import { methodesDePage } from '../data/methodes';
+import { urlSignalement } from '../lib/signalement';
 
 interface Props {
   /** Slug de la page (« population »…) ou « accueil » */
@@ -11,6 +12,7 @@ interface Props {
 }
 
 const methodes = methodesDePage(Astro.props.page);
+const lienSignalement = urlSignalement(Astro.url.pathname, Astro.site);
 ---
 
 {
@@ -37,6 +39,11 @@ const methodes = methodesDePage(Astro.props.page);
             </div>
           ))}
         </dl>
+        <p class="mt-6 text-sm text-ink-2">
+          Un chiffre semble faux ?
+          <a class="underline decoration-accent underline-offset-4 hover:text-ink" href={lienSignalement} rel="noopener">Signaler une erreur ou proposer une idée</a>
+          (compte GitHub gratuit nécessaire).
+        </p>
       </details>
     </section>
   )

@@ -16,6 +16,7 @@ import { dernierDe, participations, resumeElections } from './elections';
 import { periodeDelinquance } from './delinquance';
 import { resumeEau } from './eau';
 import { resumeConstruction } from './construction';
+import { appelsOffres, comparaison, conseil, derniereAnnee as derniereAnneeBalance, premiereAnnee as premiereAnneeBalance, premiereNotification, premierePublication } from './transparence';
 import { formatCommunes, formatMonthYear, formatNumber } from '../lib/format';
 
 export interface Methode {
@@ -37,6 +38,9 @@ const prix = `${resumeImmobilier.annee_debut_prix}-${resumeImmobilier.annee_fin}
 const DVF = 'DGFiP, demandes de valeurs foncières (DVF), via Etalab';
 const DGFIP = 'DGFiP, comptes individuels des communes';
 const HUBEAU = "contrôle sanitaire des eaux (ARS, ministère de la Santé), via l'API Hub'eau";
+const BALANCES = 'DGFiP, balances comptables des communes (budget principal)';
+const RNE = 'ministère de l\'Intérieur, répertoire national des élus (conseillers municipaux)';
+const balances = `${premiereAnneeBalance}-${derniereAnneeBalance}`;
 const POPULATION_DGFIP = `population retenue par la DGFiP (${formatNumber(resumeBudget.population)} habitants, population légale « totale »)`;
 
 const METHODES = {
@@ -503,6 +507,54 @@ const METHODES = {
     calcul: 'moyenne du titre hydrotimétrique (°f, degrés français) mesuré ; département : moyenne de toutes ses analyses',
     millesime: `${resumeEau.fenetre_debut}-${resumeEau.fenetre_fin}`,
   },
+  depenses_postes: {
+    titre: 'Où vont 100 € de dépenses',
+    source: BALANCES,
+    calcul: `dépenses de fonctionnement payées dans l'année, regroupées par grandes natures de dépenses (comptes 60 à 67, hors amortissements et provisions, qui n'impliquent aucune sortie d'argent), ramenées à 100 € ; plan comptable M14 jusqu'en 2023, M57 ensuite, rapprochés par leurs premiers chiffres`,
+    millesime: balances,
+  },
+  elus_indemnites: {
+    titre: 'Indemnités des élus',
+    source: BALANCES + ', compte 6531 (M14) puis 65311 (M57)',
+    calcul: `indemnités versées aux élus dans l'année, divisées par la population retenue par la DGFiP (${formatNumber(resumeBudget.population)} habitants) ; comparaison : total des indemnités des communes de même taille (strate DGFiP, toute la France) divisé par leur population, et médiane des communes d'Indre-et-Loire (communes ayant une écriture sur ce compte)`,
+    millesime: String(comparaison('indemnites').annee),
+  },
+  subventions_associations: {
+    titre: 'Subventions aux associations',
+    source: BALANCES + ', compte 6574 (M14) puis 65748 (M57) ; CCAS : 657362 puis 657363',
+    calcul: `subventions de fonctionnement versées dans l'année, divisées par la population retenue par la DGFiP ; comparaison : même méthode que les indemnités des élus. Le détail association par association n'est pas repris sur ce site`,
+    millesime: String(comparaison('associations').annee),
+  },
+  marches_plafonds: {
+    titre: 'Marchés publics attribués',
+    source: 'données essentielles de la commande publique consolidées (DECP, data.gouv.fr), marchés dont l\'acheteur est la mairie de Luynes',
+    calcul: `nombre de marchés publiés (version à jour de chaque marché). Le montant affiché est le plafond du contrat : jamais une dépense, jamais additionné. La base ne contient que les marchés dont la commune a publié les données, à partir de ${formatMonthYear(new Date(premierePublication))} : les marchés plus anciens n'y figurent pas`,
+    millesime: `marchés notifiés depuis ${formatMonthYear(new Date(premiereNotification))}`,
+  },
+  appels_offres: {
+    titre: "Appels d'offres publiés",
+    source: 'DILA, bulletin officiel des annonces de marchés publics (BOAMP)',
+    calcul: "avis d'appel d'offres initiaux publiés par la mairie (sans les avis rectificatifs ni les avis d'attribution), comptés par année de parution",
+    millesime: `${Math.min(...appelsOffres.map((a) => a.annee))}-${Math.max(...appelsOffres.map((a) => a.annee))}`,
+  },
+  conseil_parite: {
+    titre: 'Conseil municipal',
+    source: RNE,
+    calcul: `nombre de conseillers (maire et adjoints compris) et part des femmes ; comparaison : part des femmes parmi les habitants de 18 ans et plus (recensement ${conseil.annee_recensement}, INSEE)`,
+    millesime: `mandat en cours depuis le ${new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(new Date(conseil.debut_mandat))} ; ${extraction}`,
+  },
+  conseil_ages: {
+    titre: 'Âge des élus',
+    source: RNE + ' ; INSEE, recensement (population par âge)',
+    calcul: `âge des élus à la date de construction du site (la date de naissance n'est jamais publiée), regroupé en trois tranches ; comparaison : habitants de 18 ans et plus (recensement ${conseil.annee_recensement})`,
+    millesime: extraction,
+  },
+  conseil_professions: {
+    titre: 'Professions des élus',
+    source: RNE,
+    calcul: 'catégorie socioprofessionnelle déclarée, regroupée en grandes catégories de l\'INSEE (les anciens cadres, anciens employés… sont classés avec les retraités)',
+    millesime: extraction,
+  },
 } as const satisfies Record<string, Methode>;
 
 export type CleMethode = keyof typeof METHODES;
@@ -513,7 +565,7 @@ export function methode(cle: CleMethode): Methode {
 
 /** Méthodes affichées dans la section « Sources et méthode » de chaque page (dans l'ordre des chiffres clés). */
 const PAR_PAGE: Record<string, readonly CleMethode[]> = {
-  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences'],
+  accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences', 'elus_indemnites', 'conseil_parite'],
   population: ['population', 'multiplie_1968', 'age_median', 'part_65', 'naissances'],
   territoire: ['superficie', 'densite'],
   'patrimoine-risques': ['monuments', 'cavites', 'catnat', 'mouvements'],
@@ -527,6 +579,7 @@ const PAR_PAGE: Record<string, readonly CleMethode[]> = {
   delinquance: ['delinquance_bilan', 'delinquance_cambriolages', 'delinquance_degradations'],
   eau: ['eau_conformite', 'eau_physico', 'eau_prelevements', 'eau_nitrates', 'eau_durete'],
   construction: ['logements_commences', 'logements_sociaux'],
+  transparence: ['depenses_postes', 'elus_indemnites', 'subventions_associations', 'marches_plafonds', 'appels_offres', 'conseil_parite', 'conseil_ages', 'conseil_professions'],
 };
 
 export function methodesDePage(page: string): Methode[] {

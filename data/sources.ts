@@ -12,6 +12,7 @@ import { SOURCES_ELECTIONS } from './sources-elections.ts';
 import { SOURCES_DELINQUANCE } from './sources-delinquance.ts';
 import { SOURCES_EAU } from './sources-eau.ts';
 import { SOURCES_CONSTRUCTION } from './sources-construction.ts';
+import { SOURCES_TRANSPARENCE } from './sources-transparence.ts';
 
 export interface Source {
   /** Nom du fichier produit dans data/raw/ (sans extension) */
@@ -33,8 +34,14 @@ export interface Source {
   /**
    * « json » (par défaut) : réponse JSON enregistrée dans data/raw/<id>.json.
    * « fichiers » : fichiers bruts (ex. CSV compressés) enregistrés tels quels dans le dossier data/raw/<id>/.
+   * « parquet-extrait » : gros fichier Parquet en ligne dont seules les lignes demandées (filtre) et les colonnes
+   * utiles sont lues à distance par DuckDB, puis enregistrées dans data/raw/<id>.parquet.
    */
-  readonly format?: 'json' | 'fichiers';
+  readonly format?: 'json' | 'fichiers' | 'parquet-extrait';
+  /** Format « parquet-extrait » : condition SQL (WHERE) qui garde les lignes de Luynes. */
+  readonly filtre?: string;
+  /** Format « parquet-extrait » : colonnes à conserver. */
+  readonly colonnes?: readonly string[];
 }
 
 const GEO_API = 'https://geo.api.gouv.fr';
@@ -376,4 +383,5 @@ export const SOURCES: readonly Source[] = [
 
   // — Construction et logements sociaux (voir data/sources-construction.ts) —
   ...SOURCES_CONSTRUCTION,
+  ...SOURCES_TRANSPARENCE,
 ];

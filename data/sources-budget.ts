@@ -39,7 +39,7 @@ function derniereAnnee(id: string): number {
 }
 
 /** Identifiants de tous les jeux « comptes individuels des communes », triés du plus ancien au plus récent. */
-async function jeuxComptes(): Promise<string[]> {
+export async function jeuxComptes(): Promise<string[]> {
   const recherche = encodeURIComponent(`dataset_id like "${PREFIXE_JEU}*"`);
   const response = await fetch(`${PORTAIL}?where=${recherche}&select=dataset_id&limit=100`, {
     signal: AbortSignal.timeout(30_000),

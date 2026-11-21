@@ -1,5 +1,6 @@
 ---
 import { generatedAt, sourcesEnRetard } from '../data/commune';
+import { urlSignalement } from '../lib/signalement';
 
 export interface FooterSource {
   nom: string;
@@ -15,6 +16,7 @@ interface Props {
 const { sources } = Astro.props;
 const dateMaj = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(generatedAt);
 const dateCourte = (iso: string): string => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }).format(new Date(iso));
+const lienSignalement = urlSignalement(Astro.url.pathname, Astro.site);
 const linkClass = 'underline decoration-accent underline-offset-4 hover:text-ink';
 ---
 
@@ -48,5 +50,9 @@ const linkClass = 'underline decoration-accent underline-offset-4 hover:text-ink
   </p>
   <p class="mt-2">
     <a class={linkClass} href="https://github.com/charlymedina/data-luynes">Code source et requêtes SQL sur GitHub</a>
+  </p>
+  <p class="mt-2">
+    <a class={linkClass} href={lienSignalement} rel="noopener" data-signalement>Signaler une erreur ou proposer une idée</a>
+    <span>(ouvre un message pré-rempli sur GitHub ; un compte GitHub gratuit est nécessaire)</span>
   </p>
 </footer>
