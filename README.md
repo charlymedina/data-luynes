@@ -84,6 +84,7 @@ data-luynes/
 │   ├── build-data.ts                    # téléchargement + requêtes SQL
 │   ├── archive-{dvf,baac,elections}.ts  # archives (+ manifest.ts, outils communs)
 │   ├── telechargement.ts                # téléchargement incrémental + alerte de variation (testé dans tests/)
+│   ├── veille.ts                        # veille mensuelle des nouvelles données ouvertes (issue « Veille données »)
 │   ├── signaler-alertes.sh              # issue GitHub « Alerte sources de données » (appelé par le workflow)
 │   └── test-data.ts, test-site.ts, test-archives.ts  # tests des données, du site construit et des archives
 ├── src/
@@ -93,7 +94,7 @@ data-luynes/
 │   └── lib/                             # og-pages.ts / og-image.ts (images d'aperçu), formats, anecdotes « Le saviez-vous ? » (faits*.ts), cartes, navigation
 ├── tests/*.test.ts                      # tests unitaires (formats, adresses)
 ├── docs/                                # sources, catalogue des données, revues
-└── .github/workflows/deploy.yml         # construction, tests, publication Cloudflare Pages, archives
+└── .github/workflows/                   # deploy.yml (construction, tests, publication, archives), veille.yml (veille mensuelle)
 ```
 
 ## 🚀 Commandes
@@ -133,6 +134,18 @@ volontairement, ou les annuler (`git checkout data/archive`), pour ne pas entrer
 
 Chaque push sur `main` (et chaque lundi) lance `.github/workflows/deploy.yml` : données → construction → tests →
 publication sur **Cloudflare Pages** (projet `luynes`) → enregistrement des archives si elles ont changé.
+
+## 🔭 Veille mensuelle
+
+Le 1ᵉʳ de chaque mois (6 h UTC), `.github/workflows/veille.yml` lance `scripts/veille.ts` : **aucun coût d'IA**, uniquement des API publiques sans clé.
+
+- **Où elle cherche** : data.gouv.fr (jeux citant « Luynes » ; zone `fr:commune:37139` ; Tours Métropole, Indre-et-Loire avec granularité communale ; nouvelles API « dataservices »), et les catalogues Opendatasoft de `data.tours-metropole.fr` et `data.centrevaldeloire.fr`.
+- **Filtres du bruit** : jeux archivés ou sans ressource écartés ; jeux nationaux sans granularité communale ignorés (la recherche exige la zone ou la granularité communale) ; Tours Métropole : seulement les jeux avec une colonne commune/INSEE (hors Ville de Tours seule) ou citant Luynes ; Région : seulement ceux citant l'Indre-et-Loire ; doublons fusionnés.
+- **Ce qui est « connu »** (donc jamais remonté) : `data/veille/connus.json`, tout identifiant cité dans `data/sources*.ts` ou `docs/catalogue-donnees*.md`, et ce qu'une issue « veille » précédente a déjà signalé.
+- **Résultat** : s'il y a du neuf, une issue « Veille données — <mois année> » (étiquette `veille`) liste chaque jeu (titre, producteur, lien, date, raison, statut « à examiner ») ; GitHub envoie l'e-mail. Relancée dans le mois, elle ajoute seulement un commentaire avec les compléments. Rien de nouveau : seul le journal du run en témoigne. Une source en panne n'empêche pas les autres (3 essais, 30 s de délai) ; elle est citée dans l'issue.
+- **Ajouter un jeu « connu »** : citer son identifiant data.gouv / Opendatasoft dans `data/sources*.ts` ou le catalogue, **ou** ajouter une ligne `"gouv:<id>": "titre"` (ou `"ods:tours:<dataset_id>"`) dans `data/veille/connus.json`, **ou** tout marquer connu d'un coup : `npx tsx scripts/veille.ts --init`.
+- **À la main** : `npx tsx scripts/veille.ts --dry-run` (affiche l'issue sans rien publier) ; sur GitHub, onglet Actions → « Veille mensuelle » → Run workflow.
+- **Analyse** : l'examen des nouveautés par Claude se fait **seulement à la demande de Charly** (pour économiser les crédits).
 
 ---
 
