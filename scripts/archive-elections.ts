@@ -18,7 +18,7 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import { empreinteSql, lireManifest } from './manifest.ts';
+import { copierVersParquet, empreinteSql, lireManifest } from './manifest.ts';
 
 const SOURCE = 'https://data-pipeline-open.s3.sbg.io.cloud.ovh.net/elections';
 const FICHIERS = {
@@ -50,7 +50,7 @@ async function extraire(connection: DuckDBConnection, nom: string): Promise<void
     .replaceAll('{candidats}', FICHIERS.candidats)
     .trim()
     .replace(/;\s*$/, '');
-  await connection.run(`COPY (${sql}) TO '${path.join(ARCHIVE_DIR, `${nom}.parquet`)}' (FORMAT parquet, COMPRESSION zstd)`);
+  await copierVersParquet(connection, sql, path.join(ARCHIVE_DIR, `${nom}.parquet`));
   console.log(`↻ Élections : ${nom} archivé`);
 }
 

@@ -1,0 +1,162 @@
+---
+/**
+ * Page « À propos » : pourquoi ce site, d'où viennent les données, comment les chiffres sont calculés, limites,
+ * signalement d'erreur et mentions légales d'un site personnel non commercial. Aucun chiffre écrit à la main :
+ * le nombre de thèmes, la date de mise à jour et la liste des producteurs (pied de page) viennent des données.
+ * Lien dans le pied de page uniquement (pas dans le menu des thèmes).
+ */
+import Base from '../layouts/Base.astro';
+import { CREDITS_ACCUEIL } from '../data/credits';
+import { commune, generatedAt } from '../data/commune';
+import { THEMES } from '../data/themes';
+import { urlSignalement } from '../lib/signalement';
+
+const dateMaj = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(generatedAt);
+const lienSignalement = urlSignalement(Astro.url.pathname, Astro.site);
+const DEPOT = 'https://github.com/charlymedina/data-luynes';
+const titreH2 = 'font-display text-3xl font-extrabold tracking-tight sm:text-4xl';
+const lien = 'font-medium text-loire underline decoration-accent underline-offset-4 hover:text-ink';
+const paragraphe = 'mt-4 max-w-2xl leading-relaxed text-ink-2';
+---
+
+<Base
+  title="À propos — Luynes en chiffres"
+  description={`Pourquoi ce site, d'où viennent les données sur ${commune.nom}, comment les chiffres sont calculés, leurs limites et les mentions légales.`}
+  sources={CREDITS_ACCUEIL}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-6 sm:pt-20">
+    <p class="font-medium text-loire">À propos</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.6rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-8xl">
+      Derrière <span class="text-accent">les chiffres</span>
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Un site personnel pour rassembler, vérifier et présenter simplement ce que les données publiques disent de {commune.nom}.
+    </p>
+  </section>
+
+  <section aria-labelledby="pourquoi" class="mt-12 sm:mt-16">
+    <h2 id="pourquoi" class={titreH2}>Pourquoi ce site</h2>
+    <p class={paragraphe}>
+      Les données publiques sur la commune existent, mais elles sont dispersées entre de nombreux producteurs, dans des formats
+      peu pratiques. Ce site les réunit au même endroit, les rend lisibles (chiffres clés, graphiques, cartes, comparaisons avec
+      le département) et en garde la source visible, pour que chacun puisse découvrir la commune autrement.
+    </p>
+    <p class={paragraphe}>
+      Il est organisé en {THEMES.length} thèmes, de la population aux rues en passant par l'immobilier, le budget ou la nature.
+      Seules les données propres à {commune.nom} sont présentées : aucune station ni aucun capteur situé ailleurs.
+    </p>
+    <p class={paragraphe}>
+      <strong class="font-semibold text-ink">Ce site est indépendant et non officiel.</strong> Il n'est pas édité par la mairie
+      ni par une autre institution, et ne parle pas en son nom.
+    </p>
+  </section>
+
+  <section aria-labelledby="donnees" class="mt-12 sm:mt-16">
+    <h2 id="donnees" class={titreH2}>D'où viennent les données</h2>
+    <p class={paragraphe}>
+      Toutes les données sont des données ouvertes (<em>open data</em>) publiées par des organismes publics : INSEE, ministères,
+      DGFiP, IGN, BRGM, collectivités… Le plus souvent sous
+      <a class={lien} href="https://www.etalab.gouv.fr/licence-ouverte-open-licence/">Licence Ouverte 2.0</a>, qui autorise la
+      réutilisation à condition de citer la source. Chaque page cite les siennes en pied de page ; la liste de tous les
+      producteurs, avec leur licence, figure en bas de cette page. Le détail (jeu de données, fréquence de mise à jour, fichier
+      utilisé) est publié dans le <a class={lien} href={`${DEPOT}/blob/main/docs/sources.md`}>catalogue des sources</a>.
+    </p>
+  </section>
+
+  <section aria-labelledby="calcul" class="mt-12 sm:mt-16">
+    <h2 id="calcul" class={titreH2}>Comment les chiffres sont calculés</h2>
+    <ul class="mt-4 max-w-2xl list-disc space-y-3 pl-5 leading-relaxed text-ink-2 marker:text-accent">
+      <li>
+        <strong class="font-semibold text-ink">Du SQL lisible.</strong> Chaque chiffre vient d'une requête SQL commentée en français,
+        exécutée à chaque construction du site sur les dernières données téléchargées. Aucun chiffre n'est écrit à la main dans les textes.
+      </li>
+      <li>
+        <strong class="font-semibold text-ink">Code ouvert.</strong> Le code du site et toutes les requêtes sont publiés sur
+        <a class={lien} href={DEPOT}>GitHub</a> : chacun peut les relire et les contester.
+      </li>
+      <li>
+        <strong class="font-semibold text-ink">Une bulle ⓘ sous chaque chiffre clé</strong> indique la source, le calcul et l'année ;
+        la section « Sources et méthode » en bas de chaque page les rassemble.
+      </li>
+      <li>
+        <strong class="font-semibold text-ink">Des vérifications.</strong> Des tests automatiques contrôlent les données et les pages
+        avant chaque publication, et des revues des chiffres sont menées régulièrement
+        (<a class={lien} href={`${DEPOT}/tree/main/docs/revues`}>comptes rendus publics</a>).
+      </li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="maj" class="mt-12 sm:mt-16">
+    <h2 id="maj" class={titreH2}>Mises à jour</h2>
+    <p class={paragraphe}>
+      Le site est reconstruit automatiquement chaque lundi, ainsi qu'à chaque modification, à partir des dernières données
+      publiées. Dernière construction : <strong class="font-semibold text-ink">{dateMaj}</strong>. Si une source ne répond pas,
+      sa version précédente est conservée et signalée en pied de page. Les producteurs publient à leur propre rythme : l'année
+      de chaque chiffre est indiquée dans sa bulle ⓘ.
+    </p>
+  </section>
+
+  <section aria-labelledby="limites" class="mt-12 sm:mt-16">
+    <h2 id="limites" class={titreH2}>Limites à connaître</h2>
+    <ul class="mt-4 max-w-2xl list-disc space-y-3 pl-5 leading-relaxed text-ink-2 marker:text-accent">
+      <li>
+        <strong class="font-semibold text-ink">Petits effectifs.</strong> Dans une commune de cette taille, quelques cas suffisent
+        à faire varier un taux d'une année à l'autre : une hausse ou une baisse isolée ne dit pas grand-chose seule.
+      </li>
+      <li>
+        <strong class="font-semibold text-ink">Années différentes.</strong> Chaque producteur publie avec son propre décalage :
+        les chiffres d'une même page peuvent dater d'années différentes (toujours précisées).
+      </li>
+      <li>
+        <strong class="font-semibold text-ink">Données propres à la commune.</strong> Seules les données rattachées à {commune.nom}
+        sont retenues ; ce qui se passe juste de l'autre côté de la limite communale n'apparaît pas.
+      </li>
+      <li>
+        <strong class="font-semibold text-ink">Des données, pas des vérités.</strong> Ce sont des données administratives, avec leurs
+        définitions, leurs seuils de confidentialité et leurs erreurs possibles. Les comparaisons sont présentées dans les deux sens
+        (au-dessus comme en dessous du département) et sans interprétation politique.
+      </li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="erreur" class="mt-12 sm:mt-16">
+    <h2 id="erreur" class={titreH2}>Signaler une erreur</h2>
+    <p class={paragraphe}>
+      Un chiffre semble faux, une source manque, une idée de thème : <a class={lien} href={lienSignalement} rel="noopener" data-signalement>signaler
+      une erreur ou proposer une idée</a> (ouvre un message pré-rempli sur GitHub ; un compte GitHub gratuit est nécessaire).
+    </p>
+  </section>
+
+  <section aria-labelledby="mentions" class="mt-12 sm:mt-16">
+    <h2 id="mentions" class={titreH2}>Mentions légales</h2>
+    <dl class="mt-4 max-w-2xl space-y-4 leading-relaxed text-ink-2">
+      <div>
+        <dt class="font-semibold text-ink">Éditeur</dt>
+        <dd>
+          Site personnel, édité par un particulier à titre non professionnel et non commercial.
+          <!-- À COMPLÉTER PAR CHARLY : éditeur (nom ou pseudonyme, et moyen de contact si souhaité) -->
+        </dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-ink">Hébergeur</dt>
+        <dd>Cloudflare, Inc. (service Cloudflare Pages), 101 Townsend Street, San Francisco, CA 94107, États-Unis.</dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-ink">Cookies et statistiques</dt>
+        <dd>
+          Le site ne dépose aucun cookie et ne demande aucune donnée personnelle. La fréquentation est mesurée avec
+          Cloudflare Web Analytics, sans cookies et sans suivi individuel des visiteurs. Le choix clair ou sombre est mémorisé
+          dans le navigateur, sur l'appareil uniquement.
+        </dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-ink">Cartes</dt>
+        <dd>Les fonds de carte sont fournis par OpenFreeMap (données © contributeurs OpenStreetMap), chargés uniquement sur les pages qui comportent une carte.</dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-ink">Réutilisation</dt>
+        <dd>Les données restent soumises aux licences de leurs producteurs ; en cas de réutilisation, citer la source d'origine.</dd>
+      </div>
+    </dl>
+  </section>
+</Base>

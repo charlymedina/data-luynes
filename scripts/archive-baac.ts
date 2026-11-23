@@ -22,7 +22,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import { empreinteSql, lireManifest } from './manifest.ts';
+import { copierVersParquet, empreinteSql, lireManifest } from './manifest.ts';
 
 const DATASET = 'https://www.data.gouv.fr/api/1/datasets/53698f4ca3a729239d2036df/';
 const RAW_DIR = 'data/raw/baac';
@@ -127,7 +127,7 @@ async function archiverAnnee(connection: DuckDBConnection, annee: string, urls: 
     const selection = await requete(table, annee);
     if (table === 'caract') await connection.run(`CREATE OR REPLACE TEMP TABLE accidents_annee AS ${selection}`);
     const source = table === 'caract' ? 'SELECT * FROM accidents_annee' : selection;
-    await connection.run(`COPY (${source}) TO '${path.join(ARCHIVE_DIR, `${annee}-${table}.parquet`)}' (FORMAT parquet, COMPRESSION zstd)`);
+    await copierVersParquet(connection, source, path.join(ARCHIVE_DIR, `${annee}-${table}.parquet`));
   }
   await rm(dossier, { recursive: true, force: true });
   console.log(`↻ Accidents ${annee} : archivés`);

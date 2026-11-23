@@ -3,6 +3,7 @@ import '../styles/global.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter, { type FooterSource } from '../components/SiteFooter.astro';
 import { pagePath } from '../lib/urls';
+import { OG_HAUTEUR, OG_LARGEUR, OG_PAGES } from '../lib/og-pages';
 
 interface Props {
   title: string;
@@ -13,6 +14,10 @@ interface Props {
 
 const { title, description, sources } = Astro.props;
 const canonical = new URL(pagePath(Astro.url.pathname), Astro.site);
+// Image d'aperçu pour le partage : celle de la page (src/pages/og/), sinon celle de l'accueil (page 404).
+const slugPage = pagePath(Astro.url.pathname).replace(/^\//, '') || 'accueil';
+const og = OG_PAGES.find((p) => p.slug === slugPage) ?? OG_PAGES[0];
+const ogImage = new URL(`/og/${og?.slug}.png`, Astro.site);
 ---
 
 <!doctype html>
@@ -33,6 +38,18 @@ const canonical = new URL(pagePath(Astro.url.pathname), Astro.site);
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Luynes en chiffres" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content={String(OG_LARGEUR)} />
+    <meta property="og:image:height" content={String(OG_HAUTEUR)} />
+    <meta property="og:image:alt" content={og?.alt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={og?.alt} />
     <meta property="og:locale" content="fr_FR" />
   </head>
   <body class="min-h-dvh">

@@ -14,7 +14,7 @@
 import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import { lireManifest } from './manifest.ts';
+import { copierVersParquet, lireManifest } from './manifest.ts';
 
 const RAW_DIR = 'data/raw/dvf_37';
 const ARCHIVE_DIR = 'data/archive/dvf';
@@ -74,8 +74,7 @@ async function archiverAnnee(connection: DuckDBConnection, manifest: Manifest, f
     console.log(`= DVF ${annee} : archive à jour`);
     return;
   }
-  await connection.run(`COPY (${selection} ORDER BY id_mutation, id_parcelle, lot1_numero)
-    TO '${path.join(ARCHIVE_DIR, `${annee}.parquet`)}' (FORMAT parquet, COMPRESSION zstd)`);
+  await copierVersParquet(connection, `${selection} ORDER BY id_mutation, id_parcelle, lot1_numero`, path.join(ARCHIVE_DIR, `${annee}.parquet`));
   manifest[annee] = nouvelle;
   console.log(`↻ DVF ${annee} : archivée (${nouvelle.lignes} lignes)`);
 }

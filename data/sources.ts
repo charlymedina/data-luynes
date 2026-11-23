@@ -49,6 +49,14 @@ export interface Source {
   readonly separateur?: string;
   /** Format « parquet-extrait » : colonnes à conserver. */
   readonly colonnes?: readonly string[];
+  /**
+   * Téléchargement incrémental (voir scripts/telechargement.ts) : une source dont le serveur donne un ETag ou un
+   * Last-Modified n'est retéléchargée que si cette signature change. Sans signature, la version locale est réutilisée
+   * pendant ce nombre de jours (7 par défaut ; mettre 0 pour toujours retélécharger).
+   */
+  readonly validiteJours?: number;
+  /** Alerte (issue GitHub) si le nombre de lignes varie de plus de ce pourcentage entre deux téléchargements (10 par défaut). */
+  readonly seuilAlertePct?: number;
 }
 
 const GEO_API = 'https://geo.api.gouv.fr';

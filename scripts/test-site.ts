@@ -3,6 +3,8 @@
  *  - chaque lien interne mène à une page ou un fichier qui existe ;
  *  - aucun « NaN », « undefined » ou « null » n'apparaît dans le texte des pages ;
  *  - chaque thème du registre a sa page, figure dans le menu de l'accueil, et chaque page cite ses sources ;
+ *  - chaque page a ses balises d'aperçu pour le partage (og:image absolue, 1200 × 630, twitter:card) et l'image existe dans dist/og/ ;
+ *  - la page « À propos » existe, est liée depuis le pied de page et figure dans le plan du site ;
  *  - chaque chiffre clé a sa bulle « Source · Calcul · Année » ;
  *  - aucun chiffre n'est collé à un mot ou à une parenthèse (« les5 062 », « à97,3 % », « 2025(27,8 % ») : signe d'un espace
  *    perdu entre un texte et une expression {…} dans une page Astro (la compression du HTML supprime les espaces en bout de ligne).
@@ -42,6 +44,21 @@ function cible(href: string): string {
   return path.join(DIST, `${chemin}.html`);
 }
 
+/** Balises Open Graph / Twitter d'une page, et présence de l'image d'aperçu dans dist/og/. */
+function erreursApercu(page: string, html: string): string[] {
+  const erreurs: string[] = [];
+  const meta = (cle: string): string | undefined => new RegExp(`<meta (?:property|name)="${cle}" content="([^"]*)"`).exec(html)?.[1];
+  for (const cle of ['og:title', 'og:description', 'og:url', 'og:image', 'og:image:alt', 'twitter:card']) {
+    if (!meta(cle)) erreurs.push(`${page} : balise ${cle} absente`);
+  }
+  if (meta('twitter:card') !== 'summary_large_image') erreurs.push(`${page} : twitter:card doit valoir summary_large_image`);
+  if (meta('og:image:width') !== '1200' || meta('og:image:height') !== '630') erreurs.push(`${page} : l'image d'aperçu doit annoncer 1200 × 630`);
+  const image = meta('og:image');
+  if (image && !/^https:\/\/luynes\.pages\.dev\/og\/[a-z-]+\.png$/.test(image)) erreurs.push(`${page} : og:image doit être une adresse absolue du site (${image})`);
+  else if (image && !existsSync(path.join(DIST, new URL(image).pathname))) erreurs.push(`${page} : image d'aperçu absente de dist (${image})`);
+  return erreurs;
+}
+
 async function main(): Promise<void> {
   const pages = (await readdir(DIST)).filter((f) => f.endsWith('.html'));
   if (pages.length === 0) throw new Error('aucune page dans dist/ : lancer « npm run build » d\'abord');
@@ -55,6 +72,7 @@ async function main(): Promise<void> {
     const mots = texteVisible(html).match(/\b(NaN|undefined|null)\b/g);
     if (mots) erreurs.push(`${page} : texte suspect (${[...new Set(mots)].join(', ')})`);
     for (const extrait of chiffresCollesAuTexte(html)) erreurs.push(`${page} : chiffre collé au texte (espace manquant ?) « ${extrait} »`);
+    erreurs.push(...erreursApercu(page, html));
     if (page !== '404.html' && !html.includes('>Sources<')) erreurs.push(`${page} : pas de sources en pied de page`);
     // Politique de sécurité (public/_headers, script-src 'self') : aucun script exécutable intégré dans la page.
     for (const [balise] of html.matchAll(/<script\b[^>]*>/g)) {
@@ -75,6 +93,11 @@ async function main(): Promise<void> {
     if (!existsSync(path.join(DIST, `${theme.slug}.html`))) erreurs.push(`thème ${theme.slug} : page absente`);
     if (!accueil.includes(`href="/${theme.slug}"`)) erreurs.push(`thème ${theme.slug} : absent du menu de l'accueil`);
   }
+
+  if (!existsSync(path.join(DIST, 'a-propos.html'))) erreurs.push('page « À propos » absente');
+  if (!accueil.includes('href="/a-propos"')) erreurs.push("« À propos » : lien absent du pied de page");
+  const plan = await readFile(path.join(DIST, 'sitemap.xml'), 'utf8');
+  if (!plan.includes('/a-propos<')) erreurs.push('« À propos » : absent du plan du site');
 
   if (erreurs.length > 0) {
     console.error(`✗ ${erreurs.length} problème(s) dans le site :`);

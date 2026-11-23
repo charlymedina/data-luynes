@@ -15,3 +15,6 @@ src/data/generated/
 
 # Captures d’écran et outils de test locaux
 .playwright-mcp/
+
+# Fichiers temporaires d'une archive interrompue
+data/archive/**/*.tmp

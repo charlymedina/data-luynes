@@ -51,6 +51,11 @@ Sources publiques ──► data/raw/ ──► requêtes SQL (DuckDB) ──►
 
 1. `scripts/build-data.ts` télécharge chaque source listée dans `data/sources.ts` (et `data/sources-<thème>.ts`).
    Si une source ne répond pas après 3 essais, sa version précédente est réutilisée et signalée en pied de page.
+   Le téléchargement est **incrémental** (`scripts/telechargement.ts`) : `data/raw/_manifest.json` retient pour chaque source son
+   ETag / Last-Modified et sa taille ; une source inchangée n'est pas retéléchargée, et une source sans signature est réutilisée
+   `validiteJours` jours (7 par défaut, réglable dans `data/sources*.ts`). `--force` retélécharge tout.
+   Si le nombre de lignes d'une source varie de plus de `seuilAlertePct` (10 % par défaut), la construction continue mais
+   `data/raw/_alertes.json` est écrit et le workflow ouvre (ou met à jour) l'issue GitHub « Alerte sources de données ».
    Une source peut aussi être de type « parquet-extrait » (gros Parquet en ligne dont DuckDB ne lit que les lignes utiles)
    ou « csv-extrait » (gros CSV lus en continu, seules les lignes du filtre sont gardées).
 2. Les **archives** (`data/archive/`) gardent ce que les producteurs ne publient plus ou qui est trop lourd à
@@ -78,12 +83,14 @@ data-luynes/
 ├── scripts/
 │   ├── build-data.ts                    # téléchargement + requêtes SQL
 │   ├── archive-{dvf,baac,elections}.ts  # archives (+ manifest.ts, outils communs)
-│   └── test-data.ts, test-site.ts       # tests des données et du site construit
+│   ├── telechargement.ts                # téléchargement incrémental + alerte de variation (testé dans tests/)
+│   ├── signaler-alertes.sh              # issue GitHub « Alerte sources de données » (appelé par le workflow)
+│   └── test-data.ts, test-site.ts, test-archives.ts  # tests des données, du site construit et des archives
 ├── src/
-│   ├── pages/                           # une page par thème + accueil + 404
+│   ├── pages/                           # une page par thème + accueil + À propos + 404 ; og/[slug].png.ts = images de partage
 │   ├── components/ (charts/)            # chiffres clés, bulles ⓘ, cartes, graphiques
 │   ├── data/                            # types + lecture des JSON ; themes.ts (registre), credits.ts, methodes.ts
-│   └── lib/                             # formats, anecdotes « Le saviez-vous ? » (faits*.ts), cartes, navigation
+│   └── lib/                             # og-pages.ts / og-image.ts (images d'aperçu), formats, anecdotes « Le saviez-vous ? » (faits*.ts), cartes, navigation
 ├── tests/*.test.ts                      # tests unitaires (formats, adresses)
 ├── docs/                                # sources, catalogue des données, revues
 └── .github/workflows/deploy.yml         # construction, tests, publication Cloudflare Pages, archives
@@ -94,12 +101,14 @@ data-luynes/
 ```bash
 npm install
 npm run data                          # télécharge les données et exécute les requêtes SQL
-npm run data -- --sources=id1,id2     # ne retélécharge que ces sources (les autres sont réutilisées)
+npm run data -- --sources=id1,id2     # ne traite que ces sources (les autres fichiers de data/raw/ sont réutilisés)
+npm run data -- --force               # retélécharge toutes les sources (sinon : seulement celles qui ont changé)
 npm run dev                           # site en local (relance aussi les données)
 npm run build                         # version finale dans dist/
 npm run preview                       # affiche dist/ en local
 npm run check                         # vérification TypeScript
-npm test                              # tests : unitaires, données (SQL), site construit
+npm test                              # tests : unitaires, données (SQL), archives, site construit
+npm run test:archives                 # simule la disparition d'une année à la source (DVF, BAAC, élections) dans une copie
 ```
 
 ⚠️ `npm run build` en local peut modifier `data/archive/` (nouvelles années DVF ou accidents) : committer ces fichiers

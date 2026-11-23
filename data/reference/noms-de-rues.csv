@@ -2,7 +2,7 @@ nom_voie;nature;sujet;sexe;categorie;description
 Avenue Louis-Charles d'Albert Duc de Luynes;personne;Louis-Charles d'Albert, duc de Luynes;homme;Histoire locale;Membre de la famille d'Albert, ducs de Luynes
 Avenue du Général de Gaulle;personne;Charles de Gaulle;homme;Hommes d'État;Général, chef de la France libre puis président de la République
 Place Anatole France;personne;Anatole France;homme;Écrivains et poètes;Écrivain, prix Nobel de littérature
-Place Carnot;personne;Carnot (prénom non précisé);indetermine;Non déterminé;Plusieurs personnalités portent ce nom : le prénom n'est pas précisé
+Place Carnot;personne;Sadi Carnot;homme;Hommes d'État;Président de la République de 1887 à 1894
 Place Georges Courteline;personne;Georges Courteline;homme;Écrivains et poètes;Écrivain, auteur de pièces et de récits humoristiques
 Place Jean-Antoine Nicod;personne;Jean-Antoine Nicod;homme;Histoire locale;Maire de Luynes à la Révolution, maître chirurgien
 Place du Maréchal Leclerc;personne;Philippe Leclerc de Hauteclocque;homme;Militaires et résistants;Maréchal de France à titre posthume, chef de la 2e division blindée
@@ -29,7 +29,7 @@ Rue René Descartes;personne;René Descartes;homme;Savants, penseurs et artistes
 Rue Victor Hugo;personne;Victor Hugo;homme;Écrivains et poètes;Écrivain, poète et homme politique
 Rue de Saint-Venant;personne;Saint Venant;homme;Saints;Nom d'un saint
 Rue de Saint Solenne;personne;Saint Solenne;homme;Saints;Nom d'un saint
-Rue du Docteur Caillet;personne;Docteur Caillet;indetermine;Non déterminé;Personne non identifiée avec certitude
+Rue du Docteur Caillet;personne;Docteur Caillet;homme;Non déterminé;Personne non identifiée avec certitude
 Rue du Docteur Jean Boidron;personne;Docteur Jean Boidron;homme;Non déterminé;Personne non identifiée avec certitude
 Rue du Maréchal Joffre;personne;Joseph Joffre;homme;Militaires et résistants;Maréchal de France, commandant en chef de l'armée française au début de la Première Guerre mondiale
 Rue du Maréchal Juin;personne;Alphonse Juin;homme;Militaires et résistants;Maréchal de France, chef du corps expéditionnaire français en Italie pendant la Seconde Guerre mondiale

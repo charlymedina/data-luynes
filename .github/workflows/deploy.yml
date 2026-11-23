@@ -10,10 +10,17 @@ on:
   schedule:
     - cron: '0 5 * * 1'
   workflow_dispatch:
+    inputs:
+      retelecharger_tout:
+        description: 'Retélécharger toutes les sources (ignore le téléchargement incrémental)'
+        type: boolean
+        default: false
 
 permissions:
   # « write » uniquement pour enregistrer les archives de données (dernière étape) ; rien d'autre n'est modifié.
   contents: write
+  # « write » pour l'issue « Alerte sources de données » (étape après la construction) ; rien d'autre.
+  issues: write
 
 concurrency:
   group: deploy
@@ -22,7 +29,8 @@ concurrency:
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
-    # La construction télécharge ~70 sources (≈ 13 min fin 2026) : marge confortable avant l'arrêt forcé.
+    # Une construction complète télécharge ~110 sources (≈ 13 min fin 2026) ; avec le téléchargement incrémental, la
+    # plupart sont réutilisées. Marge confortable avant l'arrêt forcé.
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v5
@@ -45,8 +53,19 @@ jobs:
           key: donnees-${{ github.run_id }}
           restore-keys: donnees-
 
+      # Téléchargement incrémental : seules les sources modifiées sont retéléchargées (voir scripts/telechargement.ts).
       - name: Préparer les données (SQL) et construire le site
         run: npm run build
+        env:
+          FORCE_DOWNLOAD: ${{ inputs.retelecharger_tout && '1' || '' }}
+
+      # Si une source a brutalement changé de taille (±10 % par défaut), la publication continue mais une issue
+      # « Alerte sources de données » est ouverte (ou mise à jour) : GitHub prévient par e-mail.
+      - name: Signaler les sources qui ont brutalement changé
+        if: ${{ !cancelled() }}
+        run: bash scripts/signaler-alertes.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Vérifier la cohérence des données et des pages
         run: npm test

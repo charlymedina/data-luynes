@@ -1,5 +1,5 @@
 /**
- * Plan du site pour les moteurs de recherche (/sitemap.xml) : l'accueil et chaque page de thème du registre.
+ * Plan du site pour les moteurs de recherche (/sitemap.xml) : l'accueil, chaque page de thème du registre et la page « À propos ».
  * Les adresses sont écrites comme les liens du site (sans « .html » ni « / » final) ; `lastmod` = date des données.
  */
 import type { APIRoute } from 'astro';
@@ -9,7 +9,7 @@ import { generatedAt } from '../data/commune';
 export const GET: APIRoute = ({ site }) => {
   const base = site?.origin ?? 'https://luynes.pages.dev';
   const lastmod = generatedAt.toISOString().slice(0, 10);
-  const chemins = ['/', ...THEMES.map((t) => `/${t.slug}`)];
+  const chemins = ['/', ...THEMES.map((t) => `/${t.slug}`), '/a-propos'];
   const urls = chemins
     .map((chemin) => `  <url><loc>${base}${chemin}</loc><lastmod>${lastmod}</lastmod></url>`)
     .join('\n');

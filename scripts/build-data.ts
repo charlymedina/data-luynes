@@ -16,6 +16,14 @@
  * Source en panne : après 3 essais, si une version précédente existe dans data/raw/ (en CI, data/raw/ est gardé
  * d'une construction à l'autre par le cache GitHub Actions), elle est réutilisée et signalée sur le site
  * (« données non mises à jour depuis le … »). La construction n'échoue que si aucune version n'existe.
+ *
+ * Téléchargement incrémental (voir scripts/telechargement.ts) : data/raw/_manifest.json note pour chaque source sa
+ * signature (ETag / Last-Modified) et sa taille. Une source inchangée est réutilisée ; sans signature, elle l'est
+ * pendant `validiteJours` (7 par défaut). `npm run data -- --force` (ou FORCE_DOWNLOAD=1) retélécharge tout.
+ *
+ * Alerte : si le nombre de lignes d'une source varie de plus de `seuilAlertePct` (10 % par défaut) entre deux
+ * téléchargements, la construction continue mais un avertissement est affiché et data/raw/_alertes.json est écrit
+ * (le workflow en fait une issue GitHub).
  */
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -26,6 +34,18 @@ import { SOURCES, type Source } from '../data/sources.ts';
 import { archiverDvf } from './archive-dvf.ts';
 import { archiverBaac } from './archive-baac.ts';
 import { archiverElections } from './archive-elections.ts';
+import {
+  VALIDITE_PAR_DEFAUT_JOURS,
+  compterLignesJson,
+  decider,
+  corpsIssueAlertes,
+  evaluerVariation,
+  hacher,
+  signatureDepuisAdresses,
+  type Alerte,
+  type Manifeste,
+  type Mesure,
+} from './telechargement.ts';
 
 const RAW_DIR = 'data/raw';
 const SQL_DIR = 'data/sql';
@@ -35,6 +55,12 @@ const MAX_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 5_000;
 /** Date du dernier téléchargement réussi de chaque source (pour dater les données réutilisées après une panne). */
 const JOURNAL = path.join(RAW_DIR, '_telechargements.json');
+/** Signature, date et taille de chaque source téléchargée (voir scripts/telechargement.ts). */
+const MANIFESTE = path.join(RAW_DIR, '_manifest.json');
+/** Sources dont la taille a brutalement changé lors de cette construction (lu par le workflow). */
+const ALERTES = path.join(RAW_DIR, '_alertes.json');
+/** Texte de l'issue GitHub (absent s'il n'y a aucune alerte). */
+const ALERTES_ISSUE = path.join(RAW_DIR, '_alertes.md');
 
 /** Source réutilisée telle quelle parce qu'elle n'a pas répondu (écrit dans meta.json, affiché sur le site). */
 interface SourceEnRetard {
@@ -253,6 +279,106 @@ async function downloadSource(source: Source, journal: Record<string, string>): 
   return null;
 }
 
+/** Empreinte de ce qui définit la source (adresse, filtre, colonnes…) : si elle change, on retélécharge. */
+function definitionSource(source: Source): string {
+  const { url, format, pagination, filtre, separateur, colonnes } = source;
+  return hacher(JSON.stringify({ url: typeof url === 'string' ? url : url.toString(), format, pagination, filtre, separateur, colonnes }));
+}
+
+/** Signature actuelle de la source (requêtes HEAD) ; undefined pour les sources paginées ou sans ETag / Last-Modified. */
+async function signatureActuelle(source: Source): Promise<string | undefined> {
+  if (source.pagination) return undefined;
+  try {
+    return await signatureDepuisAdresses(await resolveUrls(source));
+  } catch {
+    return undefined;
+  }
+}
+
+/** Taille de la version locale : nombre de lignes (JSON, Parquet) et octets. */
+async function mesurer(source: Source): Promise<Mesure> {
+  const local = cheminLocal(source);
+  if (source.format === 'fichiers') {
+    let octets = 0;
+    for (const nom of await readdir(local)) octets += (await stat(path.join(local, nom))).size;
+    return { octets };
+  }
+  const octets = (await stat(local)).size;
+  if (source.format === 'parquet-extrait' || source.format === 'csv-extrait') {
+    const instance = await DuckDBInstance.create(':memory:');
+    const connection = await instance.connect();
+    try {
+      const [ligne] = (await connection.runAndReadAll(`SELECT count(*)::INTEGER AS n FROM read_parquet('${local}')`)).getRowObjectsJson() as unknown as { n: number }[];
+      return { lignes: ligne?.n, octets };
+    } finally {
+      connection.closeSync();
+      instance.closeSync();
+    }
+  }
+  return { lignes: compterLignesJson(JSON.parse(await readFile(local, 'utf8'))), octets };
+}
+
+async function lireManifeste(): Promise<Manifeste> {
+  try {
+    return JSON.parse(await readFile(MANIFESTE, 'utf8')) as Manifeste;
+  } catch {
+    return {};
+  }
+}
+
+interface Options {
+  force: boolean;
+}
+
+interface Bilan {
+  retard: SourceEnRetard | null;
+  alerte: Alerte | null;
+  reutilisee: boolean;
+}
+
+/** Réutilise la version locale si elle est à jour, sinon la télécharge ; note sa taille et repère un changement brutal. */
+async function traiterSource(source: Source, journal: Record<string, string>, manifeste: Manifeste, options: Options): Promise<Bilan> {
+  const definition = definitionSource(source);
+  const local = cheminLocal(source);
+  const entree = manifeste[source.id];
+  const decision = await decider({
+    entree,
+    definition,
+    fichierLocalPresent: existsSync(local),
+    force: options.force,
+    validiteJours: source.validiteJours ?? VALIDITE_PAR_DEFAUT_JOURS,
+    aujourdhui: aujourdhui(),
+    signatureActuelle: () => signatureActuelle(source),
+  });
+  if (decision.action === 'reutiliser' && entree) {
+    if (decision.confirmee) manifeste[source.id] = { ...entree, verifieLe: aujourdhui() };
+    console.log(`= ${source.id} — réutilisée (${decision.raison})`);
+    return { retard: null, alerte: null, reutilisee: true };
+  }
+
+  // Taille de la version qu'on s'apprête à remplacer (si le manifeste ne la connaît pas encore, on la mesure).
+  const avant: Mesure | undefined = entree ?? (existsSync(local) ? await mesurer(source).catch(() => undefined) : undefined);
+  // Signature lue avant le téléchargement (jamais plus récente que les données), et lue deux fois : certaines API
+  // renvoient un ETag différent à chaque requête (contenu horodaté) ; une signature instable est ignorée, la durée
+  // de validité prend alors le relais.
+  const premiere = await signatureActuelle(source);
+  const signature = premiere !== undefined && premiere === (await signatureActuelle(source)) ? premiere : undefined;
+  const retard = await downloadSource(source, journal);
+  if (retard) return { retard, alerte: null, reutilisee: false }; // version précédente gardée : le manifeste ne change pas
+
+  const apres = await mesurer(source);
+  const jour = aujourdhui();
+  manifeste[source.id] = { definition, signature, telechargeLe: jour, verifieLe: jour, ...apres };
+  return { retard: null, alerte: evaluerVariation(source, avant, apres), reutilisee: false };
+}
+
+/** Avertissement visible dans le journal GitHub Actions (et lisible en local). */
+function signalerAlerte(alerte: Alerte): void {
+  const sens = alerte.variationPct >= 0 ? '+' : '';
+  const message = `Source « ${alerte.id} » : ${alerte.avant} → ${alerte.apres} ${alerte.mesure} (${sens}${alerte.variationPct} %, seuil ±${alerte.seuilPct} %)`;
+  console.warn(process.env.GITHUB_ACTIONS ? `::warning title=Source de données modifiée::${message}` : `⚠ ${message}`);
+}
+
 async function exportQuery(connection: DuckDBConnection, file: string): Promise<void> {
   const name = path.basename(file, '.sql');
   const sql = await readFile(path.join(SQL_DIR, file), 'utf8');
@@ -294,14 +420,31 @@ async function main(): Promise<void> {
   // En développement, `npm run data -- --sources=id1,id2` ne retélécharge que ces sources (les autres
   // fichiers de data/raw/ sont réutilisés tels quels) ; la construction officielle télécharge tout.
   const only = process.argv.find((arg) => arg.startsWith('--sources='))?.slice('--sources='.length).split(',');
+  const options: Options = { force: process.argv.includes('--force') || process.env.FORCE_DOWNLOAD === '1' };
+  const debut = Date.now();
+  await rm(ALERTES_ISSUE, { force: true }); // jamais d'alertes périmées (le dossier est gardé par le cache)
   const journal = await lireJournal();
+  const manifeste = await lireManifeste();
   const enRetard: SourceEnRetard[] = [];
+  const alertes: Alerte[] = [];
+  let reutilisees = 0;
+  let telechargees = 0;
   for (const source of SOURCES) {
     if (only && !only.includes(source.id)) continue;
-    const retard = await downloadSource(source, journal);
-    if (retard) enRetard.push(retard);
+    const bilan = await traiterSource(source, journal, manifeste, options);
+    if (bilan.retard) enRetard.push(bilan.retard);
+    if (bilan.alerte) {
+      alertes.push(bilan.alerte);
+      signalerAlerte(bilan.alerte);
+    }
+    if (bilan.reutilisee) reutilisees++;
+    else telechargees++;
   }
   await writeFile(JOURNAL, `${JSON.stringify(journal, null, 2)}\n`);
+  await writeFile(MANIFESTE, `${JSON.stringify(manifeste, null, 2)}\n`);
+  await writeFile(ALERTES, `${JSON.stringify({ generatedAt: new Date().toISOString(), alertes }, null, 2)}\n`);
+  if (alertes.length > 0) await writeFile(ALERTES_ISSUE, corpsIssueAlertes(alertes, aujourdhui()));
+  console.log(`Sources : ${reutilisees} réutilisée(s), ${telechargees} traitée(s) (téléchargement) en ${Math.round((Date.now() - debut) / 1000)} s`);
   await runQueries();
   await writeFile(
     path.join(OUTPUT_DIR, 'meta.json'),
