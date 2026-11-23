@@ -9,11 +9,10 @@ import Base from '../layouts/Base.astro';
 import { CREDITS_ACCUEIL } from '../data/credits';
 import { commune, generatedAt } from '../data/commune';
 import { THEMES } from '../data/themes';
-import { urlSignalement } from '../lib/signalement';
+import { lienSignalement } from '../lib/signalement';
 
 const dateMaj = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(generatedAt);
-const lienSignalement = urlSignalement(Astro.url.pathname, Astro.site);
-const DEPOT = 'https://github.com/charlymedina/data-luynes';
+const lienFormulaire = lienSignalement(Astro.url.pathname);
 const titreH2 = 'font-display text-3xl font-extrabold tracking-tight sm:text-4xl';
 const lien = 'font-medium text-loire underline decoration-accent underline-offset-4 hover:text-ink';
 const paragraphe = 'mt-4 max-w-2xl leading-relaxed text-ink-2';
@@ -58,8 +57,8 @@ const paragraphe = 'mt-4 max-w-2xl leading-relaxed text-ink-2';
       DGFiP, IGN, BRGM, collectivités… Le plus souvent sous
       <a class={lien} href="https://www.etalab.gouv.fr/licence-ouverte-open-licence/">Licence Ouverte 2.0</a>, qui autorise la
       réutilisation à condition de citer la source. Chaque page cite les siennes en pied de page ; la liste de tous les
-      producteurs, avec leur licence, figure en bas de cette page. Le détail (jeu de données, fréquence de mise à jour, fichier
-      utilisé) est publié dans le <a class={lien} href={`${DEPOT}/blob/main/docs/sources.md`}>catalogue des sources</a>.
+      producteurs, avec leur licence, figure en bas de cette page. Le détail de chaque chiffre (jeu de données, calcul, année) figure dans la
+      section « Sources et méthode » en bas de chaque page.
     </p>
   </section>
 
@@ -71,8 +70,8 @@ const paragraphe = 'mt-4 max-w-2xl leading-relaxed text-ink-2';
         exécutée à chaque construction du site sur les dernières données téléchargées. Aucun chiffre n'est écrit à la main dans les textes.
       </li>
       <li>
-        <strong class="font-semibold text-ink">Code ouvert.</strong> Le code du site et toutes les requêtes sont publiés sur
-        <a class={lien} href={DEPOT}>GitHub</a> : chacun peut les relire et les contester.
+        <strong class="font-semibold text-ink">Calculs documentés.</strong> Les requêtes de calcul sont décrites dans chaque section
+        « Sources et méthode » : chacun peut les relire et les contester.
       </li>
       <li>
         <strong class="font-semibold text-ink">Une bulle ⓘ sous chaque chiffre clé</strong> indique la source, le calcul et l'année ;
@@ -80,8 +79,7 @@ const paragraphe = 'mt-4 max-w-2xl leading-relaxed text-ink-2';
       </li>
       <li>
         <strong class="font-semibold text-ink">Des vérifications.</strong> Des tests automatiques contrôlent les données et les pages
-        avant chaque publication, et des revues des chiffres sont menées régulièrement
-        (<a class={lien} href={`${DEPOT}/tree/main/docs/revues`}>comptes rendus publics</a>).
+        avant chaque publication, et des revues des chiffres sont menées régulièrement.
       </li>
     </ul>
   </section>
@@ -122,8 +120,8 @@ const paragraphe = 'mt-4 max-w-2xl leading-relaxed text-ink-2';
   <section aria-labelledby="erreur" class="mt-12 sm:mt-16">
     <h2 id="erreur" class={titreH2}>Signaler une erreur</h2>
     <p class={paragraphe}>
-      Un chiffre semble faux, une source manque, une idée de thème : <a class={lien} href={lienSignalement} rel="noopener" data-signalement>signaler
-      une erreur ou proposer une idée</a> (ouvre un message pré-rempli sur GitHub ; un compte GitHub gratuit est nécessaire).
+      Un chiffre semble faux, une source manque, une idée de thème : <a class={lien} href={lienFormulaire}>signaler
+      une erreur ou proposer une idée</a> avec le formulaire du site (sans compte ni adresse e-mail).
     </p>
   </section>
 
@@ -133,8 +131,8 @@ const paragraphe = 'mt-4 max-w-2xl leading-relaxed text-ink-2';
       <div>
         <dt class="font-semibold text-ink">Éditeur</dt>
         <dd>
-          Site personnel, édité par un particulier à titre non professionnel et non commercial.
-          <!-- À COMPLÉTER PAR CHARLY : éditeur (nom ou pseudonyme, et moyen de contact si souhaité) -->
+          Un habitant de Luynes, à titre personnel, non professionnel et non commercial. Contact : via le
+          <a class={lien} href={lienFormulaire}>formulaire du site</a>.
         </dd>
       </div>
       <div>

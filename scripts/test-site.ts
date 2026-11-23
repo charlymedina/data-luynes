@@ -5,6 +5,8 @@
  *  - chaque thème du registre a sa page, figure dans le menu de l'accueil, et chaque page cite ses sources ;
  *  - chaque page a ses balises d'aperçu pour le partage (og:image absolue, 1200 × 630, twitter:card) et l'image existe dans dist/og/ ;
  *  - la page « À propos » existe, est liée depuis le pied de page et figure dans le plan du site ;
+ *  - anonymat : aucun fichier texte publié (dist/) ne contient « charly », « medina » ni « github.com/charlymedina » ;
+ *  - la page /signaler existe, est liée depuis le pied de page et figure dans le plan du site ;
  *  - chaque chiffre clé a sa bulle « Source · Calcul · Année » ;
  *  - aucun chiffre n'est collé à un mot ou à une parenthèse (« les5 062 », « à97,3 % », « 2025(27,8 % ») : signe d'un espace
  *    perdu entre un texte et une expression {…} dans une page Astro (la compression du HTML supprime les espaces en bout de ligne).
@@ -59,6 +61,29 @@ function erreursApercu(page: string, html: string): string[] {
   return erreurs;
 }
 
+/** Fichiers texte de dist/ (le dossier des images et polices binaires est ignoré). */
+async function fichiersTexte(dossier: string): Promise<string[]> {
+  const sortie: string[] = [];
+  for (const entree of await readdir(dossier, { withFileTypes: true })) {
+    const chemin = path.join(dossier, entree.name);
+    if (entree.isDirectory()) sortie.push(...(await fichiersTexte(chemin)));
+    else if (/\.(html|js|css|json|txt|xml|svg|map|webmanifest)$/.test(entree.name)) sortie.push(chemin);
+  }
+  return sortie;
+}
+
+/** Anonymat du propriétaire : ses nom, prénom et dépôt ne doivent figurer nulle part dans le site publié. */
+async function erreursAnonymat(): Promise<string[]> {
+  const erreurs: string[] = [];
+  for (const fichier of await fichiersTexte(DIST)) {
+    const contenu = (await readFile(fichier, 'utf8')).toLowerCase();
+    for (const interdit of ['charly', 'medina', 'github.com/charlymedina']) {
+      if (contenu.includes(interdit)) erreurs.push(`${fichier} : contient « ${interdit} » (anonymat du propriétaire)`);
+    }
+  }
+  return erreurs;
+}
+
 async function main(): Promise<void> {
   const pages = (await readdir(DIST)).filter((f) => f.endsWith('.html'));
   if (pages.length === 0) throw new Error('aucune page dans dist/ : lancer « npm run build » d\'abord');
@@ -98,6 +123,11 @@ async function main(): Promise<void> {
   if (!accueil.includes('href="/a-propos"')) erreurs.push("« À propos » : lien absent du pied de page");
   const plan = await readFile(path.join(DIST, 'sitemap.xml'), 'utf8');
   if (!plan.includes('/a-propos<')) erreurs.push('« À propos » : absent du plan du site');
+
+  erreurs.push(...(await erreursAnonymat()));
+  if (!existsSync(path.join(DIST, 'signaler.html'))) erreurs.push('page « Signaler » absente');
+  if (!accueil.includes('href="/signaler?page=')) erreurs.push('« Signaler » : lien absent du pied de page');
+  if (!plan.includes('/signaler<')) erreurs.push('« Signaler » : absent du plan du site');
 
   if (erreurs.length > 0) {
     console.error(`✗ ${erreurs.length} problème(s) dans le site :`);

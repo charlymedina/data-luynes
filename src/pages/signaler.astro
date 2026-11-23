@@ -1,0 +1,84 @@
+---
+/**
+ * Formulaire « Signaler une erreur ou proposer une idée ». La page d'origine arrive par ?page=… (pré-remplie par le script).
+ * Envoi par JavaScript vers /api/signalement (Pages Function) ; sans JavaScript, un message l'indique.
+ * Anti-spam : champ piège caché (« piege »), délai minimal de remplissage et taille limitée, sans service tiers.
+ */
+import Base from '../layouts/Base.astro';
+import { CREDITS_ACCUEIL } from '../data/credits';
+import { MESSAGE_MAX, MESSAGE_MIN, PAGE_MAX } from '../lib/signalement';
+
+const champ =
+  'mt-2 block w-full rounded-xl border border-line bg-surface px-4 py-3 text-base text-ink focus:border-accent focus:outline-2 focus:outline-offset-2 focus:outline-accent';
+---
+
+<Base
+  title="Signaler une erreur — Luynes en chiffres"
+  description="Un chiffre semble faux, une source manque, une idée de thème : le formulaire pour le signaler."
+  sources={CREDITS_ACCUEIL}
+>
+  <section aria-labelledby="titre" class="pt-12 pb-6 sm:pt-20">
+    <p class="font-medium text-loire">Contact</p>
+    <h1 id="titre" class="mt-3 font-display text-[2.2rem] leading-[0.95] font-extrabold tracking-tight min-[380px]:text-5xl sm:text-7xl">
+      Signaler une <span class="text-accent">erreur</span> ou une idée
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-2">
+      Un chiffre semble faux, une source manque, une idée de thème ? Dites-le ici. Aucune adresse e-mail n'est demandée :
+      il n'est pas possible de répondre individuellement, mais chaque message est lu et sert à corriger ou compléter le site.
+    </p>
+  </section>
+
+  <section class="mt-8 max-w-2xl">
+    <noscript>
+      <p class="rounded-xl border border-dashed border-accent p-3 text-sm">Le formulaire a besoin de JavaScript pour fonctionner.</p>
+    </noscript>
+    <form id="form-signalement" class="space-y-6" novalidate>
+      <div>
+        <label for="champ-page" class="font-semibold text-ink">Page concernée</label>
+        <input id="champ-page" name="page" type="text" maxlength={PAGE_MAX} autocomplete="off" class={champ} />
+      </div>
+      <div>
+        <label for="champ-message" class="font-semibold text-ink">Message <span class="font-normal text-ink-2">(obligatoire)</span></label>
+        <textarea
+          id="champ-message"
+          name="message"
+          rows="7"
+          required
+          minlength={MESSAGE_MIN}
+          maxlength={MESSAGE_MAX}
+          aria-describedby="aide-message"
+          class={champ}></textarea>
+        <p id="aide-message" class="mt-1 flex flex-wrap justify-between gap-x-4 text-sm text-ink-2">
+          <span>Le chiffre concerné, ce qui semble faux, la source publique qui le montre… ({MESSAGE_MIN} à {MESSAGE_MAX} caractères)</span>
+          <span id="compteur" aria-hidden="true"></span>
+        </p>
+      </div>
+      <!-- Champ piège : invisible pour les visiteurs, rempli par les robots. -->
+      <div class="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+        <label for="champ-piege">Ne pas remplir</label>
+        <input id="champ-piege" name="piege" type="text" tabindex="-1" autocomplete="off" />
+      </div>
+      <button
+        type="submit"
+        class="rounded-full bg-ink px-6 py-3 font-semibold text-bg hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50"
+      >
+        Envoyer
+      </button>
+    </form>
+    <p
+      id="etat-signalement"
+      role="status"
+      hidden
+      class="mt-6 rounded-xl border border-line bg-surface p-4 text-ink data-[erreur=oui]:border-accent"
+    >
+    </p>
+    <p class="mt-8 text-sm text-ink-2">
+      Seuls la page et le message sont conservés ; aucune autre donnée personnelle n'est collectée.
+    </p>
+  </section>
+</Base>
+
+<script>
+  import { initFormulaireSignalement } from '../lib/formulaire-signalement.ts';
+  initFormulaireSignalement();
+</script>

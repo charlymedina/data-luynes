@@ -55,6 +55,12 @@ const GEORISQUES: FooterSource = {
   detail: 'cavités souterraines, mouvements de terrain, arrêtés de catastrophe naturelle (GASPAR), zones inondables (directive inondation, TRI de Tours) — Licence Ouverte 2.0',
 };
 
+const PPRI_DDT: FooterSource = {
+  nom: 'DDT d’Indre-et-Loire — PPRi de la Loire, Val de Tours – Val de Luynes',
+  url: 'https://www.data.gouv.fr/datasets/plan-de-prevention-des-risques-naturels-previsibles-dinondation-de-la-loire-sur-le-val-de-tours-val-de-luynes-2016-dans-lindre-et-loire-1/',
+  detail: 'zonage réglementaire du plan de prévention du risque d’inondation — Licence Ouverte 2.0',
+};
+
 const DVF: FooterSource = {
   nom: 'Demandes de valeurs foncières géolocalisées (DGFiP, Etalab)',
   url: 'https://www.data.gouv.fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/',
@@ -291,7 +297,7 @@ export const CREDITS_ACCIDENTS: readonly FooterSource[] = [ONISR_BAAC, API_GEO, 
 export const CREDITS_BUDGET: readonly FooterSource[] = [DGFIP_COMPTES, DGFIP_BALANCES, DECP, BOAMP, RNE, INSEE_RECENSEMENT, API_GEO];
 export const CREDITS_REVENUS: readonly FooterSource[] = [INSEE_REVENUS_EMPLOI, CAF, API_GEO];
 export const CREDITS_IMMOBILIER: readonly FooterSource[] = [DVF, CARTE_LOYERS, ADEME_DPE, API_GEO, OPENFREEMAP];
-export const CREDITS_PATRIMOINE: readonly FooterSource[] = [MERIMEE, PALISSY, BD_TOPO, INSEE_LOGEMENTS, GEORISQUES, API_GEO, OPENFREEMAP];
+export const CREDITS_PATRIMOINE: readonly FooterSource[] = [MERIMEE, PALISSY, BD_TOPO, INSEE_LOGEMENTS, GEORISQUES, PPRI_DDT, API_GEO, OPENFREEMAP];
 export const CREDITS_TERRITOIRE: readonly FooterSource[] = [API_GEO];
 export const CREDITS_POPULATION: readonly FooterSource[] = [TOURS_METROPOLE, INSEE_RECENSEMENT, API_GEO];
 

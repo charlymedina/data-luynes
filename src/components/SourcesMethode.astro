@@ -4,7 +4,7 @@
  * (même contenu que les bulles ⓘ, toujours lisible sans JavaScript).
  */
 import { methodesDePage } from '../data/methodes';
-import { urlSignalement } from '../lib/signalement';
+import { lienSignalement } from '../lib/signalement';
 
 interface Props {
   /** Slug de la page (« population »…) ou « accueil » */
@@ -12,7 +12,7 @@ interface Props {
 }
 
 const methodes = methodesDePage(Astro.props.page);
-const lienSignalement = urlSignalement(Astro.url.pathname, Astro.site);
+const lienFormulaire = lienSignalement(Astro.url.pathname);
 ---
 
 {
@@ -25,7 +25,7 @@ const lienSignalement = urlSignalement(Astro.url.pathname, Astro.site);
         </summary>
         <p class="mt-3 max-w-2xl text-sm text-ink-2">
           D'où vient chaque chiffre clé de cette page, comment il est calculé et de quelle année il date.
-          Les requêtes SQL complètes sont publiées sur GitHub.
+          Le détail de chaque calcul est donné ci-dessous.
         </p>
         <dl class="mt-6 grid gap-x-8 gap-y-5 md:grid-cols-2">
           {methodes.map((m) => (
@@ -41,8 +41,7 @@ const lienSignalement = urlSignalement(Astro.url.pathname, Astro.site);
         </dl>
         <p class="mt-6 text-sm text-ink-2">
           Un chiffre semble faux ?
-          <a class="underline decoration-accent underline-offset-4 hover:text-ink" href={lienSignalement} rel="noopener">Signaler une erreur ou proposer une idée</a>
-          (compte GitHub gratuit nécessaire).
+          <a class="underline decoration-accent underline-offset-4 hover:text-ink" href={lienFormulaire}>Signaler une erreur ou proposer une idée</a>
         </p>
       </details>
     </section>

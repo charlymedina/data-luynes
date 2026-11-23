@@ -9,6 +9,8 @@ import cavitesRows from './generated/risques_cavites.json';
 import catnatRows from './generated/risques_catnat.json';
 import mouvementsRows from './generated/risques_mouvements.json';
 import zonesInondablesRows from './generated/risques_zones_inondables.json';
+import ppriRows from './generated/risques_ppri.json';
+import ppriResumeRows from './generated/risques_ppri_resume.json';
 import objetsRows from './generated/patrimoine_objets.json';
 import objetsSiecleRows from './generated/patrimoine_objets_siecles.json';
 import objetsResumeRows from './generated/patrimoine_objets_resume.json';
@@ -86,10 +88,31 @@ export interface ZoneInondable {
   zone: ContourGeometry;
 }
 
+/** Un type de zone réglementée du PPRi de la Loire à Luynes (voir data/sql/risques_ppri.sql). */
+export interface ZonePpri {
+  ordre: number;
+  type: string;
+  regle: string;
+  codes: string[];
+  surface_ha: number;
+  part_commune_pct: number;
+  zone: ContourGeometry;
+}
+
+/** Total du PPRi à Luynes : surface, part de la commune et date d'approbation (AAAA-MM-JJ). */
+export interface ResumePpri {
+  surface_ha: number;
+  part_commune_pct: number;
+  nb_codes: number;
+  date_approbation: string;
+}
+
 export const monuments: readonly Monument[] = monumentsRows as Monument[];
 /** DuckDB exporte la forme GeoJSON sous forme de texte : on la relit en objet. */
 const zoneBrute = firstRow(zonesInondablesRows as { surface_ha: number; part_commune_pct: number; zone: string }[], 'risques_zones_inondables');
 export const zoneInondable: ZoneInondable = { ...zoneBrute, zone: JSON.parse(zoneBrute.zone) as ContourGeometry };
+export const zonesPpri: readonly ZonePpri[] = (ppriRows as unknown as (Omit<ZonePpri, 'zone'> & { zone: string })[]).map((z) => ({ ...z, zone: JSON.parse(z.zone) as ContourGeometry }));
+export const resumePpri: ResumePpri = firstRow(ppriResumeRows as ResumePpri[], 'risques_ppri_resume');
 export const cavites: readonly Cavite[] = cavitesRows as Cavite[];
 export const arretesCatnat: readonly ArreteCatnat[] = catnatRows as ArreteCatnat[];
 export const mouvementsTerrain: readonly MouvementTerrain[] = mouvementsRows as MouvementTerrain[];

@@ -44,6 +44,8 @@ export interface Source {
    * « csv-extrait » : gros CSV (séparateur « ; ») lus en continu, seules les lignes du filtre sont gardées (data/raw/<id>.parquet).
    */
   readonly format?: 'json' | 'fichiers' | 'parquet-extrait' | 'csv-extrait';
+  /** Format « fichiers » : nom du fichier enregistré (sinon tiré de l'adresse). Une extension « .gml » retire le schéma distant. */
+  readonly nomFichier?: string;
   /** Format « parquet-extrait » : condition SQL (WHERE) qui garde les lignes de Luynes. */
   readonly filtre?: string;
   /** Format « csv-extrait » : séparateur de colonnes (« ; » par défaut). */

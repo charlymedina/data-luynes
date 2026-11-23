@@ -6,6 +6,18 @@
  */
 import type { Source } from './sources.ts';
 
+/**
+ * Plan de prévention du risque d'inondation (PPRi) de la Loire, Val de Tours – Val de Luynes (DDT d'Indre-et-Loire,
+ * data.gouv.fr jeu 67373fda79c29a6c22c40a92). Couche « zone réglementée » du service WFS du Géocatalogue (Géo-IDE),
+ * en GML (c'est le seul format que ce service sait produire) dans un rectangle englobant Luynes ; le découpage exact
+ * à la limite communale est fait en SQL (data/sql/risques_ppri.sql). L'extension « .gml » du nom de fichier demande
+ * à build-data.ts de retirer l'adresse du schéma distant, que GDAL (DuckDB) irait sinon chercher sur Internet.
+ */
+const PPRI_WFS =
+  'https://ogc.geo-ide.developpement-durable.gouv.fr/wxs?map=/opt/data/stack/mapfiles/1.4/org_38016/' +
+  'fr-120066022-orphan-59e34478-8fff-4fff-ade9-6c0966b17e63.internet.map&SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature' +
+  '&typeNames=ms:N_ZONE_REG_PPRN_20120007_S_037&srsName=EPSG:4326&bbox=47.36,0.47,47.46,0.61,urn:ogc:def:crs:EPSG::4326';
+
 export const SOURCES_PATRIMOINE: readonly Source[] = [
   {
     id: 'palissy_luynes',
@@ -25,6 +37,15 @@ export const SOURCES_PATRIMOINE: readonly Source[] = [
     url: 'https://data.geopf.fr/wfs/ows?service=WFS&version=2.0.0&request=GetFeature&typeNames=BDTOPO_V3:batiment&outputFormat=application/json&srsName=EPSG:4326&bbox=47.36,0.485,47.46,0.587,urn:ogc:def:crs:EPSG::4326&sortBy=cleabs&count=5000&startIndex=0&propertyName=cleabs,usage_1,usage_2,nature,etat_de_l_objet,date_d_apparition,date_de_confirmation,hauteur,nombre_de_logements,nombre_d_etages,geometrie',
     pagination: 'wfs',
     // La BD TOPO est mise à jour par l'IGN chaque trimestre : inutile de la retélécharger toutes les semaines.
+    validiteJours: 30,
+  },
+  {
+    id: 'ppri_zones',
+    description: 'PPRi de la Loire (Val de Tours – Val de Luynes) : zonage réglementaire autour de Luynes (DDT 37, data.gouv.fr)',
+    url: PPRI_WFS,
+    format: 'fichiers',
+    nomFichier: 'zones.gml',
+    // Un plan approuvé change très rarement : une vérification mensuelle suffit.
     validiteJours: 30,
   },
 ];

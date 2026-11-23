@@ -5,7 +5,7 @@
  */
 import { commune, generatedAt, rang } from './commune';
 import { agesDe, derniereAnneeEtatCivil, evolutionAges, faits, historique } from './population';
-import { periodesBati, resumeBati, resumeObjets, resumeRisques } from './patrimoine';
+import { periodesBati, resumeBati, resumeObjets, resumePpri, resumeRisques, zonesPpri } from './patrimoine';
 import { loyerMaison, resumeImmobilier } from './immobilier';
 import { anneesBudget, resumeBudget } from './budget';
 import { anneesCaf, creations, resumeCaf, resumeRevenus } from './revenus';
@@ -368,9 +368,15 @@ const METHODES = {
     calcul: 'surface de la zone inondable découpée par le contour de la commune, divisée par la surface communale',
     millesime: extraction,
   },
+  ppri: {
+    titre: 'Zones réglementées du PPRi',
+    source: 'DDT d’Indre-et-Loire, plan de prévention du risque d’inondation (PPRi) de la Loire, Val de Tours – Val de Luynes (data.gouv.fr, zonage réglementaire)',
+    calcul: `chaque zone du plan est découpée par le contour de la commune ; surface par type de zone divisée par la surface communale (les ${resumePpri.nb_codes} codes de zone du plan présents à Luynes sont regroupés en ${zonesPpri.length} types)`,
+    millesime: `plan approuvé le ${new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(resumePpri.date_approbation))} ; ${extraction}`,
+  },
   carte_patrimoine: {
     titre: 'Carte patrimoine et risques',
-    source: 'Mérimée (monuments), BRGM / Géorisques (cavités, zone inondable), IGN (contour) ; fond OpenFreeMap',
+    source: 'Mérimée (monuments), BRGM / Géorisques (cavités, zone inondable), DDT 37 (PPRi), IGN (contour) ; fond OpenFreeMap',
     calcul: 'positions publiées par chaque base ; les noms des cavités et les adresses privées ne sont pas repris',
     millesime: extraction,
   },

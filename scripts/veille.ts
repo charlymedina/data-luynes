@@ -1,7 +1,9 @@
 /**
  * Veille mensuelle des nouvelles données ouvertes utiles pour Luynes (37139) — sans aucun coût d'IA.
  *
- * Interroge des API publiques sans clé (data.gouv.fr, Opendatasoft de Tours Métropole et de la Région Centre-Val de Loire),
+ * Interroge des API publiques sans clé : data.gouv.fr (qui moissonne déjà beaucoup de portails, dont culture.data.gouv.fr),
+ * Opendatasoft (Tours Métropole, Région Centre-Val de Loire, data.education.gouv.fr), le catalogue INSEE Melodi et
+ * ADEME data-fair (data.ademe.fr),
  * ne garde que ce qui n'est pas déjà connu et ouvre une issue GitHub « Veille données — <mois année> » (étiquette « veille »).
  *
  * Usage :
@@ -36,12 +38,22 @@ const PAGES_ODS_MAX = 30;
 /** Granularités data.gouv considérées comme « communales » (jeux utilisables à l'échelle de Luynes). */
 const GRANULARITES_COMMUNALES = new Set(['fr:commune', 'fr:iris', 'fr:canton']);
 const MOTS_COMMUNE = /insee|commune|code_com|com_code|codgeo|depcom/i;
+/** Colonnes « code commune » au sens strict (portails nationaux : on évite les colonnes qui citent seulement un nom de commune). */
+const MOTS_CODE_COMMUNE = /^(code_?(insee|commune|geo)|insee(_?com)?|num(ero)?_?insee|com(mune)?_?(code|insee)|codgeo|depcom|code_?com)$/i;
+/** Concept INSEE d'une colonne « code commune » dans ADEME data-fair (granularité communale). */
+const CONCEPT_CODE_COMMUNE = 'http://rdf.insee.fr/def/geo#codeCommune';
+const MELODI = 'https://api.insee.fr/melodi';
+const ADEME = 'https://data.ademe.fr/data-fair/api/v1';
+const TAILLE_PAGE_ADEME = 100;
+const PAGES_ADEME_MAX = 10;
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
 const DATAGOUV = 'https://www.data.gouv.fr/api/1';
 const PORTAILS_ODS = [
   { id: 'tours', nom: 'Tours Métropole', hote: 'https://data.tours-metropole.fr', regle: 'metropole' },
   { id: 'cvl', nom: 'Région Centre-Val de Loire', hote: 'https://data.centrevaldeloire.fr', regle: 'region' },
+  // Ministère de l'Éducation nationale. (culture.data.gouv.fr n'a plus d'API Opendatasoft : ses jeux sont sur data.gouv.fr.)
+  { id: 'education', nom: 'Éducation nationale (data.education.gouv.fr)', hote: 'https://data.education.gouv.fr', regle: 'national' },
 ] as const;
 
 // ───────────────────────── Types ─────────────────────────
@@ -71,14 +83,19 @@ type Json = Record<string, unknown>;
 // ───────────────────────── Réseau robuste ─────────────────────────
 const attendre = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-/** GET JSON avec délai d'attente et 3 essais. */
+/** GET JSON (objet) avec délai d'attente et 3 essais. */
 async function lireJson(url: string): Promise<Json> {
+  return (await lireJsonTableau(url)) as Json;
+}
+
+/** Idem, pour une réponse qui peut être un tableau (catalogue Melodi). */
+async function lireJsonTableau(url: string): Promise<unknown> {
   let derniere: unknown;
   for (let essai = 1; essai <= ESSAIS; essai++) {
     try {
       const reponse = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), headers: { accept: 'application/json' } });
       if (!reponse.ok) throw new Error(`HTTP ${reponse.status}`);
-      return (await reponse.json()) as Json;
+      return await reponse.json();
     } catch (erreur) {
       derniere = erreur;
       if (essai < ESSAIS) await attendre(PAUSE_ESSAI_MS * essai);
@@ -219,7 +236,10 @@ type PortailOds = (typeof PORTAILS_ODS)[number];
  *  - tout jeu citant « Luynes » est retenu ;
  *  - « metropole » (Tours Métropole) : on ne garde que les jeux avec une colonne « commune/INSEE » (Luynes peut y figurer),
  *    sauf ceux de la seule Ville de Tours ;
- *  - « region » (Centre-Val de Loire) : on ne garde que les jeux citant l'Indre-et-Loire (ou le 37).
+ *  - « region » (Centre-Val de Loire) : on ne garde que les jeux citant l'Indre-et-Loire (ou le 37) ;
+ *  - « national » (portails nationaux) : uniquement une colonne « code INSEE de la commune » stricte (MOTS_CODE_COMMUNE),
+ *    sans quoi la moindre colonne « commune » (nom de commune, établissement…) ferait du bruit.
+ * Les jeux sans enregistrement (has_records = false : simples fichiers joints) sont écartés partout.
  */
 function raisonOds(portail: PortailOds, jeu: Json): string | null {
   const metas = ((jeu.metas as Json | undefined)?.default ?? {}) as Json;
@@ -228,9 +248,10 @@ function raisonOds(portail: PortailOds, jeu: Json): string | null {
   const champs = ((jeu.fields as Json[] | undefined) ?? []).map((c) => texte(c.name));
   const colonneCommune = champs.some((c) => MOTS_COMMUNE.test(c));
   const contexte = `${texte(metas.title)} ${texte(metas.description)} ${((metas.keyword as string[] | undefined) ?? []).join(' ')}`;
-  const citeLuynes = /luynes/i.test(contexte);
+  const citeLuynes = /luynes|\b37139\b/i.test(contexte);
   const citeDepartement = /indre[- ]et[- ]loire|\b37\b/i.test(contexte);
   if (citeLuynes) return 'cite « Luynes »';
+  if (portail.regle === 'national') return champs.some((c) => MOTS_CODE_COMMUNE.test(c)) ? 'jeu avec colonne « code INSEE de la commune »' : null;
   if (portail.regle === 'metropole') {
     if (/^ville de tours$/i.test(producteur) && !colonneCommune) return null;
     return colonneCommune ? 'jeu métropolitain avec colonne commune/INSEE' : null;
@@ -264,12 +285,80 @@ async function chercherOds(portail: PortailOds): Promise<Trouvaille[]> {
   return trouvees;
 }
 
+// ───────────────────────── INSEE Melodi ─────────────────────────
+/**
+ * Catalogue Melodi de l'INSEE (une seule requête, ≈ 160 jeux) : on ne garde que les jeux dont une des résolutions
+ * géographiques est la commune (« COM »), donc utilisables pour Luynes. Les jeux déjà utilisés par le site sont
+ * « connus » car leur identifiant (ex. DS_RP_LOGEMENT_PRINC) figure dans data/sources*.ts.
+ */
+async function chercherMelodi(): Promise<Trouvaille[]> {
+  const catalogue = (await lireJsonTableau(`${MELODI}/catalog/all`)) as Json[];
+  const trouvees: Trouvaille[] = [];
+  for (const jeu of catalogue) {
+    const resolutions = (jeu.spatialResolution as { id?: string }[] | undefined) ?? [];
+    if (!resolutions.some((r) => r.id === 'COM')) continue;
+    const id = texte(jeu.identifier);
+    const titre = ((jeu.title as { content?: string; lang?: string }[] | undefined) ?? []).find((t) => t.lang === 'fr')?.content ?? id;
+    trouvees.push({
+      jeton: `melodi:${id}`,
+      identifiants: [id],
+      titre,
+      producteur: 'INSEE (Melodi)',
+      lien: `${MELODI}/data/${id}`,
+      date: dateCourte(jeu.modified),
+      creeLe: dateCourte(jeu.issued),
+      raisons: ['catalogue Melodi : disponible à la commune (COM)'],
+    });
+  }
+  return trouvees;
+}
+
+// ───────────────────────── ADEME data-fair ─────────────────────────
+interface JeuAdeme {
+  id: string;
+  slug?: string;
+  title: string;
+  page?: string;
+  updatedAt?: string;
+  createdAt?: string;
+}
+
+async function chercherAdeme(parametres: string, raison: string): Promise<Trouvaille[]> {
+  const trouvees: Trouvaille[] = [];
+  for (let page = 1; page <= PAGES_ADEME_MAX; page++) {
+    const url = `${ADEME}/datasets?${parametres}&size=${TAILLE_PAGE_ADEME}&page=${page}&select=id,slug,title,page,updatedAt,createdAt,status&sort=updatedAt:-1`;
+    const reponse = await lireJson(url);
+    const jeux = (reponse.results as (JeuAdeme & { status?: string })[] | undefined) ?? [];
+    for (const jeu of jeux) {
+      if (jeu.status && jeu.status !== 'finalized') continue; // jeu en cours de chargement ou en erreur
+      trouvees.push({
+        jeton: `ademe:${jeu.id}`,
+        identifiants: [jeu.id, jeu.slug ?? ''],
+        titre: jeu.title,
+        producteur: 'ADEME (data.ademe.fr)',
+        lien: jeu.page ?? `https://data.ademe.fr/datasets/${jeu.slug ?? jeu.id}`,
+        date: dateCourte(jeu.updatedAt),
+        creeLe: dateCourte(jeu.createdAt),
+        raisons: [raison],
+      });
+    }
+    if (jeux.length < TAILLE_PAGE_ADEME) break;
+  }
+  return trouvees;
+}
+
 // ───────────────────────── Collecte ─────────────────────────
 async function collecter(): Promise<ResultatSource[]> {
   const taches: { nom: string; run: () => Promise<Trouvaille[]> }[] = [
     ...RECHERCHES_GOUV.map((r) => ({ nom: r.nom, run: () => chercherGouv(r) })),
     { nom: 'data.gouv.fr — nouvelles API (dataservices)', run: chercherDataservices },
     ...PORTAILS_ODS.map((p) => ({ nom: `Opendatasoft — ${p.nom}`, run: () => chercherOds(p) })),
+    { nom: 'INSEE Melodi — jeux disponibles à la commune', run: chercherMelodi },
+    {
+      nom: 'ADEME data-fair — colonne « code commune » (concept INSEE)',
+      run: () => chercherAdeme(`concepts=${encodeURIComponent(CONCEPT_CODE_COMMUNE)}`, 'ADEME : jeu avec colonne « code commune » (granularité communale)'),
+    },
+    { nom: 'ADEME data-fair — mention « Luynes »', run: () => chercherAdeme('q=Luynes', 'ADEME : cite « Luynes »') },
   ];
   const resultats: ResultatSource[] = [];
   for (const tache of taches) {

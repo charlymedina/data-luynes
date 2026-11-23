@@ -9,7 +9,7 @@ import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.ast
 import MiniRank from '../components/charts/MiniRank.astro';
 import RankGauge from '../components/charts/RankGauge.astro';
 import Waffle from '../components/charts/Waffle.astro';
-import { arretesCatnat, cavites, contourCommune, monuments, mouvementsTerrain, objetsParSiecle, objetsProteges, periodesBati, resumeBati as rb, resumeObjets as ro, resumeRisques as r, zoneInondable } from '../data/patrimoine';
+import { arretesCatnat, cavites, contourCommune, monuments, mouvementsTerrain, objetsParSiecle, objetsProteges, periodesBati, resumeBati as rb, resumeObjets as ro, resumePpri, resumeRisques as r, zoneInondable, zonesPpri } from '../data/patrimoine';
 import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
 import InfoTip from '../components/InfoTip.astro';
 import { CREDITS_PATRIMOINE } from '../data/credits';
@@ -44,12 +44,26 @@ const legende: MapLegendItem[] = [
   },
 ];
 
+/** Couleurs des types de zones du PPRi, dans l'ordre du plan (lit de la Loire, derrière les digues, champ d'expansion, quartiers bâtis). */
+const COULEURS_PPRI = ['--seq-5', '--seq-3', '--chart-4', '--chart-2'] as const;
+const datePpri = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(resumePpri.date_approbation));
+
 const zones: MapAreaLegendItem[] = [
+  ...zonesPpri.map((z, i) => ({
+    label: `PPRi : ${z.type.charAt(0).toLowerCase()}${z.type.slice(1)}`,
+    area: {
+      id: `ppri-${z.ordre}`,
+      colorVar: COULEURS_PPRI[i] ?? '--chart-4',
+      geometry: z.zone,
+      label: `PPRi, ${z.type.charAt(0).toLowerCase()}${z.type.slice(1)} : ${z.regle} — ${formatNumber(z.surface_ha)} ha, ${formatNumber(z.part_commune_pct, 1)} % de la commune`,
+    },
+  })),
   {
-    label: 'Zone inondable de la Loire',
+    label: 'Atlas des zones inondables (TRI de Tours)',
     area: {
       id: 'zone-inondable',
       colorVar: '--chart-3',
+      masquee: true,
       geometry: zoneInondable.zone,
       label: `Zone inondable de la Loire (crue de référence) : ${formatNumber(zoneInondable.surface_ha)} ha, ${formatNumber(zoneInondable.part_commune_pct, 1)} % de la commune`,
     },
@@ -120,7 +134,8 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
     <h2 id="carte-titre" class={titreH2}>La carte</h2>
     <p class="mt-4 max-w-2xl text-ink-2">
       Les gros points orange sont les monuments historiques, les petits points bleu-vert les cavités recensées par le BRGM,
-      la zone bleue la partie de la commune que la Loire peut recouvrir lors d'une crue de référence.
+      les zones colorées les secteurs réglementés par le plan de prévention du risque d'inondation (voir la section suivante).
+      La case « Atlas des zones inondables » ajoute la zone bleue que la Loire peut recouvrir lors d'une crue de référence.
       Le pointillé marque la limite de la commune.
     </p>
     <aside class="mt-6 grid max-w-4xl gap-6 rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8 md:grid-cols-[3fr_2fr] md:items-center">
@@ -144,7 +159,7 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
     </aside>
     <div class="mt-8">
       <MapView info={methode('carte_patrimoine')}
-        ariaLabel={`Carte de Luynes : ${formatNumber(r.monuments)} monuments historiques, ${formatNumber(r.cavites)} cavités souterraines et la zone inondable de la Loire (${formatNumber(zoneInondable.part_commune_pct, 1)} % de la commune)`}
+        ariaLabel={`Carte de Luynes : ${formatNumber(r.monuments)} monuments historiques, ${formatNumber(r.cavites)} cavités souterraines, la zone inondable de la Loire (${formatNumber(zoneInondable.part_commune_pct, 1)} % de la commune) et les zones réglementées du PPRi (${formatNumber(resumePpri.part_commune_pct, 1)} % de la commune)`}
         contour={contourCommune}
         legend={legende}
         areas={zones}
@@ -158,6 +173,43 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
         </details>
       </MapView>
     </div>
+  </section>
+
+  <section id="ppri" aria-labelledby="ppri-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="ppri-titre" class={titreH2}>Le plan de prévention des inondations</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      Un plan de prévention du risque d'inondation (PPRi) est un document approuvé par l'État : il délimite les zones
+      exposées aux crues et fixe, pour chacune, les règles à respecter pour construire ou aménager. Il s'impose aux permis
+      de construire et au plan local d'urbanisme. Celui de la Loire, « Val de Tours – Val de Luynes », a été approuvé le {datePpri}.
+    </p>
+    <div class:list={['mt-8', carte]}>
+      <div class="flex items-start justify-between gap-4">
+        <h3 class="font-display text-2xl font-bold">{formatNumber(resumePpri.part_commune_pct, 1)} % de la commune est réglementée</h3>
+        <InfoTip methode={methode('ppri')} label="Zones réglementées du PPRi" />
+      </div>
+      <p class="mt-2 text-sm text-ink-2">Soit {formatNumber(resumePpri.surface_ha)} hectares, répartis en {formatNumber(zonesPpri.length)} types de zones.</p>
+      <ul class="mt-6 grid gap-4 sm:grid-cols-2">
+        {
+          zonesPpri.map((z, i) => (
+            <li class="flex gap-3">
+              <span class="mt-1.5 inline-block size-3.5 shrink-0 rounded-[3px] opacity-80" style={`background:var(${COULEURS_PPRI[i] ?? '--chart-4'})`} aria-hidden="true"></span>
+              <span class="text-sm text-ink-2">
+                <strong class="block text-ink">{z.type}</strong>
+                {z.regle}.
+                <span class="tabular block">{formatNumber(z.surface_ha)} ha · {formatNumber(z.part_commune_pct, 1)} % de la commune</span>
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <p class="mt-6 max-w-2xl text-sm leading-relaxed text-ink-2">
+      <strong class="font-semibold text-ink">Deux cartes, deux rôles.</strong> L'atlas des zones inondables (case de la carte, ci-dessus) montre
+      ce que la Loire peut recouvrir lors d'une crue de référence : il informe, sans créer de règle ({formatNumber(zoneInondable.surface_ha)} ha).
+      Le PPRi est le zonage réglementaire ({formatNumber(resumePpri.surface_ha)} ha) : il tient compte de la crue de référence mais aussi
+      du lit du fleuve et de la zone protégée par les digues, et il dit ce qu'il est permis de construire. Les deux ne se
+      superposent donc pas exactement.
+    </p>
   </section>
 
   <section id="monuments" aria-labelledby="monuments-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">

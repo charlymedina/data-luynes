@@ -168,6 +168,15 @@ function fileNameFromUrl(url: string): string {
 }
 
 /**
+ * Retire l'attribut xsi:schemaLocation d'un fichier GML : sans cela, la lecture par GDAL (DuckDB, ST_Read) va chercher
+ * le schéma sur Internet à chaque ouverture, ce qui échoue ou ralentit la construction. Les données ne changent pas.
+ */
+function retirerSchemaGml(octets: Uint8Array): Uint8Array {
+  const texte = new TextDecoder().decode(octets).replace(/\s+xsi:schemaLocation="[^"]*"/, '');
+  return new TextEncoder().encode(texte);
+}
+
+/**
  * Source au format « fichiers » : chaque adresse est enregistrée telle quelle (sans conversion) dans
  * data/raw/<id>/. Tout est téléchargé avant d'écrire, puis le dossier est vidé : jamais de fichier périmé.
  */
@@ -176,7 +185,11 @@ async function downloadFiles(source: Source): Promise<void> {
   for (const url of await resolveUrls(source)) {
     const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!response.ok) throw new Error(`HTTP ${response.status} pour ${url}`);
-    files.push({ name: fileNameFromUrl(url), content: new Uint8Array(await response.arrayBuffer()) });
+    const octets = new Uint8Array(await response.arrayBuffer());
+    files.push({
+      name: source.nomFichier ?? fileNameFromUrl(url),
+      content: source.nomFichier?.endsWith('.gml') ? retirerSchemaGml(octets) : octets,
+    });
   }
   if (files.length === 0) throw new Error('aucun fichier à télécharger');
   const dir = path.join(RAW_DIR, source.id);

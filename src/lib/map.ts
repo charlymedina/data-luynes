@@ -31,6 +31,8 @@ export interface MapAreaData {
   geometry: Geometry;
   /** Texte affiché au clic dans la zone. */
   label: string;
+  /** Zone décochée au départ (le visiteur peut l'afficher avec la légende). */
+  masquee?: boolean;
 }
 
 export interface MapData {

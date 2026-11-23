@@ -9,7 +9,7 @@ import { generatedAt } from '../data/commune';
 export const GET: APIRoute = ({ site }) => {
   const base = site?.origin ?? 'https://luynes.pages.dev';
   const lastmod = generatedAt.toISOString().slice(0, 10);
-  const chemins = ['/', ...THEMES.map((t) => `/${t.slug}`), '/a-propos'];
+  const chemins = ['/', ...THEMES.map((t) => `/${t.slug}`), '/a-propos', '/signaler'];
   const urls = chemins
     .map((chemin) => `  <url><loc>${base}${chemin}</loc><lastmod>${lastmod}</lastmod></url>`)
     .join('\n');

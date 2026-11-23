@@ -88,10 +88,11 @@ data-luynes/
 │   ├── signaler-alertes.sh              # issue GitHub « Alerte sources de données » (appelé par le workflow)
 │   └── test-data.ts, test-site.ts, test-archives.ts  # tests des données, du site construit et des archives
 ├── src/
-│   ├── pages/                           # une page par thème + accueil + À propos + 404 ; og/[slug].png.ts = images de partage
+│   ├── pages/                           # une page par thème + formulaire /signaler + accueil + À propos + 404 ; og/[slug].png.ts = images de partage
 │   ├── components/ (charts/)            # chiffres clés, bulles ⓘ, cartes, graphiques
 │   ├── data/                            # types + lecture des JSON ; themes.ts (registre), credits.ts, methodes.ts
 │   └── lib/                             # og-pages.ts / og-image.ts (images d'aperçu), formats, anecdotes « Le saviez-vous ? » (faits*.ts), cartes, navigation
+├── functions/api/signalement.ts         # Pages Function : reçoit le formulaire (/api/signalement)
 ├── tests/*.test.ts                      # tests unitaires (formats, adresses)
 ├── docs/                                # sources, catalogue des données, revues
 └── .github/workflows/                   # deploy.yml (construction, tests, publication, archives), veille.yml (veille mensuelle)
@@ -139,17 +140,34 @@ publication sur **Cloudflare Pages** (projet `luynes`) → enregistrement des ar
 
 Le 1ᵉʳ de chaque mois (6 h UTC), `.github/workflows/veille.yml` lance `scripts/veille.ts` : **aucun coût d'IA**, uniquement des API publiques sans clé.
 
-- **Où elle cherche** : data.gouv.fr (jeux citant « Luynes » ; zone `fr:commune:37139` ; Tours Métropole, Indre-et-Loire avec granularité communale ; nouvelles API « dataservices »), et les catalogues Opendatasoft de `data.tours-metropole.fr` et `data.centrevaldeloire.fr`.
-- **Filtres du bruit** : jeux archivés ou sans ressource écartés ; jeux nationaux sans granularité communale ignorés (la recherche exige la zone ou la granularité communale) ; Tours Métropole : seulement les jeux avec une colonne commune/INSEE (hors Ville de Tours seule) ou citant Luynes ; Région : seulement ceux citant l'Indre-et-Loire ; doublons fusionnés.
+- **Où elle cherche** : data.gouv.fr (jeux citant « Luynes » ; zone `fr:commune:37139` ; Tours Métropole, Indre-et-Loire avec granularité communale ; nouvelles API « dataservices »), les catalogues Opendatasoft de `data.tours-metropole.fr`, `data.centrevaldeloire.fr` et `data.education.gouv.fr`, le catalogue **INSEE Melodi** (`api.insee.fr/melodi/catalog/all`) et **ADEME data-fair** (`data.ademe.fr`). `culture.data.gouv.fr` n'a plus d'API propre : ses jeux sont sur data.gouv.fr, déjà couvert.
+- **Filtres du bruit** : jeux archivés ou sans ressource écartés ; jeux nationaux sans granularité communale ignorés (la recherche exige la zone ou la granularité communale) ; Tours Métropole : seulement les jeux avec une colonne commune/INSEE (hors Ville de Tours seule) ou citant Luynes ; Région : seulement ceux citant l'Indre-et-Loire ; Éducation nationale : seulement les jeux citant Luynes / 37139 ou ayant une colonne « code INSEE de la commune » stricte (`MOTS_CODE_COMMUNE`) ; Melodi : seulement les jeux ayant la commune (`COM`) parmi leurs résolutions géographiques ; ADEME : seulement les colonnes typées « code commune » (concept INSEE `geo#codeCommune`) ou citant Luynes, jeux finalisés ; doublons fusionnés.
 - **Ce qui est « connu »** (donc jamais remonté) : `data/veille/connus.json`, tout identifiant cité dans `data/sources*.ts` ou `docs/catalogue-donnees*.md`, et ce qu'une issue « veille » précédente a déjà signalé.
 - **Résultat** : s'il y a du neuf, une issue « Veille données — <mois année> » (étiquette `veille`) liste chaque jeu (titre, producteur, lien, date, raison, statut « à examiner ») ; GitHub envoie l'e-mail. Relancée dans le mois, elle ajoute seulement un commentaire avec les compléments. Rien de nouveau : seul le journal du run en témoigne. Une source en panne n'empêche pas les autres (3 essais, 30 s de délai) ; elle est citée dans l'issue.
-- **Ajouter un jeu « connu »** : citer son identifiant data.gouv / Opendatasoft dans `data/sources*.ts` ou le catalogue, **ou** ajouter une ligne `"gouv:<id>": "titre"` (ou `"ods:tours:<dataset_id>"`) dans `data/veille/connus.json`, **ou** tout marquer connu d'un coup : `npx tsx scripts/veille.ts --init`.
+- **Ajouter un jeu « connu »** : citer son identifiant data.gouv / Opendatasoft dans `data/sources*.ts` ou le catalogue, **ou** ajouter une ligne `"gouv:<id>": "titre"` (ou `"ods:tours:<dataset_id>"`, `"melodi:<id>"`, `"ademe:<id>"`) dans `data/veille/connus.json`, **ou** tout marquer connu d'un coup : `npx tsx scripts/veille.ts --init`.
 - **À la main** : `npx tsx scripts/veille.ts --dry-run` (affiche l'issue sans rien publier) ; sur GitHub, onglet Actions → « Veille mensuelle » → Run workflow.
 - **Analyse** : l'examen des nouveautés par Claude se fait **seulement à la demande de Charly** (pour économiser les crédits).
 
 ---
 
-Un lien « Signaler une erreur ou proposer une idée » (pied de page, `src/lib/signalement.ts`) ouvre une issue GitHub pré-remplie ; le modèle est dans `.github/ISSUE_TEMPLATE/signalement.md`.
+## 📮 Formulaire de signalement (anonyme)
+
+Le site n'affiche aucun lien vers GitHub ni le nom de l'auteur (un test de `npm test` le vérifie dans `dist/`). Le lien « Signaler une erreur ou proposer une idée » ouvre la page **/signaler** (page d'origine pré-remplie par `?page=`). Le formulaire envoie un JSON à la **Pages Function** `functions/api/signalement.ts` (déployée avec le site, car `functions/` est à la racine du projet, là où `wrangler pages deploy dist` est lancé), qui valide les champs puis crée une **issue** (étiquette `signalement`) dans le dépôt, via l'API REST de GitHub.
+
+- **Aucune adresse e-mail n'est demandée** (le dépôt est public : on ne peut donc pas répondre, et la page le dit). Seuls la page et le message sont transmis.
+- **Anti-spam, sans service tiers** : champ piège caché (`piege`), délai minimal de 3 s entre l'affichage et l'envoi, message de 10 à 2 000 caractères, corps limité à 10 Ko, `@` neutralisés dans l'issue. Un robot reçoit une réponse « ok » sans qu'aucune issue soit créée.
+- **Si le jeton manque** : la Function répond 503 et le formulaire affiche « momentanément indisponible ».
+- Code : `src/lib/signalement.ts` (règles partagées), `src/lib/signalement-serveur.ts` (traitement, testé avec un `fetch` simulé dans `tests/signalement.test.ts`), `src/lib/formulaire-signalement.ts` (navigateur).
+
+**À faire une fois (par le propriétaire du dépôt) :**
+
+1. Sur GitHub : *Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token*. Accès aux dépôts : **« Only select repositories » → ce dépôt seulement** ; permission **Issues : Read and write** (rien d'autre) ; une date d'expiration (la renouveler ensuite). Copier le jeton.
+2. Le déclarer comme secret du projet Cloudflare Pages (invites interactives, la valeur n'est jamais écrite dans un fichier) :
+   ```bash
+   npx wrangler pages secret put GITHUB_ISSUES_TOKEN --project-name=luynes   # coller le jeton
+   npx wrangler pages secret put GITHUB_REPO --project-name=luynes           # « propriétaire/nom-du-dépôt »
+   ```
+3. Les secrets s'appliquent au déploiement suivant (relancer le workflow « Construire et publier »). Tant qu'ils manquent, le formulaire affiche le message de repli.
 
 ---
 
