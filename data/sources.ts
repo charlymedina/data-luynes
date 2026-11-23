@@ -32,9 +32,10 @@ export interface Source {
    *  - « georisques » : API Géorisques (champ total_pages, paramètre page) ;
    *  - « tabular »    : API tabulaire data.gouv (lien links.next) ;
    *  - « hubeau »     : API Hub'eau (lien next) ;
-   *  - « dido »       : API DiDo du SDES (lien nextPage, pages de 100 lignes).
+   *  - « dido »       : API DiDo du SDES (lien nextPage, pages de 100 lignes) ;
+   *  - « wfs »        : service WFS de la Géoplateforme en GeoJSON (paramètres startIndex et count, tri stable exigé).
    */
-  readonly pagination?: 'georisques' | 'tabular' | 'hubeau' | 'dido';
+  readonly pagination?: 'georisques' | 'tabular' | 'hubeau' | 'dido' | 'wfs';
   /**
    * « json » (par défaut) : réponse JSON enregistrée dans data/raw/<id>.json.
    * « fichiers » : fichiers bruts (ex. CSV compressés) enregistrés tels quels dans le dossier data/raw/<id>/.

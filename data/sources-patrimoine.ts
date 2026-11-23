@@ -17,4 +17,14 @@ export const SOURCES_PATRIMOINE: readonly Source[] = [
     // ce second champ est erroné pour 2 notices du château de Condé-en-Brie (Aisne, 02209), qui y portent 37139.
     filtre: `COG_Insee = '37139'`,
   },
+  {
+    id: 'bdtopo_batiments',
+    description: 'Bâtiments autour de Luynes : usage, date d’apparition, hauteur (BD TOPO, IGN, via Géoplateforme)',
+    // Tri par identifiant (obligatoire pour que les pages se suivent sans trou ni doublon) et seulement les colonnes utiles.
+    // Rectangle englobant la commune (découpé au contour exact en SQL) : ≈ 9 400 bâtiments, ≈ 6 Mo, moins de 5 secondes.
+    url: 'https://data.geopf.fr/wfs/ows?service=WFS&version=2.0.0&request=GetFeature&typeNames=BDTOPO_V3:batiment&outputFormat=application/json&srsName=EPSG:4326&bbox=47.36,0.485,47.46,0.587,urn:ogc:def:crs:EPSG::4326&sortBy=cleabs&count=5000&startIndex=0&propertyName=cleabs,usage_1,usage_2,nature,etat_de_l_objet,date_d_apparition,date_de_confirmation,hauteur,nombre_de_logements,nombre_d_etages,geometrie',
+    pagination: 'wfs',
+    // La BD TOPO est mise à jour par l'IGN chaque trimestre : inutile de la retélécharger toutes les semaines.
+    validiteJours: 30,
+  },
 ];

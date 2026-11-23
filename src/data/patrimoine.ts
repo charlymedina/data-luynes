@@ -12,6 +12,8 @@ import zonesInondablesRows from './generated/risques_zones_inondables.json';
 import objetsRows from './generated/patrimoine_objets.json';
 import objetsSiecleRows from './generated/patrimoine_objets_siecles.json';
 import objetsResumeRows from './generated/patrimoine_objets_resume.json';
+import batiResumeRows from './generated/patrimoine_bati_resume.json';
+import batiPeriodesRows from './generated/patrimoine_bati_periodes.json';
 import { firstRow } from './rows';
 
 export interface Monument {
@@ -126,3 +128,35 @@ export interface ResumeObjets {
 export const objetsProteges: readonly ObjetProtege[] = objetsRows as ObjetProtege[];
 export const objetsParSiecle: readonly SiecleObjets[] = objetsSiecleRows as SiecleObjets[];
 export const resumeObjets: ResumeObjets = firstRow(objetsResumeRows as ResumeObjets[], 'patrimoine_objets_resume');
+
+/** Âge du bâti d'après la BD TOPO (IGN) : la date de construction n'est connue que pour une partie des bâtiments. */
+export interface ResumeBati {
+  batiments: number;
+  batiments_dates: number;
+  part_dates_pct: number;
+  residentiels: number;
+  residentiels_dates: number;
+  part_residentiels_dates_pct: number;
+  plus_ancien_annee: number;
+  plus_ancien_usage: string;
+  plus_recent_annee: number;
+  annee_mediane_residentiels: number;
+  hauteur_max: number;
+  hauteur_max_nature: string;
+}
+
+/** Une période de construction (découpage du recensement INSEE) : bâtiments d'habitation datés et résidences principales. */
+export interface PeriodeBati {
+  ordre: number;
+  periode: string;
+  batiments: number;
+  part_batiments_pct: number;
+  logements: number;
+  part_logements_pct: number;
+  part_logements_37_pct: number;
+  part_logements_france_pct: number;
+  annee_recensement: number;
+}
+
+export const resumeBati: ResumeBati = firstRow(batiResumeRows as ResumeBati[], 'patrimoine_bati_resume');
+export const periodesBati: readonly PeriodeBati[] = batiPeriodesRows as PeriodeBati[];

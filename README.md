@@ -23,10 +23,10 @@ modification) à partir des dernières données publiées.
 |---|---|---|
 | Population | `/population` | INSEE (recensement, état civil), Tours Métropole |
 | Territoire | `/territoire` | IGN / API Géo |
-| Patrimoine & risques | `/patrimoine-risques` | Base Mérimée, Géorisques (BRGM, GASPAR, zones inondables) |
+| Patrimoine & risques | `/patrimoine-risques` | Base Mérimée, Palissy, BD TOPO (IGN, âge du bâti), INSEE (logements par période), Géorisques (BRGM, GASPAR, zones inondables) |
 | Immobilier | `/immobilier` | DVF (DGFiP), carte des loyers, DPE (ADEME) |
 | Budget & vie municipale | `/budget` | DGFiP (comptes individuels, balances comptables), DECP, BOAMP, répertoire national des élus |
-| Revenus & emploi | `/revenus-emploi` | INSEE (Filosofi, recensement, base Tous salariés, SIDE) |
+| Revenus & emploi | `/revenus-emploi` | INSEE (Filosofi, recensement, base Tous salariés, SIDE), CAF (foyers allocataires par prestation) |
 | Accidents de la route | `/accidents` | ONISR (fichiers BAAC) |
 | Écoles, santé & services | `/equipements` | INSEE (BPE), Éducation nationale |
 | Énergie & mobilité | `/energie-mobilite` | Agence ORE, ODRÉ, SDES, base IRVE |

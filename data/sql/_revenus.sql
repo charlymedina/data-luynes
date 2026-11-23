@@ -71,3 +71,64 @@ SELECT
   o.measures.OBS_VALUE_NIVEAU.value::DOUBLE AS salaire
 FROM (SELECT unnest(observations) AS o FROM read_json('data/raw/salaires.json'))
 WHERE o.dimensions.GEO NOT LIKE '%FRANCE-FM';
+
+-- Résidences principales (= ménages) selon la période d'achèvement de la construction (recensement INSEE).
+-- BUILD_END : « _T » = toutes périodes ; « Y_LT1919 » = avant 1919 ; « Y1919T1945 » = de 1919 à 1945 ; « Y2006TAAAA » = 2006 ou après.
+-- Selon le recensement, l'INSEE publie des découpages un peu différents : on filtre donc au moment de l'usage.
+CREATE OR REPLACE VIEW residences_principales AS
+SELECT
+  territoire(o.dimensions.GEO)              AS territoire,
+  o.dimensions.TIME_PERIOD::INTEGER         AS annee,
+  o.dimensions.BUILD_END                    AS periode,
+  o.measures.OBS_VALUE_NIVEAU.value::DOUBLE AS logements
+FROM (SELECT unnest(observations) AS o FROM read_json('data/raw/residences_principales.json'))
+WHERE o.dimensions.GEO NOT LIKE '%FRANCE-FM';
+
+-- Nombre de ménages (résidences principales, toutes périodes) de chaque commune du département.
+CREATE OR REPLACE VIEW menages_communes_37 AS
+SELECT
+  regexp_extract(o.dimensions.GEO, 'COM-(\d+)', 1) AS code,
+  o.dimensions.TIME_PERIOD::INTEGER                AS annee,
+  o.measures.OBS_VALUE_NIVEAU.value::DOUBLE        AS menages
+FROM (SELECT unnest(observations) AS o FROM read_json('data/raw/residences_principales_communes_37.json'))
+WHERE o.measures.OBS_VALUE_NIVEAU.value IS NOT NULL;
+
+-- CAF : foyers allocataires de chaque prestation, par commune d'Indre-et-Loire et par année (situation de décembre).
+-- Les nombres sont ARRONDIS À 5 par la CAF (7 → 5, 12 → 10) : un 0 veut dire « moins de 3 foyers » (secret statistique),
+-- pas « aucun ». Colonnes indfoy_<prestation> = foyers ; la liste des prestations est en bas de requête revenus_caf_prestations.sql.
+CREATE OR REPLACE VIEW caf_communes AS
+SELECT
+  numcomdo                      AS code,
+  left(dtreffre, 4)::INTEGER    AS annee,
+  dtreffre,
+  * EXCLUDE (numcomdo, nomcom, dtreffre)
+FROM read_json('data/raw/caf_communes_37.json');
+
+-- CAF, Indre-et-Loire : mêmes colonnes, mois par mois (les nombres du département sont exacts, non arrondis).
+CREATE OR REPLACE VIEW caf_departement AS
+SELECT left(dtreffre, 4)::INTEGER AS annee, dtreffre, * EXCLUDE (dtreffre, numdep, nomdep, numregi, nomregi)
+FROM read_json('data/raw/caf_departement.json');
+
+-- Foyers allocataires en « format long » (une ligne par territoire, mois et prestation) pour comparer Luynes et le département.
+CREATE OR REPLACE VIEW caf_foyers AS
+WITH luynes AS (
+  SELECT 'Luynes' AS territoire, annee, dtreffre, * EXCLUDE (code, annee, dtreffre)
+  FROM caf_communes WHERE code = '37139'
+),
+departement AS (
+  SELECT 'Indre-et-Loire' AS territoire, annee, dtreffre, * EXCLUDE (annee, dtreffre) FROM caf_departement
+),
+long_luynes AS (
+  SELECT territoire, annee, dtreffre, replace(prestation, 'indfoy_', '') AS prestation, foyers::DOUBLE AS foyers
+  FROM (SELECT territoire, annee, dtreffre, COLUMNS('^indfoy_') FROM luynes)
+  UNPIVOT (foyers FOR prestation IN (COLUMNS('^indfoy_')))
+),
+long_departement AS (
+  SELECT territoire, annee, dtreffre, replace(prestation, 'indfoy_', '') AS prestation, foyers::DOUBLE AS foyers
+  FROM (SELECT territoire, annee, dtreffre, COLUMNS('^indfoy_') FROM departement)
+  UNPIVOT (foyers FOR prestation IN (COLUMNS('^indfoy_')))
+)
+-- Le fichier départemental contient parfois un mois en double (décembre 2021 : une ligne tronquée à 1 foyer) : on garde la valeur la plus grande.
+SELECT territoire, annee, dtreffre, prestation, max(foyers) AS foyers
+FROM (SELECT * FROM long_luynes UNION ALL SELECT * FROM long_departement)
+GROUP BY ALL;

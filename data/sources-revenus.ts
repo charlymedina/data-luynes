@@ -7,6 +7,8 @@ import { readFile } from 'node:fs/promises';
 import type { Source } from './sources.ts';
 
 const MELODI = 'https://api.insee.fr/melodi/data';
+/** Portail open data de la CAF (Licence Ouverte) : une API par jeu, export JSON filtré à la source. */
+const CAF = 'https://data.caf.fr/api/explore/v2.1/catalog/datasets';
 const TROIS_TERRITOIRES = 'GEO=COM-37139&GEO=DEP-37&GEO=FRANCE';
 
 /**
@@ -63,5 +65,27 @@ export const SOURCES_REVENUS: readonly Source[] = [
     id: 'creations_entreprises',
     description: "Créations d'entreprises à Luynes par année (INSEE, SIDE)",
     url: `${MELODI}/DS_SIDE_CREA_COM?GEO=COM-37139&ACTIVITY=_T&LEGAL_FORM=_T&SIDE_MEASURE=BURE&maxResult=1000`,
+  },
+
+  {
+    id: 'caf_communes_37',
+    description: "Foyers allocataires par prestation des communes d'Indre-et-Loire, décembre de chaque année (CAF, data.caf.fr)",
+    url: `${CAF}/s_ben_com_f/exports/json?where=${encodeURIComponent('startswith(numcomdo, "37")')}`,
+  },
+  {
+    id: 'caf_departement',
+    description: "Foyers allocataires par prestation en Indre-et-Loire, mois par mois (CAF, data.caf.fr)",
+    url: `${CAF}/s_ben_dep/exports/json?where=${encodeURIComponent('numdep="37"')}`,
+  },
+  {
+    id: 'residences_principales_communes_37',
+    description: "Résidences principales (= ménages) des communes d'Indre-et-Loire, recensements (INSEE)",
+    url: async () =>
+      `${MELODI}/DS_RP_LOGEMENT_PRINC?${await geoCommunes37()}&OCS=DW_MAIN&RP_MEASURE=DWELLINGS&BUILD_END=_T&NOR=_T&TDW=_T&TSH=_T&CARPARK=_T&CARS=_T&NRG_SRC=_T&L_STAY=_T&maxResult=10000`,
+  },
+  {
+    id: 'residences_principales',
+    description: 'Résidences principales (= ménages) — Luynes, Indre-et-Loire, France, par période d’achèvement de la construction (INSEE, recensement)',
+    url: `${MELODI}/DS_RP_LOGEMENT_PRINC?${TROIS_TERRITOIRES}&OCS=DW_MAIN&RP_MEASURE=DWELLINGS&NOR=_T&TDW=_T&TSH=_T&CARPARK=_T&CARS=_T&NRG_SRC=_T&L_STAY=_T&maxResult=10000`,
   },
 ];

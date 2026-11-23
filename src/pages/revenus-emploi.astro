@@ -8,9 +8,11 @@ import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.ast
 import PictoGrid from '../components/charts/PictoGrid.astro';
 import RankGauge from '../components/charts/RankGauge.astro';
 import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
-import { activiteDe, creations, resumeRevenus as r, trajets } from '../data/revenus';
+import InfoTip from '../components/InfoTip.astro';
+import { activiteDe, anneesCaf, creations, prestationsCaf, resumeCaf as caf, resumeRevenus as r, trajets } from '../data/revenus';
 import { CREDITS_REVENUS } from '../data/credits';
-import { formatNumber } from '../lib/format';
+import { formatNumber, formatPercent } from '../lib/format';
+import type { IconName } from '../lib/icons';
 import { faitsRevenus, surDix } from '../lib/faits-revenus';
 import { methode } from '../data/methodes';
 import SourcesMethode from '../components/SourcesMethode.astro';
@@ -61,11 +63,28 @@ const colonnes: Column[] = creations.map((c) => ({
 const premiereCreation = creations[0]?.annee ?? 0;
 const derniereCreation = creations.at(-1)?.annee ?? 0;
 const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes - r.salaire_femmes)) / r.salaire_hommes) : 0;
+// Aides de la CAF : les prestations sont regroupées (logement, familles…) dans l'ordre où elles arrivent des données.
+const iconesCaf: Record<string, IconName> = { Logement: 'maison', Familles: 'famille', 'Petite enfance': 'bebe', 'Revenus et solidarité': 'pieces' };
+const groupesCaf = [...new Set(prestationsCaf.map((p) => p.groupe))].map((groupe) => ({
+  groupe,
+  icon: iconesCaf[groupe] ?? 'pieces',
+  prestations: prestationsCaf.filter((p) => p.groupe === groupe),
+}));
+const colonnesCaf: Column[] = anneesCaf.map((a) => ({
+  label: `’${String(a.annee).slice(2)}`,
+  fullLabel: `Décembre ${a.annee}`,
+  value: a.foyers,
+  display: formatNumber(a.foyers),
+  highlight: a.annee === caf.annee,
+}));
+const premiereCaf = anneesCaf[0];
+const derniereCaf = anneesCaf.at(-1);
+const evolution = (v: number): string => (v > 0 ? '+' : v < 0 ? '−' : '') + formatPercent(Math.abs(v));
 ---
 
 <Base
   title="Revenus et emploi à Luynes — Luynes en chiffres"
-  description={`Niveau de vie, pauvreté, chômage, trajets domicile-travail, salaires et créations d'entreprises à Luynes, comparés au département et à la France.`}
+  description={`Niveau de vie, pauvreté, chômage, trajets domicile-travail, salaires, créations d'entreprises et aides de la CAF à Luynes, comparés au département et à la France.`}
   sources={CREDITS_REVENUS}
 >
   <section aria-labelledby="titre" class="pt-12 pb-10 sm:pt-20">
@@ -199,6 +218,86 @@ const ecartSalaires = r.salaire_hommes > 0 ? Math.round((100 * (r.salaire_hommes
         tableCaption="Créations d'entreprises à Luynes par année"
       />
     </div>
+  </section>
+
+  <section id="aides" aria-labelledby="aides-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="aides-titre" class={titreH2}>Les aides de la CAF</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      En décembre {caf.annee}, <strong class="font-display text-2xl text-ink">{formatNumber(caf.foyers)}</strong> foyers luynois (soit {formatNumber(caf.personnes)} personnes) touchaient au moins une prestation de la CAF :
+      logement, famille, petite enfance, prime d'activité, RSA… Les nombres sont arrondis à 5 par la CAF, et les parts rapportées aux ménages du recensement {caf.annee_recensement} sont approximatives.
+    </p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+      <KeyFigure tone="loire" icon="famille" label={`Foyers allocataires · décembre ${caf.annee}`} value={caf.foyers} info={methode('caf_foyers')}>
+        <MiniCompare onDark items={[
+          { label: 'Luynes', value: caf.part_menages, display: `${pourcent(caf.part_menages)} des ménages`, highlight: true },
+          { label: 'Indre-et-Loire', value: caf.part_menages_37, display: pourcent(caf.part_menages_37) },
+        ]} />
+      </KeyFigure>
+      <div class={carte}>
+        <PictoGrid info={methode('caf_foyers')}
+          shape="maison"
+          count={caf.part_menages}
+          label={`ménages luynois touchent au moins une prestation de la CAF. ${formatNumber(Math.round(caf.part_menages_37))} sur 100 en Indre-et-Loire.`}
+          ariaLabel={`Environ ${formatNumber(caf.part_menages, 1)} % des ménages luynois touchent au moins une prestation de la CAF, contre ${formatNumber(caf.part_menages_37, 1)} % en Indre-et-Loire.`}
+        />
+      </div>
+    </div>
+    <div class="mt-6 max-w-md">
+      <RankGauge info={methode('caf_foyers')} label="Part de ménages allocataires de la CAF" rank={caf.rang} total={caf.nb_communes} icon="famille" />
+    </div>
+
+    <h3 class="mt-12 flex items-center gap-2 font-display text-2xl font-bold">Quelles prestations ? <InfoTip methode={methode('caf_prestations')} label="Prestations de la CAF" /></h3>
+    <p class="mt-2 max-w-2xl text-sm text-ink-2">
+      Part des ménages luynois qui touchent chaque prestation, comparée à l'Indre-et-Loire. Un foyer peut en toucher plusieurs : les lignes ne s'additionnent pas.
+      L'allocation aux adultes handicapés (AAH) n'est publiée par la CAF que pour le département, pas pour les communes.
+    </p>
+    <div class="mt-6 grid gap-6 md:grid-cols-2">
+      {
+        groupesCaf.map((g) => (
+          <article class={carte}>
+            <h4 class="flex items-center gap-2 font-display text-xl font-bold"><Icon name={g.icon} class="h-6 w-6 text-loire" /> {g.groupe}</h4>
+            <ul class="mt-4 space-y-5">
+              {
+                g.prestations.map((p) => (
+                  <li>
+                    <p class="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+                      <span class:list={[p.principale ? 'font-semibold text-ink' : 'text-ink-2']}>{p.libelle}</span>
+                      <span class="tabular font-semibold text-ink">{p.masque ? 'moins de 3 foyers' : `${formatNumber(p.foyers)} foyers`}</span>
+                    </p>
+                    {p.masque ? (
+                      <p class="mt-1 text-xs text-ink-2">Valeur masquée par la CAF (secret statistique).</p>
+                    ) : (
+                      <MiniCompare items={[
+                        { label: 'Luynes', value: p.part_menages, display: pourcent(p.part_menages), highlight: true },
+                        { label: 'Indre-et-Loire', value: p.part_menages_37, display: pourcent(p.part_menages_37) },
+                      ]} />
+                    )}
+                  </li>
+                ))
+              }
+            </ul>
+          </article>
+        ))
+      }
+    </div>
+
+    {
+      premiereCaf && derniereCaf && anneesCaf.length > 1 && (
+        <div class:list={['mt-8', carte]}>
+          <h3 class="font-display text-xl font-bold">Évolution des foyers allocataires</h3>
+          <p class="mt-1 text-sm text-ink-2">
+            Depuis décembre {premiereCaf.annee} : {evolution(derniereCaf.evolution_pct)} à Luynes, {evolution(derniereCaf.evolution_37_pct)} en Indre-et-Loire.
+          </p>
+          <ColumnChart info={methode('caf_evolution')}
+            columns={colonnesCaf}
+            unit="foyers allocataires"
+            headers={['Décembre', 'Foyers allocataires']}
+            ariaLabel={`Foyers allocataires de la CAF à Luynes, de décembre ${premiereCaf.annee} à décembre ${derniereCaf.annee} : ${formatNumber(premiereCaf.foyers)} puis ${formatNumber(derniereCaf.foyers)}.`}
+            tableCaption="Foyers allocataires de la CAF à Luynes, chaque mois de décembre"
+          />
+        </div>
+      )
+    }
   </section>
 
   <FunFacts facts={faitsRevenus()} id="saviez-vous-revenus" />

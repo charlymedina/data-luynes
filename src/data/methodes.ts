@@ -5,10 +5,10 @@
  */
 import { commune, generatedAt, rang } from './commune';
 import { agesDe, derniereAnneeEtatCivil, evolutionAges, faits, historique } from './population';
-import { resumeObjets, resumeRisques } from './patrimoine';
+import { periodesBati, resumeBati, resumeObjets, resumeRisques } from './patrimoine';
 import { loyerMaison, resumeImmobilier } from './immobilier';
 import { anneesBudget, resumeBudget } from './budget';
-import { creations, resumeRevenus } from './revenus';
+import { anneesCaf, creations, resumeCaf, resumeRevenus } from './revenus';
 import { resumeAccidents } from './accidents';
 import { cantinesEcoles, ipsEtablissements, mediatheque, resumeEquipements } from './equipements';
 import { anneesEnergie, resumeEnergie } from './energie';
@@ -47,6 +47,9 @@ const prix = `${resumeImmobilier.annee_debut_prix}-${resumeImmobilier.annee_fin}
 const DVF = 'DGFiP, demandes de valeurs foncières (DVF), via Etalab';
 const DGFIP = 'DGFiP, comptes individuels des communes';
 const HUBEAU = "contrôle sanitaire des eaux (ARS, ministère de la Santé), via l'API Hub'eau";
+const CAF = 'CNAF / CAF, foyers allocataires par prestation et par commune (data.caf.fr, Licence Ouverte)';
+const BD_TOPO = 'IGN, BD TOPO (couche « bâtiment »), via la Géoplateforme (Licence Ouverte 2.0)';
+const INSEE_LOGEMENTS = 'INSEE, recensement de la population (résidences principales selon la période d\'achèvement)';
 const PALISSY = 'ministère de la Culture, base Palissy (objets mobiliers protégés au titre des monuments historiques), via la plateforme POP';
 const SLL = 'ministère de la Culture, Service du livre et de la lecture (enquête annuelle sur les bibliothèques des collectivités territoriales)';
 const MA_CANTINE_SOURCE = 'ministère de l\'Agriculture, Ma Cantine (télédéclarations des cantines, loi EGalim)';
@@ -839,6 +842,48 @@ const METHODES = {
     calcul: 'bancs publics et point d\'apport volontaire du textile recensés à Luynes ; pas de comparaison : l\'inventaire des bancs est très inégal d\'une commune à l\'autre de la métropole (certaines en comptent quelques unités), il ne dit donc pas combien de bancs existent réellement',
     millesime: `inventaire consulté en ${formatMonthYear(generatedAt)}`,
   },
+  caf_foyers: {
+    titre: 'Foyers allocataires de la CAF',
+    source: CAF,
+    calcul: `foyers qui touchent au moins une prestation légale de la CAF en décembre (hors allocation de rentrée scolaire), rapportés aux ménages du recensement ${resumeCaf.annee_recensement} (résidences principales, INSEE) ; la CAF arrondit les nombres de foyers à 5 de la commune, et les deux chiffres ne datent pas de la même année : la part est approximative. Classement des ${formatNumber(resumeCaf.nb_communes)} communes d'Indre-et-Loire selon cette part (1 = la plus élevée)`,
+    millesime: `décembre ${resumeCaf.annee} (ménages : recensement ${resumeCaf.annee_recensement})`,
+  },
+  caf_prestations: {
+    titre: 'Prestations de la CAF',
+    source: CAF,
+    calcul: `foyers de la commune qui touchent chaque prestation en décembre, rapportés aux ménages du recensement ${resumeCaf.annee_recensement} ; un foyer peut toucher plusieurs prestations, les lignes ne s'additionnent donc pas. Secret statistique : la CAF arrondit à 5 et indique 0 sous 3 foyers, la page écrit alors « moins de 3 foyers ». L'allocation aux adultes handicapés (AAH) n'est publiée que pour le département`,
+    millesime: `décembre ${resumeCaf.annee}`,
+  },
+  caf_evolution: {
+    titre: 'Évolution des foyers allocataires',
+    source: CAF,
+    calcul: `foyers allocataires (au moins une prestation légale) chaque mois de décembre, de ${anneesCaf[0]?.annee ?? ''} à ${resumeCaf.annee} ; évolution rapportée à la première année, pour Luynes et pour l'Indre-et-Loire`,
+    millesime: `décembre ${anneesCaf[0]?.annee ?? ''} à décembre ${resumeCaf.annee}`,
+  },
+  bati_batiments: {
+    titre: 'Bâtiments de Luynes',
+    source: BD_TOPO,
+    calcul: `bâtiments en service dont un point intérieur est dans le contour exact de la commune (annexes, garages et hangars compris, pas seulement les habitations). La date de construction n'est connue que pour ${formatNumber(resumeBati.part_dates_pct)} % d'entre eux (${formatNumber(resumeBati.part_residentiels_dates_pct)} % des bâtiments d'habitation) : c'est une estimation, souvent arrondie, qui s'arrête en ${resumeBati.plus_recent_annee}`,
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  bati_hauteur: {
+    titre: 'Bâtiment le plus haut',
+    source: BD_TOPO,
+    calcul: 'hauteur du bâtiment (du sol à la gouttière ou au faîte, mesurée par l\'IGN) la plus élevée parmi les bâtiments de la commune ; la nature (château, église…) est celle indiquée par l\'IGN',
+    millesime: `base consultée en ${formatMonthYear(generatedAt)}`,
+  },
+  bati_anciens: {
+    titre: `Logements construits ${(periodesBati[0]?.periode ?? '').toLowerCase()}`,
+    source: INSEE_LOGEMENTS,
+    calcul: 'résidences principales achevées avant la première des périodes publiées, divisées par l\'ensemble des résidences principales ; comparées à l\'Indre-et-Loire et à la France (le recensement date la construction de tous les logements, contrairement à la BD TOPO)',
+    millesime: `recensement ${periodesBati[0]?.annee_recensement ?? ''}`,
+  },
+  bati_periodes: {
+    titre: 'Période de construction',
+    source: BD_TOPO + ' ; ' + INSEE_LOGEMENTS,
+    calcul: `bâtiments d'habitation datés de la BD TOPO (${formatNumber(resumeBati.residentiels_dates)} sur ${formatNumber(resumeBati.residentiels)}) rangés dans les périodes du recensement selon leur date d'apparition, en % du total daté ; en regard, part des résidences principales de chaque période (recensement). Les dates BD TOPO sont des estimations et s'arrêtent en ${resumeBati.plus_recent_annee} : la dernière période est sous-estimée`,
+    millesime: `BD TOPO consultée en ${formatMonthYear(generatedAt)} ; recensement ${periodesBati[0]?.annee_recensement ?? ''}`,
+  },
   quotidien_carte: {
     titre: 'Carte de la vie quotidienne',
     source: GEODAE + ' ; ' + TOURS_OPEN_DATA + ' ; fond de carte OpenFreeMap (© OpenStreetMap)',
@@ -858,10 +903,10 @@ const PAR_PAGE: Record<string, readonly CleMethode[]> = {
   accueil: ['population', 'age_median', 'naissances', 'superficie', 'densite', 'monuments', 'cavites', 'prix_m2_maison', 'ventes', 'depenses', 'niveau_vie', 'accidents_taux', 'voitures_electriques', 'equipements', 'eleves', 'participation_pres', 'delinquance_bilan', 'eau_conformite', 'logements_commences', 'elus_indemnites', 'conseil_parite', 'sport_licences', 'sport_equipements', 'nature_protege', 'nature_especes', 'rues_noms', 'quotidien_fibre', 'quotidien_dae'],
   population: ['population', 'multiplie_1968', 'age_median', 'part_65', 'naissances'],
   territoire: ['superficie', 'densite'],
-  'patrimoine-risques': ['monuments', 'objets_proteges', 'objets_siecles', 'objets_liste', 'cavites', 'catnat', 'mouvements'],
+  'patrimoine-risques': ['monuments', 'objets_proteges', 'objets_siecles', 'objets_liste', 'bati_batiments', 'bati_anciens', 'bati_hauteur', 'bati_periodes', 'cavites', 'catnat', 'mouvements'],
   immobilier: ['prix_m2_maison', 'prix_maison', 'ventes', 'loyer_maison'],
   budget: ['depenses', 'budget_flux', 'budget_series', 'dette', 'equipement', 'taxe_fonciere', 'subventions_associations', 'elus_indemnites', 'marches_plafonds', 'appels_offres', 'conseil_parite', 'conseil_ages', 'conseil_professions'],
-  'revenus-emploi': ['niveau_vie', 'pauvrete', 'chomage', 'salaire'],
+  'revenus-emploi': ['niveau_vie', 'pauvrete', 'chomage', 'salaire', 'caf_foyers', 'caf_prestations', 'caf_evolution'],
   accidents: ['accidents', 'accidents_taux', 'accidents_annees_sans'],
   equipements: ['equipements', 'medecins', 'eleves', 'etablissements', 'mediatheque_prets', 'mediatheque_collections', 'cantines_bio', 'cantines_liste'],
   'energie-mobilite': ['voitures_electriques', 'solaire', 'electricite', 'bornes'],

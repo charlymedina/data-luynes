@@ -116,7 +116,20 @@ function pageDido(body: unknown): Page {
   return { data, next: nextPage || null }; // la dernière page renvoie une adresse vide
 }
 
+/** Taille des pages demandées à un service WFS (limite du serveur : 5 000 objets). */
+const TAILLE_PAGE_WFS = 5000;
+
+/** Lit une page WFS GeoJSON ({ features }) ; la suivante commence après les objets déjà reçus (startIndex). */
+function pageWfs(body: unknown, url: string): Page {
+  const { features } = body as { features: unknown[] };
+  const courante = new URL(url);
+  const debut = Number(courante.searchParams.get('startIndex') ?? '0');
+  courante.searchParams.set('startIndex', String(debut + features.length));
+  return { data: features, next: features.length === TAILLE_PAGE_WFS ? courante.toString() : null };
+}
+
 function lirePage(source: Source, body: unknown, url: string): Page {
+  if (source.pagination === 'wfs') return pageWfs(body, url);
   if (source.pagination === 'georisques') return pageGeorisques(body, url);
   if (source.pagination === 'hubeau') return pageHubeau(body);
   if (source.pagination === 'dido') return pageDido(body);

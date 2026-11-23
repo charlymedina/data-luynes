@@ -31,6 +31,24 @@ const PALISSY: FooterSource = {
   detail: 'plateforme ouverte du patrimoine (POP) — Licence Ouverte 2.0',
 };
 
+const BD_TOPO: FooterSource = {
+  nom: 'IGN — BD TOPO (bâtiments)',
+  url: 'https://geoservices.ign.fr/bdtopo',
+  detail: 'bâtiments, usage, hauteur et date d’apparition estimée, via la Géoplateforme — Licence Ouverte 2.0',
+};
+
+const INSEE_LOGEMENTS: FooterSource = {
+  nom: 'INSEE — recensement de la population (API Melodi)',
+  url: 'https://www.insee.fr/fr/statistiques/8581474',
+  detail: 'résidences principales selon la période d’achèvement de la construction — Licence Ouverte 2.0',
+};
+
+const CAF: FooterSource = {
+  nom: 'CAF (CNAF) — foyers allocataires par prestation et par commune',
+  url: 'https://data.caf.fr/explore/dataset/s_ben_com_f/',
+  detail: 'prestations légales, nombres arrondis à 5 (secret statistique) — Licence Ouverte',
+};
+
 const GEORISQUES: FooterSource = {
   nom: 'Géorisques (ministère de la Transition écologique, BRGM)',
   url: 'https://www.georisques.gouv.fr',
@@ -64,7 +82,7 @@ const DGFIP_COMPTES: FooterSource = {
 const INSEE_REVENUS_EMPLOI: FooterSource = {
   nom: 'INSEE — Filosofi, recensement, base Tous salariés, SIDE (API Melodi)',
   url: 'https://www.insee.fr/fr/information/8193036',
-  detail: 'niveau de vie, pauvreté, activité, trajets domicile-travail, salaires, créations d’entreprises — Licence Ouverte 2.0',
+  detail: 'niveau de vie, pauvreté, activité, trajets domicile-travail, salaires, créations d’entreprises, ménages — Licence Ouverte 2.0',
 };
 
 const ONISR_BAAC: FooterSource = {
@@ -271,9 +289,9 @@ export const CREDITS_EQUIPEMENTS: readonly FooterSource[] = [INSEE_BPE, EDUCATIO
 export const CREDITS_ENERGIE: readonly FooterSource[] = [AGENCE_ORE, ODRE_SOLAIRE, SDES_PARC, IRVE, API_GEO];
 export const CREDITS_ACCIDENTS: readonly FooterSource[] = [ONISR_BAAC, API_GEO, OPENFREEMAP];
 export const CREDITS_BUDGET: readonly FooterSource[] = [DGFIP_COMPTES, DGFIP_BALANCES, DECP, BOAMP, RNE, INSEE_RECENSEMENT, API_GEO];
-export const CREDITS_REVENUS: readonly FooterSource[] = [INSEE_REVENUS_EMPLOI, API_GEO];
+export const CREDITS_REVENUS: readonly FooterSource[] = [INSEE_REVENUS_EMPLOI, CAF, API_GEO];
 export const CREDITS_IMMOBILIER: readonly FooterSource[] = [DVF, CARTE_LOYERS, ADEME_DPE, API_GEO, OPENFREEMAP];
-export const CREDITS_PATRIMOINE: readonly FooterSource[] = [MERIMEE, PALISSY, GEORISQUES, API_GEO, OPENFREEMAP];
+export const CREDITS_PATRIMOINE: readonly FooterSource[] = [MERIMEE, PALISSY, BD_TOPO, INSEE_LOGEMENTS, GEORISQUES, API_GEO, OPENFREEMAP];
 export const CREDITS_TERRITOIRE: readonly FooterSource[] = [API_GEO];
 export const CREDITS_POPULATION: readonly FooterSource[] = [TOURS_METROPOLE, INSEE_RECENSEMENT, API_GEO];
 

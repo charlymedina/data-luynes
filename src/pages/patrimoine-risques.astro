@@ -9,7 +9,7 @@ import MiniCompare, { type MiniItem } from '../components/charts/MiniCompare.ast
 import MiniRank from '../components/charts/MiniRank.astro';
 import RankGauge from '../components/charts/RankGauge.astro';
 import Waffle from '../components/charts/Waffle.astro';
-import { arretesCatnat, cavites, contourCommune, monuments, mouvementsTerrain, objetsParSiecle, objetsProteges, resumeObjets as ro, resumeRisques as r, zoneInondable } from '../data/patrimoine';
+import { arretesCatnat, cavites, contourCommune, monuments, mouvementsTerrain, objetsParSiecle, objetsProteges, periodesBati, resumeBati as rb, resumeObjets as ro, resumeRisques as r, zoneInondable } from '../data/patrimoine';
 import ColumnChart, { type Column } from '../components/charts/ColumnChart.astro';
 import InfoTip from '../components/InfoTip.astro';
 import { CREDITS_PATRIMOINE } from '../data/credits';
@@ -73,6 +73,16 @@ const typesCatnat: MiniItem[] = [
 ];
 
 const colonnesSiecles: Column[] = objetsParSiecle.map((s) => ({ label: `${s.siecle}ᵉ`, fullLabel: `${s.siecle}ᵉ siècle`, value: s.objets, display: formatNumber(s.objets) }));
+const premierePeriode = periodesBati[0];
+const colonnesPeriodes: Column[] = periodesBati.map((p) => ({
+  // Libellé court (sous la colonne) : année de début de la période, « < 1919 » pour la plus ancienne ; le libellé complet est dans l'infobulle et le tableau
+  label: p.periode.startsWith('Avant') ? p.periode.replace('Avant ', '< ') : (p.periode.match(/^\d{4}/)?.[0] ?? p.periode),
+  fullLabel: p.periode,
+  value: p.part_batiments_pct,
+  display: `${formatNumber(p.part_batiments_pct)} %`,
+  highlight: p.part_batiments_pct === Math.max(...periodesBati.map((q) => q.part_batiments_pct)),
+}));
+const enPourcent = (v: number): string => `${formatNumber(v, 1)} %`;
 const titreH2 = 'font-display text-4xl font-extrabold tracking-tight sm:text-5xl';
 const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
 ---
@@ -211,6 +221,68 @@ const carte = 'rounded-[1.5rem] border border-line bg-surface p-5 sm:p-8';
           ))
         }
       </ul>
+    </div>
+  </section>
+
+  <section id="bati" aria-labelledby="bati-titre" class="reveal mt-20 scroll-mt-8 sm:mt-28">
+    <h2 id="bati-titre" class={titreH2}>L'âge des maisons</h2>
+    <p class="mt-4 max-w-2xl text-ink-2">
+      La BD TOPO de l'IGN dessine chaque bâtiment de la commune : {formatNumber(rb.batiments)} à Luynes, dont {formatNumber(rb.residentiels)} servent (au moins en partie) d'habitation.
+      Sa date de construction n'est connue que pour {formatNumber(rb.part_dates_pct)} % d'entre eux ({formatNumber(rb.part_residentiels_dates_pct)} % des habitations) :
+      c'est une estimation, souvent arrondie, qui s'arrête en {rb.plus_recent_annee}. Les parts ci-dessous portent donc sur les bâtiments datés ;
+      le recensement de l'INSEE, qui date tous les logements, sert de repère.
+    </p>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <KeyFigure tone="loire" icon="maison" label="Bâtiments cartographiés" value={rb.batiments} info={methode('bati_batiments')}>
+        <p class="mt-4 text-sm opacity-90">
+          Habitations datées : année médiane de construction {rb.annee_mediane_residentiels}. Le plus ancien bâtiment daté remonterait à {rb.plus_ancien_annee} (date estimée).
+        </p>
+      </KeyFigure>
+      {
+        premierePeriode && (
+          <KeyFigure tone="accent" icon="immeuble" label={`Logements construits ${premierePeriode.periode.toLowerCase()}`} value={premierePeriode.part_logements_pct} decimals={1} unit="%" info={methode('bati_anciens')}>
+            <MiniCompare items={[
+              { label: 'Luynes', value: premierePeriode.part_logements_pct, display: enPourcent(premierePeriode.part_logements_pct), highlight: true },
+              { label: 'Indre-et-Loire', value: premierePeriode.part_logements_37_pct, display: enPourcent(premierePeriode.part_logements_37_pct) },
+              { label: 'France', value: premierePeriode.part_logements_france_pct, display: enPourcent(premierePeriode.part_logements_france_pct) },
+            ]} />
+          </KeyFigure>
+        )
+      }
+      <KeyFigure icon="regle" label="Bâtiment le plus haut" value={rb.hauteur_max} decimals={1} unit="m" note={`Nature indiquée par l'IGN : ${rb.hauteur_max_nature.toLowerCase()}.`} info={methode('bati_hauteur')} />
+    </div>
+    <div class:list={['mt-6', carte]}>
+      <h3 class="font-display text-xl font-bold">Quand les habitations ont-elles été construites ?</h3>
+      <p class="mt-1 text-sm text-ink-2">
+        Part des {formatNumber(rb.residentiels_dates)} habitations datées, par période de construction (BD TOPO) : chaque colonne porte l'année de début de sa période. La dernière période est sous-estimée : les dates s'arrêtent en {rb.plus_recent_annee}.
+      </p>
+      <ColumnChart info={methode('bati_periodes')}
+        columns={colonnesPeriodes}
+        unit="des habitations datées"
+        headers={['Période de construction', 'Part des habitations datées']}
+        ariaLabel={`Habitations datées de Luynes par période de construction : ${periodesBati.map((p) => `${p.periode} ${formatNumber(p.part_batiments_pct)} %`).join(', ')}.`}
+        tableCaption="Habitations datées de Luynes par période de construction (BD TOPO)"
+      />
+    </div>
+    <div class:list={['mt-6', carte]}>
+      <h3 class="font-display text-xl font-bold">Le repère du recensement</h3>
+      <p class="mt-1 mb-6 text-sm text-ink-2">
+        Part des résidences principales de chaque période de construction, pour Luynes, l'Indre-et-Loire et la France (recensement {premierePeriode?.annee_recensement}).
+      </p>
+      <div class="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          periodesBati.map((p) => (
+            <div>
+              <p class="text-sm font-semibold">{p.periode}</p>
+              <MiniCompare items={[
+                { label: 'Luynes', value: p.part_logements_pct, display: enPourcent(p.part_logements_pct), highlight: true },
+                { label: 'Indre-et-Loire', value: p.part_logements_37_pct, display: enPourcent(p.part_logements_37_pct) },
+                { label: 'France', value: p.part_logements_france_pct, display: enPourcent(p.part_logements_france_pct) },
+              ]} />
+            </div>
+          ))
+        }
+      </div>
     </div>
   </section>
 

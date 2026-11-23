@@ -4,7 +4,7 @@
  */
 import { commune, rang } from '../data/commune';
 import { agesDe, derniereAnneeEtatCivil, faits, pyramide } from '../data/population';
-import { monuments, resumeObjets, resumeRisques, zoneInondable } from '../data/patrimoine';
+import { monuments, periodesBati, resumeBati, resumeObjets, resumeRisques, zoneInondable } from '../data/patrimoine';
 import { etiquettesDpe, loyerMaison, resumeImmobilier } from '../data/immobilier';
 import {
   COMMUNES_37_COMPARABLES,
@@ -73,6 +73,17 @@ export function faitsPatrimoine(): string[] {
     `En plus des édifices, ${formatNumber(o.objets)} objets ou ensembles mobiliers de Luynes sont protégés au titre des monuments historiques, du ${o.siecle_min}ᵉ au ${o.siecle_max}ᵉ siècle.`,
     `${formatNumber(o.objets_lieu_principal)} des ${formatNumber(o.objets)} objets protégés de Luynes sont conservés dans un même lieu : « ${o.lieu_principal.toLowerCase()} ».`,
   );
+  const b = resumeBati;
+  liste.push(
+    `Parmi les ${formatNumber(b.residentiels_dates)} bâtiments d'habitation datés de Luynes (BD TOPO), l'année médiane de construction est ${b.annee_mediane_residentiels} ; le plus ancien daté remonterait à ${b.plus_ancien_annee} (date estimée).`,
+    `Le bâtiment le plus haut de Luynes mesure ${formatNumber(b.hauteur_max, 1)} m (${b.hauteur_max_nature.toLowerCase()}), d'après la BD TOPO de l'IGN.`,
+  );
+  const ancienne = periodesBati[0];
+  if (ancienne) {
+    liste.push(
+      `${formatPercent(ancienne.part_logements_pct)} des résidences principales de Luynes ont été construites ${ancienne.periode.toLowerCase()}, contre ${formatPercent(ancienne.part_logements_37_pct)} en Indre-et-Loire et ${formatPercent(ancienne.part_logements_france_pct)} en France (recensement ${ancienne.annee_recensement}).`,
+    );
+  }
   if (plusAncien) {
     liste.unshift(`« ${plusAncien.nom} » : c'est le premier monument de Luynes protégé au titre des monuments historiques, dès ${plusAncien.annee_protection} !`);
   }
